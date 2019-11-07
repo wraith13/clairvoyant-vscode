@@ -224,7 +224,32 @@ export module Clairvoyant
     
     const makeEnumValidator = <ObjectT>(mapObject: ObjectT): (value: keyof ObjectT) => boolean => (value: keyof ObjectT): boolean => 0 <= Object.keys(mapObject).indexOf(value.toString());
 
+    const autoScanModeObject = Object.freeze
+    ({
+        "none":
+        {
+            onInit: () => { },
+            enabled: false,
+        },
+        "current document":
+        {
+            onInit: () => { },
+            enabled: true,
+        },
+        "open documents":
+        {
+            onInit: () => scanOpenDocuments(),
+            enabled: true,
+        },
+        "folder":
+        {
+            onInit: () => scanFolder(),
+            enabled: true,
+        },
+    });
+
     const enabledProfile = new Config("enabledProfile", true);
+    const autoScanMode = new ConfigMap("autoScanMode", "folder", autoScanModeObject);
 
     const outputChannel = vscode.window.createOutputChannel("Clairvoyant Profiler"));
         
@@ -233,6 +258,10 @@ export module Clairvoyant
         context.subscriptions.push
         (
             //  コマンドの登録
+            vscode.commands.registerCommand(`${applicationKey}.scanDocument`, scanDocument),
+            vscode.commands.registerCommand(`${applicationKey}.scanOpenDocuments`, scanOpenDocuments),
+            vscode.commands.registerCommand(`${applicationKey}.scanFolder`, scanFolder),
+            vscode.commands.registerCommand(`${applicationKey}.reload`, reload),
             vscode.commands.registerCommand
             (
                 `${applicationKey}.startProfile`, () =>
@@ -295,13 +324,29 @@ export module Clairvoyant
             ),
 
             //  イベントリスナーの登録
-            vscode.workspace.onDidChangeConfiguration(() => onDidChangeConfiguration()),
+            vscode.workspace.onDidChangeConfiguration(onDidChangeConfiguration),
             vscode.workspace.onDidChangeWorkspaceFolders(() => scanFolder()),
             vscode.workspace.onDidChangeTextDocument(event => scanDocument(event.document)),
+            vscode.window.onDidChangeActiveTextEditor(textEditor => textEditor && scanDocument(textEditor.document)),
         );
 
+        reload();
+    };
+
+    const reload = () =>
+    {
+        //clearDB();
+        onDidChangeConfiguration();
+    };
+    const onDidChangeConfiguration = () =>
+    {
+        [
+            enabledProfile,
+            autoScanMode,
+        ]
+        .forEach(i => i.clear());
         startOrStopProfile();
-        scanFolder();
+        autoScanMode.get("").onInit();
     };
 
     const startOrStopProfile = () =>
@@ -319,14 +364,6 @@ export module Clairvoyant
         }
     };
 
-    const scanFolder = () => Profiler.profile
-    (
-        "scanFolder",
-        () =>
-        {
-            vscode.workspace.textDocuments.forEach(i => scanDocument(i));
-        }
-    );
     export const regExpExecToArray = (regexp: RegExp, text: string) => Profiler.profile
     (
         `regExpExecToArray(/${regexp.source}/${regexp.flags})`,
@@ -372,6 +409,22 @@ export module Clairvoyant
                     length: i.token.length,
                 })
             );
+        }
+    );
+    const scanOpenDocuments = () => Profiler.profile
+    (
+        "scanFolder",
+        () =>
+        {
+            vscode.workspace.textDocuments.forEach(i => scanDocument(i));
+        }
+    );
+    const scanFolder = () => Profiler.profile
+    (
+        "scanFolder",
+        () =>
+        {
+            vscode.workspace.textDocuments.forEach(i => scanDocument(i));
         }
     );
 }
