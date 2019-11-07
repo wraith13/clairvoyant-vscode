@@ -206,23 +206,23 @@ export module Clairvoyant
         public get = this.cache.get;
         public clear = this.cache.clear;
     }
-    class ConfigMap<valueT, mapObjectT extends { [key: string]: valueT }>
+    class ConfigMap<ObjectT>
     {
         public constructor
         (
             public name: string,
-            public defaultValue: keyof mapObjectT,
-            public mapObject: mapObjectT
+            public defaultValue: keyof ObjectT,
+            public mapObject: ObjectT
         )
         {
         }
 
-        config = new Config<keyof mapObjectT>(this.name, this.defaultValue, value =>0 <= Object.keys(this.mapObject).indexOf(<string>value));
+        config = new Config<keyof ObjectT>(this.name, this.defaultValue, makeEnumValidator(this.mapObject));
         public get = (key: string) => this.mapObject[this.config.cache.get(key)];
         public clear = this.config.cache.clear;
     }
     
-    const makeEnumValidator = <ObjectT>(mapObject: ObjectT): (value: string) => boolean => (value: string): boolean => 0 <= Object.keys(mapObject).indexOf(value);
+    const makeEnumValidator = <ObjectT>(mapObject: ObjectT): (value: keyof ObjectT) => boolean => (value: keyof ObjectT): boolean => 0 <= Object.keys(mapObject).indexOf(value.toString());
 
     const enabledProfile = new Config("enabledProfile", true);
 
