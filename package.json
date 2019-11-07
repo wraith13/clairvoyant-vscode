@@ -17,8 +17,43 @@
 	"contributes": {
 		"commands": [
 			{
-				"command": "extension.helloWorld",
-				"title": "Hello World"
+				"command": "clairvoyant.scanDocument",
+				"title": "%clairvoyant.scanDocument.title%",
+				"category": "clairvoyant"
+			},
+			{
+				"command": "clairvoyant.scanOpenDocuments",
+				"title": "%clairvoyant.scanOpenDocuments.title%",
+				"category": "clairvoyant"
+			},
+			{
+				"command": "clairvoyant.scanFolder",
+				"title": "%clairvoyant.scanFolder.title%",
+				"category": "clairvoyant"
+			},
+			{
+				"command": "clairvoyant.reload",
+				"title": "%clairvoyant.reload.title%",
+				"category": "clairvoyant"
+			}
+		],
+		"configuration":[
+			{
+				"title": "clairvoyant",
+				"properties": {
+					"backgroundPhiColors.autoScanMode": {
+						"type": "string",
+						"default": "folder",
+						"enum": [
+							"none",
+							"current document",
+							"open documents",
+							"folder"
+						],
+						"overridable": true,
+						"description": "%clairvoyant.autoScanMode.description%"
+					}
+				}
 			}
 		]
 	},
