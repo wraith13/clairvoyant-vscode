@@ -1,11 +1,20 @@
 {
 	"name": "clairvoyant",
 	"displayName": "clairvoyant",
-	"description": "clairvoyant",
+	"description": "Smart search your codes",
 	"version": "0.0.1",
+	"publisher": "wraith13",
 	"license": "SEE LICENSE IN LICENSE_1_0.txt",
 	"engines": {
 		"vscode": "^1.39.0"
+	},
+	"bugs": {
+		"url": "https://github.com/wraith13/clairvoyant-vscode/issues"
+	},
+	"homepage": "https://github.com/wraith13/clairvoyant-vscode",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/wraith13/clairvoyant-vscode.git"
 	},
 	"categories": [
 		"Other"
