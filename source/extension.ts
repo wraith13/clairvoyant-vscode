@@ -333,9 +333,73 @@ export module Clairvoyant
         reload();
     };
 
+    interface Entry
+    {
+        preview: string;
+        selection: vscode.Selection;
+    }
+    const documentTokenEntryMap = new Map<vscode.TextDocument, Map<string, Entry[]>>();
+    const tokenDocumentEntryMap = new Map<string, Map<vscode.TextDocument, Entry[]>>();
+
+    const makeSureTokenDocumentEntryMap = () => Profiler.profile
+    (
+        "makeSureTokenDocumentEntryMap",
+        () =>
+        {
+            if (tokenDocumentEntryMap.size <= 0)
+            {
+                Array.from(documentTokenEntryMap.values())
+                    .map(i => Array.from(i.keys()))
+                    .reduce((a, b) => a.concat(b).filter((i, index, a) => index === a.indexOf(i)))
+                    .forEach
+                    (
+                        token =>
+                        {
+                            tokenDocumentEntryMap.set
+                            (
+                                token,
+                                new Map<vscode.TextDocument, Entry[]>
+                                (
+                                    <[vscode.TextDocument, Entry[]][]>
+                                    Array.from(documentTokenEntryMap.entries())
+                                        .map
+                                        (
+                                            i =>
+                                            ({
+                                                textDocument: i[0],
+                                                entries: i[1].get(token)
+                                            })
+                                        )
+                                        .filter(i => undefined !== i.entries)
+                                        .map(i => [ i.textDocument, i.entries ])
+                                )
+                            );
+                        }
+                    );
+            }
+            return tokenDocumentEntryMap;
+        }
+    );
+
+    const showToken = async (document: vscode.TextDocument, entry: Entry) =>
+    {
+        const textEditor = await vscode.window.showTextDocument(document);
+        textEditor.selection = entry.selection;
+    };
+    const copyToken = async (text: string) => await vscode.env.clipboard.writeText(text);
+    const pasteToken = async (text: string) =>
+    {
+        const textEditor = vscode.window.activeTextEditor;
+        if (textEditor)
+        {
+            await textEditor.edit(editBuilder => editBuilder.replace(textEditor.selection, text));
+        }
+    };
+
     const reload = () =>
     {
-        //clearDB();
+        documentTokenEntryMap.clear();
+        tokenDocumentEntryMap.clear();
         onDidChangeConfiguration();
     };
     const onDidChangeConfiguration = () =>
@@ -387,8 +451,9 @@ export module Clairvoyant
         "scanDocument",
         () =>
         {
+            //if (autoScanMode.get(document.languageId).enabled)
             const text = document.getText();
-            regExpExecToArray
+            const hits = regExpExecToArray
             (
                 /\w+/gm,
                 text
@@ -397,18 +462,25 @@ export module Clairvoyant
             (
                 match =>
                 ({
-                    index: match.index,
                     token: match[0],
-                })
-            )
-            .map
-            (
-                i =>
-                ({
-                    startPosition: i.index,
-                    length: i.token.length,
+                    preview: "",
+                    selection: new vscode.Selection(document.positionAt(match.index), document.positionAt(match.index +match[0].length)),
                 })
             );
+            const map = new Map<string, Entry[]>();
+            const tokens = hits.map(i => i.token).filter((i, index, a) => index === a.indexOf(i));
+            tokens.forEach
+            (
+                token =>
+                {
+                    map.set
+                    (
+                        token,
+                        hits.filter(i => token === i.token)
+                    );
+                }
+            );
+            documentTokenEntryMap.set(document, map);
         }
     );
     const scanOpenDocuments = () => Profiler.profile
