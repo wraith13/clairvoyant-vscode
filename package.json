@@ -20,9 +20,9 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:extension.helloWorld"
+		"*"
 	],
-	"main": "./out/extension.js",
+	"main": "./out/source/extension.js",
 	"contributes": {
 		"commands": [
 			{
@@ -41,8 +41,48 @@
 				"category": "clairvoyant"
 			},
 			{
+				"command": "clairvoyant.sight",
+				"title": "%clairvoyant.sight.title%",
+				"category": "clairvoyant"
+			},
+			{
+				"command": "clairvoyant.next",
+				"title": "%clairvoyant.next.title%",
+				"category": "clairvoyant"
+			},
+			{
+				"command": "clairvoyant.previous",
+				"title": "%clairvoyant.next.title%",
+				"category": "clairvoyant"
+			},
+			{
+				"command": "clairvoyant.nextDocument",
+				"title": "%clairvoyant.next.title%",
+				"category": "clairvoyant"
+			},
+			{
+				"command": "clairvoyant.previousDocument",
+				"title": "%clairvoyant.next.title%",
+				"category": "clairvoyant"
+			},
+			{
 				"command": "clairvoyant.reload",
 				"title": "%clairvoyant.reload.title%",
+				"category": "clairvoyant"
+			},
+			{
+				"command": "clairvoyant.startProfile",
+				"title": "%clairvoyant.startProfile.title%",
+				"category": "clairvoyant"
+			},
+			{
+				"command": "clairvoyant.stopProfile",
+				"title": "%clairvoyant.stopProfile.title%",
+				"category": "clairvoyant"
+			},
+			{
+				"command": "clairvoyant.reportProfile",
+				"title": "%clairvoyant.reportProfile.title%",
 				"category": "clairvoyant"
 			}
 		],

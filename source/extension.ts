@@ -27,6 +27,7 @@ export module Profiler
     let isProfiling = false;
     let startAt = 0;
     let endAt = 0;
+    let debugCount = 0;
     
     export class ProfileEntry
     {
@@ -40,7 +41,14 @@ export module Profiler
             {
                 this.startTicks = getTicks();
                 entryStack.push(this);
-                //console.log(`${"*".repeat(entryStack.length)} ${this.name} begin`);
+                if (this.name.startsWith("DEBUG:"))
+                {
+                    ++debugCount;
+                }
+                if (0 < debugCount)
+                {
+                    console.log(`${"*".repeat(entryStack.length)} ${this.name} begin`);
+                }
             }
             else
             {
@@ -51,7 +59,14 @@ export module Profiler
         {
             if (0 !== this.startTicks)
             {
-                //console.log(`${"*".repeat(entryStack.length)} ${this.name} end`);
+                if (0 < debugCount)
+                {
+                    console.log(`${"*".repeat(entryStack.length)} ${this.name} end`);
+                }
+                if (this.name.startsWith("DEBUG:"))
+                {
+                    --debugCount;
+                }
                 const wholeTicks = getTicks() -this.startTicks;
                 if (undefined === profileScore[this.name])
                 {
@@ -251,16 +266,18 @@ export module Clairvoyant
     const enabledProfile = new Config("enabledProfile", true);
     const autoScanMode = new ConfigMap("autoScanMode", "folder", autoScanModeObject);
 
-    const outputChannel = vscode.window.createOutputChannel("Clairvoyant Profiler"));
+    const outputChannel = vscode.window.createOutputChannel("Clairvoyant");
         
     export const initialize = (context: vscode.ExtensionContext): void =>
     {
+        console.log("Clairvoyant Initialize!!!");
         context.subscriptions.push
         (
             //  コマンドの登録
             vscode.commands.registerCommand(`${applicationKey}.scanDocument`, scanDocument),
             vscode.commands.registerCommand(`${applicationKey}.scanOpenDocuments`, scanOpenDocuments),
             vscode.commands.registerCommand(`${applicationKey}.scanFolder`, scanFolder),
+            vscode.commands.registerCommand(`${applicationKey}.sight`, sight),
             vscode.commands.registerCommand(`${applicationKey}.reload`, reload),
             vscode.commands.registerCommand
             (
@@ -331,6 +348,7 @@ export module Clairvoyant
         );
 
         reload();
+console.log("Clairvoyant Initialized!!!");
     };
 
     interface Entry
@@ -385,6 +403,7 @@ export module Clairvoyant
     {
         const textEditor = await vscode.window.showTextDocument(document);
         textEditor.selection = entry.selection;
+        textEditor.revealRange(entry.selection);
     };
     const copyToken = async (text: string) => await vscode.env.clipboard.writeText(text);
     const pasteToken = async (text: string) =>
@@ -446,12 +465,35 @@ export module Clairvoyant
             return result;
         }
     );
+    const makePreview = (document: vscode.TextDocument, index: number, _token: string) => Profiler.profile
+    (
+        "makePreview",
+        () =>
+        {
+            try
+            {
+                const anchor = document.positionAt(index);
+                const line = document.getText(new vscode.Range(anchor.line, 0, anchor.line +1, 0));
+                return line.length < 1024 ? line.trim().replace(/\s+/gm, " "): "TOO LONG LINE";
+            }
+            catch(error)
+            {
+                return `ERROR: ${document.fileName}, ${index}, ${_token}`;
+            }
+        }
+    );
+    const makeSelection = (document: vscode.TextDocument, index: number, token: string) => Profiler.profile
+    (
+        "makeSelection",
+        () => new vscode.Selection(document.positionAt(index), document.positionAt(index +token.length))
+    );
     const scanDocument = (document: vscode.TextDocument) => Profiler.profile
     (
         "scanDocument",
         () =>
         {
             //if (autoScanMode.get(document.languageId).enabled)
+            console.log(`scanDocument: ${document.fileName}`);
             const text = document.getText();
             const hits = regExpExecToArray
             (
@@ -463,8 +505,8 @@ export module Clairvoyant
                 match =>
                 ({
                     token: match[0],
-                    preview: "",
-                    selection: new vscode.Selection(document.positionAt(match.index), document.positionAt(match.index +match[0].length)),
+                    preview: makePreview(document, match.index, match[0]),
+                    selection: makeSelection(document, match.index, match[0]),
                 })
             );
             const map = new Map<string, Entry[]>();
@@ -499,4 +541,104 @@ export module Clairvoyant
             vscode.workspace.textDocuments.forEach(i => scanDocument(i));
         }
     );
+    const stripFileName = (path : string) : string => path.substr(0, path.length -stripDirectory(path).length);
+    const stripDirectory = (path : string) : string => path.split('\\').reverse()[0].split('/').reverse()[0];
+    const digest = (text : string) : string => text.replace(/\s+/g, " ").substr(0, 128);
+    interface CommandMenuItem extends vscode.QuickPickItem
+    {
+        command: () => Promise<void>;
+    }
+    const showMenu = async (items: CommandMenuItem[]) =>
+    {
+        const select = await vscode.window.showQuickPick(items);
+        if (select)
+        {
+            await select.command();
+        }
+    };
+    const makeSightShowMenu = (document: vscode.TextDocument, entries: Entry[]) => Profiler.profile
+    (
+        "makeSightTokenMenu",
+        () => entries
+            .map
+            (
+                entry =>
+                ({
+                    label: `$(rocket) Go to ${entry.selection.anchor.line +1}:${entry.selection.anchor.character +1}`,
+                    detail: entry.preview,
+                    command: async () => showToken(document, entry)
+                })
+            )
+    );
+    const makeSightTokenMenu = (token: string, entry: Map<vscode.TextDocument, Entry[]>) => Profiler.profile
+    (
+        "makeSightTokenMenu",
+        () =>
+        (<any>[
+            {
+                label: `$(clippy) Copy "${token}" to clipboard`,
+                command: async () => copyToken(token),
+            },
+            {
+                label: `$(clippy) Paste "${token}" to text editor`,
+                command: async () => pasteToken(token),
+            },
+        ])
+        .concat
+        (
+            Array.from(entry.entries())
+            .map
+            (
+                entry =>
+                ({
+                    label: `$(file-text) ${stripDirectory(entry[0].fileName)}`,
+                    description: entry[0].isUntitled ?
+                        digest(entry[0].getText()):
+                        stripFileName(entry[0].fileName),
+                    detail: `count: ${entry[1].length}`,
+                    command: async () =>await showMenu(makeSightShowMenu(entry[0], entry[1]))
+                })
+            )
+        )
+    );
+    const makeSightRootMenu = () => Profiler.profile
+    (
+        "makeSightRootMenu",
+        () => Array.from(makeSureTokenDocumentEntryMap().entries())
+        .map
+        (
+            entry =>
+            ({
+                label: entry[0],
+                description: undefined,
+                detail: Array.from(entry[1].entries())
+                        .map(entry => `${stripDirectory(entry[0].fileName)}(${entry[1].length})`)
+                        .join(", "),
+                    command: async () => await showMenu(makeSightTokenMenu(entry[0], entry[1]))
+                })
+            )
+    );
+    const sight = async () =>
+    {
+        const menu = makeSightRootMenu();
+        menu.sort
+        (
+            (a, b) =>
+                a.label.toLowerCase() < b.label.toLowerCase() ? -1:
+                b.label.toLowerCase() < a.label.toLowerCase() ? 1:
+                a.label < b.label ? -1:
+                b.label < a.label ? 1:
+                0
+        );
+        console.log(`tokens: ${JSON.stringify(menu.map(i => i.label))}`);
+        await showMenu(menu);
+    };
+}
+
+export function activate(context: vscode.ExtensionContext): void
+{
+    Clairvoyant.initialize(context);
+}
+export function deactivate(): void
+{
 }

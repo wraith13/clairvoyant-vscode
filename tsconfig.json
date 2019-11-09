@@ -27,11 +27,12 @@
 		"skipLibCheck": false,
 		"pretty": false,
 		"noEmitOnError": true,
-		"rootDir": "source",
+		"rootDir": ".",
 		"strict": true
 	},
 	"exclude": [
 		"node_modules",
-		".vscode-test"
+		".vscode-test",
+		"out"
 	]
 }
