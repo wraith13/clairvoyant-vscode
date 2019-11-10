@@ -30,10 +30,40 @@ const stringComparer = (a: string, b: string) =>
     a.toLowerCase() < b.toLowerCase() ? -1:
     b.toLowerCase() < a.toLowerCase() ? 1:
     simpleComparer(a, b);
+const mergeComparer = <valueT>(comparerList: ((a: valueT, b: valueT) => number)[]) => (a: valueT, b: valueT) =>
+{
+    let result = 0;
+    for(let i = 0; i < comparerList.length && 0 === result; ++i)
+    {
+        result = comparerList[i](a, b);
+    }
+    return result;
+};
 
 const mapKeys = <keyT, valueT>(map: Map<keyT, valueT>) => Array.from(map.keys());
 const mapValues = <keyT, valueT>(map: Map<keyT, valueT>) => Array.from(map.values());
 const mapEntries = <keyT, valueT>(map: Map<keyT, valueT>) => Array.from(map.entries());
+
+export const regExpExecToArray = (regexp: RegExp, text: string) => Profiler.profile
+(
+    `regExpExecToArray(/${regexp.source}/${regexp.flags})`,
+    () =>
+    {
+        const result: RegExpExecArray[] = [];
+        while(true)
+        {
+            const match = regexp.exec(text);
+            if (null === match)
+            {
+                break;
+            }
+            result.push(match);
+        }
+        return result;
+    }
+);
+
+export const timeout = (wait: number) => new Promise((resolve) => setTimeout(resolve, wait));
 
 export module Profiler
 {
@@ -156,6 +186,14 @@ export module Clairvoyant
 {
     const applicationKey = "clairvoyant";
     let context: vscode.ExtensionContext;
+
+    let eyeLabel: vscode.StatusBarItem;
+    let nextLabel: vscode.StatusBarItem;
+    let previousLabel: vscode.StatusBarItem;
+    let nextDocumentLabel: vscode.StatusBarItem;
+    let previousDocumentLabel: vscode.StatusBarItem;
+
+    let isScaning = 0;
 
     class Cache<keyT, valueT>
     {
@@ -288,12 +326,88 @@ export module Clairvoyant
             enabled: true,
         },
     });
+    const showStatusBarItemsObject = Object.freeze
+    ({
+        "none":
+        {
+            show: () =>
+            {
+                nextDocumentLabel.hide();
+                nextLabel.hide();
+                eyeLabel.hide();
+                previousLabel.hide();
+                previousDocumentLabel.hide();
+            }
+        },
+        "eye only":
+        {
+            show: () =>
+            {
+                nextDocumentLabel.hide();
+                nextLabel.hide();
+                eyeLabel.show();
+                previousLabel.hide();
+                previousDocumentLabel.hide();
+            }
+        },
+        "eye,next,previous":
+        {
+            show: () =>
+            {
+                nextDocumentLabel.hide();
+                nextLabel.show();
+                eyeLabel.show();
+                previousLabel.show();
+                previousDocumentLabel.hide();
+            }
+        },
+        "full":
+        {
+            show: () =>
+            {
+                nextDocumentLabel.show();
+                nextLabel.show();
+                eyeLabel.show();
+                previousLabel.show();
+                previousDocumentLabel.show();
+            }
+        },
+    });
 
     const enabledProfile = new Config("enabledProfile", true);
     const autoScanMode = new ConfigMap("autoScanMode", "folder", autoScanModeObject);
+    const showStatusBarItems = new ConfigMap("showStatusBarItems", "full", showStatusBarItemsObject);
 
     const outputChannel = vscode.window.createOutputChannel("Clairvoyant");
-        
+    
+    const createStatusBarItem =
+    (
+        properties :
+        {
+            alignment ? : vscode.StatusBarAlignment,
+            text ? : string,
+            command ? : string,
+            tooltip ? : string
+        }
+    )
+    : vscode.StatusBarItem =>
+    {
+        const result = vscode.window.createStatusBarItem(properties.alignment);
+        if (undefined !== properties.text)
+        {
+            result.text = properties.text;
+        }
+        if (undefined !== properties.command)
+        {
+            result.command = properties.command;
+        }
+        if (undefined !== properties.tooltip)
+        {
+            result.tooltip = properties.tooltip;
+        }
+        return result;
+    };
+
     export const initialize = (aContext: vscode.ExtensionContext): void =>
     {
         context = aContext;
@@ -365,6 +479,44 @@ export module Clairvoyant
                     }
                 }
             ),
+
+            //  ステータスバーアイコンの登録
+            nextDocumentLabel = createStatusBarItem
+            ({
+                alignment: vscode.StatusBarAlignment.Right,
+                text: "$(triangle-right)",
+                command: `${applicationKey}.nextDocument`,
+                tooltip: "%clairvoyant.nextDocument.title%"
+            }),
+            nextLabel = createStatusBarItem
+            ({
+                alignment: vscode.StatusBarAlignment.Right,
+                text: "$(chevron-right)",
+                command: `${applicationKey}.next`,
+                tooltip: "%clairvoyant.next.title%"
+            }),
+            eyeLabel = createStatusBarItem
+            ({
+                alignment: vscode.StatusBarAlignment.Right,
+                text: "$(eye)",
+                command: `${applicationKey}.sight`,
+                tooltip: "%clairvoyant.sight.title%"
+            }),
+            previousLabel = createStatusBarItem
+            ({
+                alignment: vscode.StatusBarAlignment.Right,
+                text: "$(chevron-left)",
+                command: `${applicationKey}.previous`,
+                tooltip: "%clairvoyant.previous.title%"
+            }),
+            previousDocumentLabel = createStatusBarItem
+            ({
+                alignment: vscode.StatusBarAlignment.Right,
+                text: "$(triangle-left)",
+                command: `${applicationKey}.previousDocument`,
+                tooltip: "%clairvoyant.previousDocument.title%"
+            }),
+
 
             //  イベントリスナーの登録
             vscode.workspace.onDidChangeConfiguration(onDidChangeConfiguration),
@@ -451,9 +603,11 @@ export module Clairvoyant
         [
             enabledProfile,
             autoScanMode,
+            showStatusBarItems,
         ]
         .forEach(i => i.clear());
         startOrStopProfile();
+        updateStatusBarItems();
         autoScanMode.get("").onInit();
     };
 
@@ -472,24 +626,6 @@ export module Clairvoyant
         }
     };
 
-    export const regExpExecToArray = (regexp: RegExp, text: string) => Profiler.profile
-    (
-        `regExpExecToArray(/${regexp.source}/${regexp.flags})`,
-        () =>
-        {
-            const result: RegExpExecArray[] = [];
-            while(true)
-            {
-                const match = regexp.exec(text);
-                if (null === match)
-                {
-                    break;
-                }
-                result.push(match);
-            }
-            return result;
-        }
-    );
     const makePreview = (document: vscode.TextDocument, index: number, _token: string) => Profiler.profile
     (
         "makePreview",
@@ -499,7 +635,7 @@ export module Clairvoyant
             {
                 const anchor = document.positionAt(index);
                 const line = document.getText(new vscode.Range(anchor.line, 0, anchor.line +1, 0));
-                return line.length < 1024 ? line.trim().replace(/\s+/gm, " "): "TOO LONG LINE";
+                return line.length < 1024 ? line.trim().replace(/\s+/gm, " "): "$(eye-closed) TOO LONG LINE";
             }
             catch(error)
             {
@@ -512,61 +648,65 @@ export module Clairvoyant
         "makeSelection",
         () => new vscode.Selection(document.positionAt(index), document.positionAt(index +token.length))
     );
-    const scanDocument = (document: vscode.TextDocument) => Profiler.profile
-    (
-        "scanDocument",
-        () =>
+    const scanDocument = async (document: vscode.TextDocument) =>
+    {
+        try
         {
-            //if (autoScanMode.get(document.languageId).enabled)
-            console.log(`scanDocument: ${document.fileName}`);
-            const text = document.getText();
-            const hits = regExpExecToArray
+            ++isScaning;
+            updateStatusBarItems();
+            await timeout(0);
+            Profiler.profile
             (
-                /\w+/gm,
-                text
-            )
-            .map
-            (
-                match =>
-                ({
-                    token: match[0],
-                    preview: makePreview(document, match.index, match[0]),
-                    selection: makeSelection(document, match.index, match[0]),
-                })
-            );
-            const map = new Map<string, Entry[]>();
-            const tokens = hits.map(i => i.token).filter((i, index, a) => index === a.indexOf(i));
-            tokens.forEach
-            (
-                token =>
+                "scanDocument",
+                () =>
                 {
-                    map.set
+                    console.log(`scanDocument: ${document.fileName}`);
+                    const text = document.getText();
+                    const hits = regExpExecToArray
                     (
-                        token,
-                        hits.filter(i => token === i.token)
+                        /\w+/gm,
+                        text
+                    )
+                    .map
+                    (
+                        match =>
+                        ({
+                            token: match[0],
+                            preview: makePreview(document, match.index, match[0]),
+                            selection: makeSelection(document, match.index, match[0]),
+                        })
                     );
+                    const map = new Map<string, Entry[]>();
+                    const tokens = hits.map(i => i.token).filter((i, index, a) => index === a.indexOf(i));
+                    tokens.forEach
+                    (
+                        token =>
+                        {
+                            map.set
+                            (
+                                token,
+                                hits.filter(i => token === i.token)
+                            );
+                        }
+                    );
+                    mapKeys(documentTokenEntryMap)
+                        .filter(i => i.fileName === document.fileName)
+                        .forEach(i => documentTokenEntryMap.delete(i));
+                    documentTokenEntryMap.set(document, map);
+                    tokenDocumentEntryMap.clear();
                 }
             );
-            documentTokenEntryMap.set(document, map);
-            tokenDocumentEntryMap.clear();
         }
-    );
-    const scanOpenDocuments = () => Profiler.profile
-    (
-        "scanFolder",
-        () =>
+        finally
         {
-            vscode.workspace.textDocuments.forEach(i => scanDocument(i));
+            await timeout(200); // スキャンを実行していた事を認識し易くする為、終了表示をちょっとだけ遅らせる。
+            --isScaning;
+            updateStatusBarItems();
         }
-    );
-    const scanFolder = () => Profiler.profile
-    (
-        "scanFolder",
-        () =>
-        {
-            vscode.workspace.textDocuments.forEach(i => scanDocument(i));
-        }
-    );
+    };
+    const scanOpenDocuments = () => vscode.window.visibleTextEditors.filter(i => i.viewColumn).forEach(i => scanDocument(i.document));
+    const scanFolder = () => vscode.window.visibleTextEditors.filter(i => i.viewColumn).forEach(i => scanDocument(i.document));
+
     const stripFileName = (path : string) : string => path.substr(0, path.length -stripDirectory(path).length);
     const stripDirectory = (path : string) : string => path.split('\\').reverse()[0].split('/').reverse()[0];
     const digest = (text : string) : string => text.replace(/\s+/g, " ").substr(0, 128);
@@ -590,8 +730,8 @@ export module Clairvoyant
             (
                 entry =>
                 ({
-                    label: `$(rocket) Go to: ${entry.preview}`,
-                    detail: `#${entry.selection.anchor.line +1}:${entry.selection.anchor.character +1}`,
+                    label: `$(rocket) ${entry.preview} `, // この末尾のスペースは showQuickPick の絞り込みでユーザーが他の入力候補を除外する為のモノ
+                    detail: `Go to #${entry.selection.anchor.line +1}:${entry.selection.anchor.character +1}`,
                     command: async () => showToken(document, entry)
                 })
             )
@@ -613,6 +753,7 @@ export module Clairvoyant
         () => makeSightTokenCoreMenu(token).concat
         (
             mapEntries(entry)
+            .sort(mergeComparer([makeComparer(entry => -entry[1].length), makeComparer(entry => entry[0].fileName)]))
             .map
             (
                 entry =>
@@ -643,7 +784,7 @@ export module Clairvoyant
                     command: async () =>
                     {
                         context.globalState.update("clairvoyant.rootMenuOrder", "count");
-                        await showMenu(makeSightFileListMenu());
+                        await showMenu(makeSightFileRootMenu(document, entries));
                     },
                 }:
                 {
@@ -651,7 +792,7 @@ export module Clairvoyant
                     command: async () =>
                     {
                         context.globalState.update("clairvoyant.rootMenuOrder", "token");
-                        await showMenu(makeSightFileListMenu());
+                        await showMenu(makeSightFileRootMenu(document, entries));
                     },
                 },
         ])
@@ -661,13 +802,17 @@ export module Clairvoyant
             (
                 "token" === getRootMenuOrder() ?
                     (a, b) => stringComparer(a[0], b[0]):
-                    makeComparer(entry => -entry[1].length)
+                    mergeComparer
+                    ([
+                        makeComparer(entry => -entry[1].length),
+                        (a, b) => stringComparer(a[0], b[0])
+                    ])
             )
             .map
             (
                 entry =>
                 ({
-                    label: `$(tag) ${entry[0]}`,
+                    label: `$(tag) ${entry[0]} `, // この末尾のスペースは showQuickPick の絞り込みでユーザーが他の入力候補を除外する為のモノ
                     description: undefined,
                     detail: `count: ${entry[1].length}`,
                     command: async () => await showMenu(makeSightFileTokenMenu(document, entry[0], entry[1]))
@@ -678,7 +823,9 @@ export module Clairvoyant
     const makeSightFileListMenu = (): CommandMenuItem[] => Profiler.profile
     (
         "makeSightFileListMenu",
-        () => mapEntries(documentTokenEntryMap).map
+        () => mapEntries(documentTokenEntryMap)
+        .sort(makeComparer(entry => entry[0].fileName))
+        .map
         (
             entry =>
             ({
@@ -728,20 +875,25 @@ export module Clairvoyant
                 (
                     "token" === getRootMenuOrder() ?
                         (a, b) => stringComparer(a[0], b[0]):
-                        makeComparer
-                        (
-                            (entry: [string, Map<vscode.TextDocument, Entry[]>]) =>
-                                -mapValues(entry[1]).map(i => i.length).reduce((a, b) => a +b)
-                        )
+                        mergeComparer
+                        ([
+                            makeComparer
+                            (
+                                (entry: [string, Map<vscode.TextDocument, Entry[]>]) =>
+                                    -mapValues(entry[1]).map(i => i.length).reduce((a, b) => a +b)
+                            ),
+                            (a, b) => stringComparer(a[0], b[0])
+                        ])
                 )
                 .map
                 (
                     entry =>
                     ({
-                        label: `$(tag) ${entry[0]}`,
+                        label: `$(tag) ${entry[0]} `, // この末尾のスペースは showQuickPick の絞り込みでユーザーが他の入力候補を除外する為のモノ
                         description: undefined,
                         detail: mapEntries(entry[1])
-                                .map(entry => `${stripDirectory(entry[0].fileName)}(${entry[1].length})`)
+                                .sort(mergeComparer([makeComparer(entry => -entry[1].length), makeComparer(entry => entry[0].fileName)]))
+                                .map(entry => `$(file-text) ${stripDirectory(entry[0].fileName)}(${entry[1].length})`)
                                 .join(", "),
                         command: async () => await showMenu(makeSightTokenMenu(entry[0], entry[1]))
                     })
@@ -750,6 +902,12 @@ export module Clairvoyant
     );
 
     const sight = async () => await showMenu(makeSightRootMenu());
+
+    export const updateStatusBarItems = () : void =>
+    {
+        eyeLabel.text = 0 < isScaning ? "$(sync~spin)": "$(eye)";
+        showStatusBarItems.get("").show();
+    };
 }
 
 export function activate(context: vscode.ExtensionContext): void

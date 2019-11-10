@@ -52,17 +52,17 @@
 			},
 			{
 				"command": "clairvoyant.previous",
-				"title": "%clairvoyant.next.title%",
+				"title": "%clairvoyant.previous.title%",
 				"category": "clairvoyant"
 			},
 			{
 				"command": "clairvoyant.nextDocument",
-				"title": "%clairvoyant.next.title%",
+				"title": "%clairvoyant.nextDocument.title%",
 				"category": "clairvoyant"
 			},
 			{
 				"command": "clairvoyant.previousDocument",
-				"title": "%clairvoyant.next.title%",
+				"title": "%clairvoyant.previousDocument.title%",
 				"category": "clairvoyant"
 			},
 			{
