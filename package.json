@@ -90,7 +90,7 @@
 			{
 				"title": "clairvoyant",
 				"properties": {
-					"backgroundPhiColors.autoScanMode": {
+					"clairvoyant.autoScanMode": {
 						"type": "string",
 						"default": "folder",
 						"enum": [
@@ -101,6 +101,18 @@
 						],
 						"overridable": true,
 						"description": "%clairvoyant.autoScanMode.description%"
+					},
+					"clairvoyant.showStatusBarItems": {
+						"type": "string",
+						"default": "full",
+						"enum": [
+							"none",
+							"eye only",
+							"eye,next,previous",
+							"full"
+						],
+						"overridable": true,
+						"description": "%clairvoyant.showStatusBarItems.description%"
 					}
 				}
 			}
