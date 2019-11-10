@@ -20,6 +20,21 @@ const getTicks = () => new Date().getTime();
 const roundCenti = (value : number) : number => Math.round(value *100) /100;
 const percentToDisplayString = (value : number, locales?: string | string[]) : string =>`${roundCenti(value).toLocaleString(locales, { style: "percent" })}`;
 
+const simpleComparer = <valueT>(a: valueT, b: valueT) =>
+    a < b ? -1:
+    b < a ? 1:
+    0;
+
+const makeComparer = <objectT, valueT>(getValue: (object: objectT) => valueT) => (a: objectT, b: objectT) => simpleComparer(getValue(a), getValue(b));
+const stringComparer = (a: string, b: string) =>
+    a.toLowerCase() < b.toLowerCase() ? -1:
+    b.toLowerCase() < a.toLowerCase() ? 1:
+    simpleComparer(a, b);
+
+const mapKeys = <keyT, valueT>(map: Map<keyT, valueT>) => Array.from(map.keys());
+const mapValues = <keyT, valueT>(map: Map<keyT, valueT>) => Array.from(map.values());
+const mapEntries = <keyT, valueT>(map: Map<keyT, valueT>) => Array.from(map.entries());
+
 export module Profiler
 {
     let profileScore: { [scope: string]: number } = { };
@@ -45,10 +60,7 @@ export module Profiler
                 {
                     ++debugCount;
                 }
-                if (0 < debugCount)
-                {
-                    console.log(`${"*".repeat(entryStack.length)} ${this.name} begin`);
-                }
+                debug(`${"*".repeat(entryStack.length)} ${this.name} begin`);
             }
             else
             {
@@ -59,10 +71,7 @@ export module Profiler
         {
             if (0 !== this.startTicks)
             {
-                if (0 < debugCount)
-                {
-                    console.log(`${"*".repeat(entryStack.length)} ${this.name} end`);
-                }
+                debug(`${"*".repeat(entryStack.length)} ${this.name} end`);
                 if (this.name.startsWith("DEBUG:"))
                 {
                     --debugCount;
@@ -126,11 +135,28 @@ export module Profiler
                 })
             )
             .sort((a, b) => b.ticks -a.ticks);
+
+    export const debug = (text: string, object?: any) =>
+    {
+        if (0 < debugCount)
+        {
+            if (undefined !== object)
+            {
+                console.log(text);
+            }
+            else
+            {
+                console.log(`${text}: ${JSON.stringify(object)}`);
+            }
+        }
+    };
 }
 
 export module Clairvoyant
 {
     const applicationKey = "clairvoyant";
+    let context: vscode.ExtensionContext;
+
     class Cache<keyT, valueT>
     {
         cache: { [key: string]: valueT } = { };
@@ -268,9 +294,9 @@ export module Clairvoyant
 
     const outputChannel = vscode.window.createOutputChannel("Clairvoyant");
         
-    export const initialize = (context: vscode.ExtensionContext): void =>
+    export const initialize = (aContext: vscode.ExtensionContext): void =>
     {
-        console.log("Clairvoyant Initialize!!!");
+        context = aContext;
         context.subscriptions.push
         (
             //  コマンドの登録
@@ -348,7 +374,6 @@ export module Clairvoyant
         );
 
         reload();
-console.log("Clairvoyant Initialized!!!");
     };
 
     interface Entry
@@ -366,8 +391,8 @@ console.log("Clairvoyant Initialized!!!");
         {
             if (tokenDocumentEntryMap.size <= 0)
             {
-                Array.from(documentTokenEntryMap.values())
-                    .map(i => Array.from(i.keys()))
+                mapValues(documentTokenEntryMap)
+                    .map(i => mapKeys(i))
                     .reduce((a, b) => a.concat(b).filter((i, index, a) => index === a.indexOf(i)))
                     .forEach
                     (
@@ -379,7 +404,7 @@ console.log("Clairvoyant Initialized!!!");
                                 new Map<vscode.TextDocument, Entry[]>
                                 (
                                     <[vscode.TextDocument, Entry[]][]>
-                                    Array.from(documentTokenEntryMap.entries())
+                                    mapEntries(documentTokenEntryMap)
                                         .map
                                         (
                                             i =>
@@ -523,6 +548,7 @@ console.log("Clairvoyant Initialized!!!");
                 }
             );
             documentTokenEntryMap.set(document, map);
+            tokenDocumentEntryMap.clear();
         }
     );
     const scanOpenDocuments = () => Profiler.profile
@@ -556,7 +582,7 @@ console.log("Clairvoyant Initialized!!!");
             await select.command();
         }
     };
-    const makeSightShowMenu = (document: vscode.TextDocument, entries: Entry[]) => Profiler.profile
+    const makeSightShowMenu = (document: vscode.TextDocument, entries: Entry[]): CommandMenuItem[] => Profiler.profile
     (
         "makeSightTokenMenu",
         () => entries
@@ -564,29 +590,29 @@ console.log("Clairvoyant Initialized!!!");
             (
                 entry =>
                 ({
-                    label: `$(rocket) Go to ${entry.selection.anchor.line +1}:${entry.selection.anchor.character +1}`,
-                    detail: entry.preview,
+                    label: `$(rocket) Go to: ${entry.preview}`,
+                    detail: `#${entry.selection.anchor.line +1}:${entry.selection.anchor.character +1}`,
                     command: async () => showToken(document, entry)
                 })
             )
     );
-    const makeSightTokenMenu = (token: string, entry: Map<vscode.TextDocument, Entry[]>) => Profiler.profile
+    const makeSightTokenCoreMenu = (token: string): CommandMenuItem[] =>
+    ([
+        {
+            label: `$(clippy) Copy "${token}" to clipboard`,
+            command: async () => copyToken(token),
+        },
+        {
+            label: `$(clippy) Paste "${token}" to text editor`,
+            command: async () => pasteToken(token),
+        },
+    ]);
+    const makeSightTokenMenu = (token: string, entry: Map<vscode.TextDocument, Entry[]>): CommandMenuItem[] => Profiler.profile
     (
         "makeSightTokenMenu",
-        () =>
-        (<any>[
-            {
-                label: `$(clippy) Copy "${token}" to clipboard`,
-                command: async () => copyToken(token),
-            },
-            {
-                label: `$(clippy) Paste "${token}" to text editor`,
-                command: async () => pasteToken(token),
-            },
-        ])
-        .concat
+        () => makeSightTokenCoreMenu(token).concat
         (
-            Array.from(entry.entries())
+            mapEntries(entry)
             .map
             (
                 entry =>
@@ -601,38 +627,129 @@ console.log("Clairvoyant Initialized!!!");
             )
         )
     );
-    const makeSightRootMenu = () => Profiler.profile
+    const makeSightFileTokenMenu = (document: vscode.TextDocument, token: string, entries: Entry[]): CommandMenuItem[] => Profiler.profile
     (
-        "makeSightRootMenu",
-        () => Array.from(makeSureTokenDocumentEntryMap().entries())
-        .map
+        "makeSightFileTokenMenu",
+        () => makeSightTokenCoreMenu(token).concat(makeSightShowMenu(document, entries))
+    );
+    const makeSightFileRootMenu = (document: vscode.TextDocument, entries: Map<string, Entry[]>): CommandMenuItem[] => Profiler.profile
+    (
+        "makeSightFileRootMenu",
+        () =>
+        ([
+            "token" === getRootMenuOrder() ?
+                {
+                    label: `$(list-ordered) Sort by count`,
+                    command: async () =>
+                    {
+                        context.globalState.update("clairvoyant.rootMenuOrder", "count");
+                        await showMenu(makeSightFileListMenu());
+                    },
+                }:
+                {
+                    label: `$(list-ordered) Sort by token`,
+                    command: async () =>
+                    {
+                        context.globalState.update("clairvoyant.rootMenuOrder", "token");
+                        await showMenu(makeSightFileListMenu());
+                    },
+                },
+        ])
+        .concat
+        (
+            mapEntries(entries).sort
+            (
+                "token" === getRootMenuOrder() ?
+                    (a, b) => stringComparer(a[0], b[0]):
+                    makeComparer(entry => -entry[1].length)
+            )
+            .map
+            (
+                entry =>
+                ({
+                    label: `$(tag) ${entry[0]}`,
+                    description: undefined,
+                    detail: `count: ${entry[1].length}`,
+                    command: async () => await showMenu(makeSightFileTokenMenu(document, entry[0], entry[1]))
+                })
+            )
+        )
+    );
+    const makeSightFileListMenu = (): CommandMenuItem[] => Profiler.profile
+    (
+        "makeSightFileListMenu",
+        () => mapEntries(documentTokenEntryMap).map
         (
             entry =>
             ({
-                label: entry[0],
-                description: undefined,
-                detail: Array.from(entry[1].entries())
-                        .map(entry => `${stripDirectory(entry[0].fileName)}(${entry[1].length})`)
-                        .join(", "),
-                    command: async () => await showMenu(makeSightTokenMenu(entry[0], entry[1]))
-                })
-            )
+                label: `$(file-text) ${stripDirectory(entry[0].fileName)}`,
+                description: entry[0].isUntitled ?
+                    digest(entry[0].getText()):
+                    stripFileName(entry[0].fileName),
+                command: async () =>await showMenu(makeSightFileRootMenu(entry[0], entry[1]))
+            })
+        )
     );
-    const sight = async () =>
-    {
-        const menu = makeSightRootMenu();
-        menu.sort
+    const getRootMenuOrder = () => context.globalState.get<string>("clairvoyant.rootMenuOrder", "token");
+    const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
+    (
+        "makeSightRootMenu",
+        () =>
+        ([
+            "token" === getRootMenuOrder() ?
+                {
+                    label: `$(list-ordered) Sort by count`,
+                    command: async () =>
+                    {
+                        context.globalState.update("clairvoyant.rootMenuOrder", "count");
+                        await sight();
+                    },
+                }:
+                {
+                    label: `$(list-ordered) Sort by token`,
+                    command: async () =>
+                    {
+                        context.globalState.update("clairvoyant.rootMenuOrder", "token");
+                        await sight();
+                    },
+                },
+            {
+                label: `$(list-ordered) Show by file`,
+                command: async () =>
+                {
+                    await showMenu(makeSightFileListMenu());
+                },
+            },
+        ])
+        .concat
         (
-            (a, b) =>
-                a.label.toLowerCase() < b.label.toLowerCase() ? -1:
-                b.label.toLowerCase() < a.label.toLowerCase() ? 1:
-                a.label < b.label ? -1:
-                b.label < a.label ? 1:
-                0
-        );
-        console.log(`tokens: ${JSON.stringify(menu.map(i => i.label))}`);
-        await showMenu(menu);
-    };
+            mapEntries(makeSureTokenDocumentEntryMap())
+                .sort
+                (
+                    "token" === getRootMenuOrder() ?
+                        (a, b) => stringComparer(a[0], b[0]):
+                        makeComparer
+                        (
+                            (entry: [string, Map<vscode.TextDocument, Entry[]>]) =>
+                                -mapValues(entry[1]).map(i => i.length).reduce((a, b) => a +b)
+                        )
+                )
+                .map
+                (
+                    entry =>
+                    ({
+                        label: `$(tag) ${entry[0]}`,
+                        description: undefined,
+                        detail: mapEntries(entry[1])
+                                .map(entry => `${stripDirectory(entry[0].fileName)}(${entry[1].length})`)
+                                .join(", "),
+                        command: async () => await showMenu(makeSightTokenMenu(entry[0], entry[1]))
+                    })
+                )
+        )
+    );
+
+    const sight = async () => await showMenu(makeSightRootMenu());
 }
 
 export function activate(context: vscode.ExtensionContext): void
