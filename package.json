@@ -2,6 +2,7 @@
 	"name": "clairvoyant",
 	"displayName": "clairvoyant",
 	"description": "Smart search your codes",
+    "icon": "images/clairvoyant.128.png",
 	"version": "0.0.1",
 	"publisher": "wraith13",
 	"license": "SEE LICENSE IN LICENSE_1_0.txt",
