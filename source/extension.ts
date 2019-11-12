@@ -663,7 +663,7 @@ export module Clairvoyant
         "makeSelection",
         () => new vscode.Selection(document.positionAt(index), document.positionAt(index +token.length))
     );
-    const scanDocument = async (document: vscode.TextDocument) => busy
+    const scanDocument = async (document: vscode.TextDocument) => await busy
     (
         () =>
         Profiler.profile
@@ -709,8 +709,8 @@ export module Clairvoyant
         )
     );
 
-    const scanOpenDocuments = () => vscode.window.visibleTextEditors.filter(i => i.viewColumn).forEach(i => scanDocument(i.document));
-    const scanFolder = () => vscode.window.visibleTextEditors.filter(i => i.viewColumn).forEach(i => scanDocument(i.document));
+    const scanOpenDocuments = async () => await Promise.all(vscode.window.visibleTextEditors.filter(i => i.viewColumn).map(async (i) => await scanDocument(i.document)));
+    const scanFolder = async () => await Promise.all(vscode.window.visibleTextEditors.filter(i => i.viewColumn).map(async (i) => await scanDocument(i.document)));
 
     const stripFileName = (path : string) : string => path.substr(0, path.length -stripDirectory(path).length);
     const stripDirectory = (path : string) : string => path.split('\\').reverse()[0].split('/').reverse()[0];
@@ -719,9 +719,9 @@ export module Clairvoyant
     {
         command: () => Promise<void>;
     }
-    const showMenu = async (items: CommandMenuItem[]) =>
+    const showMenu = async (items: CommandMenuItem[], options?: vscode.QuickPickOptions) =>
     {
-        const select = await vscode.window.showQuickPick(items);
+        const select = await vscode.window.showQuickPick(items, options);
         if (select)
         {
             await select.command();
