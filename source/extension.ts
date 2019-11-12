@@ -388,10 +388,18 @@ export module Clairvoyant
             }
         },
     });
+    const textEditorRevealTypeObject = Object.freeze
+    ({
+        "AtTop": vscode.TextEditorRevealType.AtTop,
+        "Default": vscode.TextEditorRevealType.Default,
+        "InCenter": vscode.TextEditorRevealType.InCenter,
+        "InCenterIfOutsideViewport": vscode.TextEditorRevealType.InCenterIfOutsideViewport,
+    });
 
     const enabledProfile = new Config("enabledProfile", true);
     const autoScanMode = new ConfigMap("autoScanMode", "folder", autoScanModeObject);
     const showStatusBarItems = new ConfigMap("showStatusBarItems", "full", showStatusBarItemsObject);
+    const textEditorRevealType = new ConfigMap("textEditorRevealType", "InCenterIfOutsideViewport", textEditorRevealTypeObject);
 
     const outputChannel = vscode.window.createOutputChannel("Clairvoyant");
     
@@ -433,6 +441,8 @@ export module Clairvoyant
             vscode.commands.registerCommand(`${applicationKey}.scanOpenDocuments`, scanOpenDocuments),
             vscode.commands.registerCommand(`${applicationKey}.scanFolder`, scanFolder),
             vscode.commands.registerCommand(`${applicationKey}.sight`, sight),
+            vscode.commands.registerCommand(`${applicationKey}.back`, showTokenUndo),
+            vscode.commands.registerCommand(`${applicationKey}.forward`, showTokenRedo),
             vscode.commands.registerCommand(`${applicationKey}.reload`, reload),
             vscode.commands.registerCommand
             (
@@ -591,19 +601,92 @@ export module Clairvoyant
         }
     );
 
-    const showToken = async (document: vscode.TextDocument, entry: Entry) =>
+    interface ShowTokenCoreEntry
     {
-        const textEditor = await vscode.window.showTextDocument(document);
+        document: vscode.TextDocument;
+        selection: vscode.Selection;
+    }
+    interface ShowTokenDoEntry
+    {
+        redo: ShowTokenCoreEntry;
+        undo: ShowTokenCoreEntry | null;
+    }
+    const showTokenUndoBuffer: ShowTokenDoEntry[] = [];
+    const showTokenRedoBuffer: ShowTokenDoEntry[] = [];
+    const showSelection = async (entry: { document: vscode.TextDocument, selection: vscode.Selection }) =>
+    {
+        const textEditor = await vscode.window.showTextDocument(entry.document);
         textEditor.selection = entry.selection;
-        textEditor.revealRange(entry.selection);
+        textEditor.revealRange(entry.selection, textEditorRevealType.get(entry.document.languageId));
     };
+    const makeShowTokenCoreEntry = () =>
+    {
+        let result: ShowTokenCoreEntry | null = null;
+        const activeTextEditor = vscode.window.activeTextEditor;
+        if (activeTextEditor)
+        {
+            result =
+            {
+                document: activeTextEditor.document,
+                selection: activeTextEditor.selection,
+            };
+        }
+        return result;
+    };
+    const showToken = async (entry: { document: vscode.TextDocument, selection: vscode.Selection }) =>
+    {
+        showTokenUndoBuffer.push
+        ({
+            redo: entry,
+            undo: makeShowTokenCoreEntry(),
+        });
+        showSelection(entry);
+        showTokenRedoBuffer.splice(0, 0);
+    };
+    const showTokenUndo = async () =>
+    {
+        const entry = showTokenUndoBuffer.pop();
+        if (entry)
+        {
+            if (entry.undo)
+            {
+                showSelection(entry.undo);
+            }
+            showTokenRedoBuffer.push(entry);
+        }
+    };
+    const showTokenRedo = async () =>
+    {
+        const entry = showTokenRedoBuffer.pop();
+        if (entry)
+        {
+            entry.undo = makeShowTokenCoreEntry() || entry.undo;
+            showSelection(entry.redo);
+            showTokenUndoBuffer.push(entry);
+        }
+    };
+
+
     const copyToken = async (text: string) => await vscode.env.clipboard.writeText(text);
     const pasteToken = async (text: string) =>
     {
         const textEditor = vscode.window.activeTextEditor;
         if (textEditor)
         {
-            await textEditor.edit(editBuilder => editBuilder.replace(textEditor.selection, text));
+            await textEditor.edit
+            (
+                editBuilder =>
+                {
+                    editBuilder.delete(textEditor.selection);
+                    editBuilder.insert
+                    (
+                        textEditor.selection.anchor.compareTo(textEditor.selection.active) <= 0 ?
+                            textEditor.selection.anchor:
+                            textEditor.selection.active,
+                        text
+                    );
+                }
+            );
         }
     };
 
@@ -611,6 +694,8 @@ export module Clairvoyant
     {
         documentTokenEntryMap.clear();
         tokenDocumentEntryMap.clear();
+        showTokenUndoBuffer.splice(0, 0);
+        showTokenRedoBuffer.splice(0, 0);
         onDidChangeConfiguration();
     };
     const onDidChangeConfiguration = () =>
@@ -619,6 +704,7 @@ export module Clairvoyant
             enabledProfile,
             autoScanMode,
             showStatusBarItems,
+            textEditorRevealType,
         ]
         .forEach(i => i.clear());
         startOrStopProfile();
@@ -737,7 +823,7 @@ export module Clairvoyant
                 ({
                     label: `$(rocket) ${entry.preview} `, // この末尾のスペースは showQuickPick の絞り込みでユーザーが他の入力候補を除外する為のモノ
                     detail: `Go to #${entry.selection.anchor.line +1}:${entry.selection.anchor.character +1}`,
-                    command: async () => showToken(document, entry)
+                    command: async () => showToken({ document, selection: entry.selection })
                 })
             )
     );
