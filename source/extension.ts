@@ -185,10 +185,6 @@ export module Clairvoyant
     let context: vscode.ExtensionContext;
 
     let eyeLabel: vscode.StatusBarItem;
-    let nextLabel: vscode.StatusBarItem;
-    let previousLabel: vscode.StatusBarItem;
-    let nextDocumentLabel: vscode.StatusBarItem;
-    let previousDocumentLabel: vscode.StatusBarItem;
 
     let isBusy = 0;
     const busy = async <valueT>(busyFunction: () => valueT) =>
@@ -338,53 +334,6 @@ export module Clairvoyant
             enabled: true,
         },
     });
-    const showStatusBarItemsObject = Object.freeze
-    ({
-        "none":
-        {
-            show: () =>
-            {
-                nextDocumentLabel.hide();
-                nextLabel.hide();
-                eyeLabel.hide();
-                previousLabel.hide();
-                previousDocumentLabel.hide();
-            }
-        },
-        "eye only":
-        {
-            show: () =>
-            {
-                nextDocumentLabel.hide();
-                nextLabel.hide();
-                eyeLabel.show();
-                previousLabel.hide();
-                previousDocumentLabel.hide();
-            }
-        },
-        "eye,next,previous":
-        {
-            show: () =>
-            {
-                nextDocumentLabel.hide();
-                nextLabel.show();
-                eyeLabel.show();
-                previousLabel.show();
-                previousDocumentLabel.hide();
-            }
-        },
-        "full":
-        {
-            show: () =>
-            {
-                nextDocumentLabel.show();
-                nextLabel.show();
-                eyeLabel.show();
-                previousLabel.show();
-                previousDocumentLabel.show();
-            }
-        },
-    });
     const textEditorRevealTypeObject = Object.freeze
     ({
         "AtTop": vscode.TextEditorRevealType.AtTop,
@@ -395,7 +344,7 @@ export module Clairvoyant
 
     const enabledProfile = new Config("enabledProfile", true);
     const autoScanMode = new ConfigMap("autoScanMode", "folder", autoScanModeObject);
-    const showStatusBarItems = new ConfigMap("showStatusBarItems", "full", showStatusBarItemsObject);
+    const showStatusBarItems = new Config("showStatusBarItems", true);
     const textEditorRevealType = new ConfigMap("textEditorRevealType", "InCenterIfOutsideViewport", textEditorRevealTypeObject);
 
     const outputChannel = vscode.window.createOutputChannel("Clairvoyant");
@@ -438,8 +387,6 @@ export module Clairvoyant
             vscode.commands.registerCommand(`${applicationKey}.scanOpenDocuments`, scanOpenDocuments),
             vscode.commands.registerCommand(`${applicationKey}.scanFolder`, scanFolder),
             vscode.commands.registerCommand(`${applicationKey}.sight`, sight),
-            vscode.commands.registerCommand(`${applicationKey}.back`, showTokenUndo),
-            vscode.commands.registerCommand(`${applicationKey}.forward`, showTokenRedo),
             vscode.commands.registerCommand(`${applicationKey}.reload`, reload),
             vscode.commands.registerCommand
             (
@@ -503,20 +450,6 @@ export module Clairvoyant
             ),
 
             //  ステータスバーアイコンの登録
-            nextDocumentLabel = createStatusBarItem
-            ({
-                alignment: vscode.StatusBarAlignment.Right,
-                text: "$(triangle-right)",
-                command: `${applicationKey}.nextDocument`,
-                tooltip: localeString("%clairvoyant.nextDocument.title%")
-            }),
-            nextLabel = createStatusBarItem
-            ({
-                alignment: vscode.StatusBarAlignment.Right,
-                text: "$(chevron-right)",
-                command: `${applicationKey}.next`,
-                tooltip: localeString("%clairvoyant.next.title%")
-            }),
             eyeLabel = createStatusBarItem
             ({
                 alignment: vscode.StatusBarAlignment.Right,
@@ -524,21 +457,6 @@ export module Clairvoyant
                 command: `${applicationKey}.sight`,
                 tooltip: localeString("%clairvoyant.sight.title%")
             }),
-            previousLabel = createStatusBarItem
-            ({
-                alignment: vscode.StatusBarAlignment.Right,
-                text: "$(chevron-left)",
-                command: `${applicationKey}.previous`,
-                tooltip: localeString("%clairvoyant.previous.title%")
-            }),
-            previousDocumentLabel = createStatusBarItem
-            ({
-                alignment: vscode.StatusBarAlignment.Right,
-                text: "$(triangle-left)",
-                command: `${applicationKey}.previousDocument`,
-                tooltip: localeString("%clairvoyant.previousDocument.title%")
-            }),
-
 
             //  イベントリスナーの登録
             vscode.workspace.onDidChangeConfiguration(onDidChangeConfiguration),
@@ -598,71 +516,12 @@ export module Clairvoyant
         }
     );
 
-    interface ShowTokenCoreEntry
-    {
-        document: vscode.TextDocument;
-        selection: vscode.Selection;
-    }
-    interface ShowTokenDoEntry
-    {
-        redo: ShowTokenCoreEntry;
-        undo: ShowTokenCoreEntry | null;
-    }
-    const showTokenUndoBuffer: ShowTokenDoEntry[] = [];
-    const showTokenRedoBuffer: ShowTokenDoEntry[] = [];
-    const showSelection = async (entry: { document: vscode.TextDocument, selection: vscode.Selection }) =>
+    const showToken = async (entry: { document: vscode.TextDocument, selection: vscode.Selection }) =>
     {
         const textEditor = await vscode.window.showTextDocument(entry.document);
         textEditor.selection = entry.selection;
         textEditor.revealRange(entry.selection, textEditorRevealType.get(entry.document.languageId));
     };
-    const makeShowTokenCoreEntry = () =>
-    {
-        let result: ShowTokenCoreEntry | null = null;
-        const activeTextEditor = vscode.window.activeTextEditor;
-        if (activeTextEditor)
-        {
-            result =
-            {
-                document: activeTextEditor.document,
-                selection: activeTextEditor.selection,
-            };
-        }
-        return result;
-    };
-    const showToken = async (entry: { document: vscode.TextDocument, selection: vscode.Selection }) =>
-    {
-        showTokenUndoBuffer.push
-        ({
-            redo: entry,
-            undo: makeShowTokenCoreEntry(),
-        });
-        showSelection(entry);
-        showTokenRedoBuffer.splice(0, 0);
-    };
-    const showTokenUndo = async () =>
-    {
-        const entry = showTokenUndoBuffer.pop();
-        if (entry)
-        {
-            if (entry.undo)
-            {
-                showSelection(entry.undo);
-            }
-            showTokenRedoBuffer.push(entry);
-        }
-    };
-    const showTokenRedo = async () =>
-    {
-        const entry = showTokenRedoBuffer.pop();
-        if (entry)
-        {
-            entry.undo = makeShowTokenCoreEntry() || entry.undo;
-            showSelection(entry.redo);
-            showTokenUndoBuffer.push(entry);
-        }
-    };
-
 
     const copyToken = async (text: string) => await vscode.env.clipboard.writeText(text);
     const pasteToken = async (text: string) =>
@@ -691,8 +550,6 @@ export module Clairvoyant
     {
         documentTokenEntryMap.clear();
         tokenDocumentEntryMap.clear();
-        showTokenUndoBuffer.splice(0, 0);
-        showTokenRedoBuffer.splice(0, 0);
         onDidChangeConfiguration();
     };
     const onDidChangeConfiguration = () =>
@@ -995,7 +852,14 @@ export module Clairvoyant
     {
         eyeLabel.text = 0 < isBusy ? "$(sync~spin)": "$(eye)";
         eyeLabel.tooltip = 0 < isBusy ? localeString("%clairvoyant.sight.busy%"): localeString("%clairvoyant.sight.title%");
-        showStatusBarItems.get("").show();
+        if (showStatusBarItems.get(""))
+        {
+            eyeLabel.show();
+        }
+        else
+        {
+            eyeLabel.hide();
+        }
     };
 }
 
