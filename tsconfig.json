@@ -28,7 +28,9 @@
 		"pretty": false,
 		"noEmitOnError": true,
 		"rootDir": ".",
-		"strict": true
+		"strict": true,
+		"resolveJsonModule": true,
+		"esModuleInterop": true
 	},
 	"exclude": [
 		"node_modules",

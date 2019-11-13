@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 
-/*
 import localeEn from "../package.nls.json";
 import localeJa from "../package.nls.ja.json";
 
@@ -13,8 +12,6 @@ const localeTable = Object.assign(localeEn, ((<{[key : string] : LocaleEntry}>{
     ja : localeJa
 })[localeTableKey] || { }));
 const localeString = (key : string) : string => localeTable[key] || key;
-*/
-const localeString = (key : string) : string => key;
 
 const getTicks = () => new Date().getTime();
 const roundCenti = (value : number) : number => Math.round(value *100) /100;
@@ -511,35 +508,35 @@ export module Clairvoyant
                 alignment: vscode.StatusBarAlignment.Right,
                 text: "$(triangle-right)",
                 command: `${applicationKey}.nextDocument`,
-                tooltip: "%clairvoyant.nextDocument.title%"
+                tooltip: localeString("%clairvoyant.nextDocument.title%")
             }),
             nextLabel = createStatusBarItem
             ({
                 alignment: vscode.StatusBarAlignment.Right,
                 text: "$(chevron-right)",
                 command: `${applicationKey}.next`,
-                tooltip: "%clairvoyant.next.title%"
+                tooltip: localeString("%clairvoyant.next.title%")
             }),
             eyeLabel = createStatusBarItem
             ({
                 alignment: vscode.StatusBarAlignment.Right,
                 text: "$(eye)",
                 command: `${applicationKey}.sight`,
-                tooltip: "%clairvoyant.sight.title%"
+                tooltip: localeString("%clairvoyant.sight.title%")
             }),
             previousLabel = createStatusBarItem
             ({
                 alignment: vscode.StatusBarAlignment.Right,
                 text: "$(chevron-left)",
                 command: `${applicationKey}.previous`,
-                tooltip: "%clairvoyant.previous.title%"
+                tooltip: localeString("%clairvoyant.previous.title%")
             }),
             previousDocumentLabel = createStatusBarItem
             ({
                 alignment: vscode.StatusBarAlignment.Right,
                 text: "$(triangle-left)",
                 command: `${applicationKey}.previousDocument`,
-                tooltip: "%clairvoyant.previousDocument.title%"
+                tooltip: localeString("%clairvoyant.previousDocument.title%")
             }),
 
 
@@ -997,7 +994,7 @@ export module Clairvoyant
     export const updateStatusBarItems = () : void =>
     {
         eyeLabel.text = 0 < isBusy ? "$(sync~spin)": "$(eye)";
-        eyeLabel.tooltip = 0 < isBusy ? "%clairvoyant.sight.busy%": "%clairvoyant.sight.title%";
+        eyeLabel.tooltip = 0 < isBusy ? localeString("%clairvoyant.sight.busy%"): localeString("%clairvoyant.sight.title%");
         showStatusBarItems.get("").show();
     };
 }
