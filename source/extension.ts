@@ -383,7 +383,18 @@ export module Clairvoyant
         context.subscriptions.push
         (
             //  コマンドの登録
-            vscode.commands.registerCommand(`${applicationKey}.scanDocument`, scanDocument),
+            vscode.commands.registerCommand
+            (
+                `${applicationKey}.scanDocument`, async () =>
+                {
+                    const activeTextEditor = vscode.window.activeTextEditor;
+                    if (activeTextEditor)
+                    {
+                        documentTokenEntryMap.delete(activeTextEditor.document);
+                        await scanDocument(activeTextEditor.document);
+                    }
+                }
+            ),
             vscode.commands.registerCommand(`${applicationKey}.scanOpenDocuments`, scanOpenDocuments),
             vscode.commands.registerCommand(`${applicationKey}.scanFolder`, scanFolder),
             vscode.commands.registerCommand(`${applicationKey}.sight`, sight),
@@ -461,7 +472,14 @@ export module Clairvoyant
             //  イベントリスナーの登録
             vscode.workspace.onDidChangeConfiguration(onDidChangeConfiguration),
             vscode.workspace.onDidChangeWorkspaceFolders(() => scanFolder()),
-            vscode.workspace.onDidChangeTextDocument(event => scanDocument(event.document)),
+            vscode.workspace.onDidChangeTextDocument
+            (
+                event =>
+                {
+                    documentTokenEntryMap.delete(event.document);
+                    scanDocument(event.document);
+                }
+            ),
             vscode.window.onDidChangeActiveTextEditor(textEditor => textEditor && scanDocument(textEditor.document)),
         );
 
@@ -470,8 +488,9 @@ export module Clairvoyant
 
     interface Entry
     {
-        preview: string;
-        selection: vscode.Selection;
+        //preview: string;
+        //selection: vscode.Selection;
+        index:number;
     }
     const documentTokenEntryMap = new Map<vscode.TextDocument, Map<string, Entry[]>>();
     const tokenDocumentEntryMap = new Map<string, Map<vscode.TextDocument, Entry[]>>();
@@ -581,28 +600,6 @@ export module Clairvoyant
         }
     };
 
-    const makePreview = (document: vscode.TextDocument, index: number, _token: string) => Profiler.profile
-    (
-        "makePreview",
-        () =>
-        {
-            try
-            {
-                const anchor = document.positionAt(index);
-                const line = document.getText(new vscode.Range(anchor.line, 0, anchor.line +1, 0));
-                return line.length < 1024 ? line.trim().replace(/\s+/gm, " "): "$(eye-closed) TOO LONG LINE";
-            }
-            catch(error)
-            {
-                return `ERROR: ${document.fileName}, ${index}, ${_token}`;
-            }
-        }
-    );
-    const makeSelection = (document: vscode.TextDocument, index: number, token: string) => Profiler.profile
-    (
-        "makeSelection",
-        () => new vscode.Selection(document.positionAt(index), document.positionAt(index +token.length))
-    );
     const scanDocument = async (document: vscode.TextDocument) => await busy
     (
         () =>
@@ -611,40 +608,48 @@ export module Clairvoyant
             "scanDocument",
             () =>
             {
-                console.log(`scanDocument: ${document.fileName}`);
-                const text = document.getText();
-                const hits = regExpExecToArray
-                (
-                    /\w+/gm,
-                    text
-                )
-                .map
-                (
-                    match =>
-                    ({
-                        token: match[0],
-                        preview: makePreview(document, match.index, match[0]),
-                        selection: makeSelection(document, match.index, match[0]),
-                    })
-                );
-                const map = new Map<string, Entry[]>();
-                const tokens = hits.map(i => i.token).filter((i, index, a) => index === a.indexOf(i));
-                tokens.forEach
-                (
-                    token =>
-                    {
-                        map.set
-                        (
-                            token,
-                            hits.filter(i => token === i.token)
-                        );
-                    }
-                );
-                mapKeys(documentTokenEntryMap)
-                    .filter(i => i.fileName === document.fileName)
-                    .forEach(i => documentTokenEntryMap.delete(i));
-                documentTokenEntryMap.set(document, map);
-                tokenDocumentEntryMap.clear();
+                if (documentTokenEntryMap.get(document))
+                {
+                    console.log(`scanDocument SKIP: ${document.fileName}`);
+                }
+                else
+                {
+                    console.log(`scanDocument: ${document.fileName}`);
+                    const text = document.getText();
+                    const hits = regExpExecToArray
+                    (
+                        /\w+/gm,
+                        text
+                    )
+                    .map
+                    (
+                        match =>
+                        ({
+                            token: match[0],
+                            index: match.index,
+                            //preview: makePreview(document, match.index, match[0]),
+                            //selection: makeSelection(document, match.index, match[0]),
+                        })
+                    );
+                    const map = new Map<string, Entry[]>();
+                    const tokens = hits.map(i => i.token).filter((i, index, a) => index === a.indexOf(i));
+                    tokens.forEach
+                    (
+                        token =>
+                        {
+                            map.set
+                            (
+                                token,
+                                hits.filter(i => token === i.token)
+                            );
+                        }
+                    );
+                    mapKeys(documentTokenEntryMap)
+                        .filter(i => i.fileName === document.fileName)
+                        .forEach(i => documentTokenEntryMap.delete(i));
+                    documentTokenEntryMap.set(document, map);
+                    tokenDocumentEntryMap.clear();
+                }
             }
         )
     );
@@ -667,19 +672,35 @@ export module Clairvoyant
             await select.command();
         }
     };
-    const makeSightShowMenu = (document: vscode.TextDocument, entries: Entry[]): CommandMenuItem[] => Profiler.profile
+    const makeSelection = (document: vscode.TextDocument, index: number, token: string) => Profiler.profile
+    (
+        "makeSelection",
+        () => new vscode.Selection(document.positionAt(index), document.positionAt(index +token.length))
+    );
+    const makeGotoCommandMenuItem = (document: vscode.TextDocument, index: number, token: string) => Profiler.profile
+    (
+        "makeGotoCommandMenuItem",
+        () =>
+        {
+            const anchor = document.positionAt(index);
+            const line = document.getText(new vscode.Range(anchor.line, 0, anchor.line +1, 0));
+            const result =
+            {
+
+                label: `$(rocket) Go to line:${anchor.line +1} row:${anchor.character +1}`,
+                detail: line.length < 1024 ? line.trim().replace(/\s+/gm, " "): "$(eye-closed) TOO LONG LINE",
+                command: async () => showToken({ document, selection: makeSelection(document, index, token) })
+            };
+            return result;
+        }
+    );
+    const makeSightShowMenu = (document: vscode.TextDocument, token: string, entries: Entry[]): CommandMenuItem[] => Profiler.profile
     (
         "makeSightTokenMenu",
-        () => entries
-            .map
-            (
-                entry =>
-                ({
-                    label: `$(rocket) ${entry.preview} `, // この末尾のスペースは showQuickPick の絞り込みでユーザーが他の入力候補を除外する為のモノ
-                    detail: `Go to #${entry.selection.anchor.line +1}:${entry.selection.anchor.character +1}`,
-                    command: async () => showToken({ document, selection: entry.selection })
-                })
-            )
+        () => entries.map
+        (
+            entry => makeGotoCommandMenuItem(document, entry.index, token)
+        )
     );
     const makeSightTokenCoreMenu = (token: string): CommandMenuItem[] =>
     ([
@@ -708,7 +729,7 @@ export module Clairvoyant
                         digest(entry[0].getText()):
                         stripFileName(entry[0].fileName),
                     detail: `count: ${entry[1].length}`,
-                    command: async () =>await showMenu(await busy(() => makeSightShowMenu(entry[0], entry[1])))
+                    command: async () =>await showMenu(await busy(() => makeSightShowMenu(entry[0], token, entry[1])), { matchOnDetail: true })
                 })
             )
         )
@@ -716,7 +737,7 @@ export module Clairvoyant
     const makeSightFileTokenMenu = (document: vscode.TextDocument, token: string, entries: Entry[]): CommandMenuItem[] => Profiler.profile
     (
         "makeSightFileTokenMenu",
-        () => makeSightTokenCoreMenu(token).concat(makeSightShowMenu(document, entries))
+        () => makeSightTokenCoreMenu(token).concat(makeSightShowMenu(document, token, entries))
     );
     const makeSightFileRootMenu = (document: vscode.TextDocument, entries: Map<string, Entry[]>): CommandMenuItem[] => Profiler.profile
     (
@@ -760,7 +781,7 @@ export module Clairvoyant
                     label: `$(tag) ${entry[0]} `, // この末尾のスペースは showQuickPick の絞り込みでユーザーが他の入力候補を除外する為のモノ
                     description: undefined,
                     detail: `count: ${entry[1].length}`,
-                    command: async () => await showMenu(await busy(() => makeSightFileTokenMenu(document, entry[0], entry[1])))
+                    command: async () => await showMenu(await busy(() => makeSightFileTokenMenu(document, entry[0], entry[1])), { matchOnDetail: true })
                 })
             )
         )
@@ -809,7 +830,7 @@ export module Clairvoyant
                 label: `$(list-ordered) Show by file`,
                 command: async () =>
                 {
-                    await showMenu(await busy(makeSightFileListMenu));
+                    await showMenu(await busy(makeSightFileListMenu), { matchOnDescription: true });
                 },
             },
         ])
@@ -840,7 +861,7 @@ export module Clairvoyant
                                 .sort(mergeComparer([makeComparer(entry => -entry[1].length), makeComparer(entry => entry[0].fileName)]))
                                 .map(entry => `$(file-text) ${stripDirectory(entry[0].fileName)}(${entry[1].length})`)
                                 .join(", "),
-                        command: async () => await showMenu(await busy(() => makeSightTokenMenu(entry[0], entry[1])))
+                        command: async () => await showMenu(await busy(() => makeSightTokenMenu(entry[0], entry[1])), { matchOnDescription: true })
                     })
                 )
         )
