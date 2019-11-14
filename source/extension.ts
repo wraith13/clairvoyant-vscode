@@ -193,7 +193,7 @@ export module Clairvoyant
         {
             ++isBusy;
             updateStatusBarItems();
-            await timeout(0);
+            await timeout(1);
             return busyFunction();
         }
         finally
@@ -401,42 +401,6 @@ export module Clairvoyant
             vscode.commands.registerCommand(`${applicationKey}.reload`, reload),
             vscode.commands.registerCommand
             (
-                `${applicationKey}.startProfile`, () =>
-                {
-                    outputChannel.show();
-                    if (Profiler.getIsProfiling())
-                    {
-                        outputChannel.appendLine(localeString("🚫 You have already started the profile."));
-                    }
-                    else
-                    {
-                        outputChannel.appendLine(`${localeString("⏱ Start Profile!")} - ${new Date()}`);
-                        Profiler.start();
-                    }
-                }
-            ),
-            vscode.commands.registerCommand
-            (
-                `${applicationKey}.stopProfile`, () =>
-                {
-                    outputChannel.show();
-                    if (Profiler.getIsProfiling())
-                    {
-                        Profiler.stop();
-                        outputChannel.appendLine(`${localeString("🏁 Stop Profile!")} - ${new Date()}`);
-                        outputChannel.appendLine(localeString("📊 Profile Report"));
-                        const total = Profiler.getReport().map(i => i.ticks).reduce((p, c) => p +c);
-                        outputChannel.appendLine(`- Total: ${total.toLocaleString()}ms ( ${percentToDisplayString(1)} )`);
-                        Profiler.getReport().forEach(i => outputChannel.appendLine(`- ${i.name}: ${i.ticks.toLocaleString()}ms ( ${percentToDisplayString(i.ticks / total)} )`));
-                    }
-                    else
-                    {
-                        outputChannel.appendLine(localeString("🚫 Profile has not been started."));
-                    }
-                }
-            ),
-            vscode.commands.registerCommand
-            (
                 `${applicationKey}.reportProfile`, () =>
                 {
                     outputChannel.show();
@@ -472,6 +436,7 @@ export module Clairvoyant
             //  イベントリスナーの登録
             vscode.workspace.onDidChangeConfiguration(onDidChangeConfiguration),
             vscode.workspace.onDidChangeWorkspaceFolders(() => scanFolder()),
+            vscode.workspace.onDidOpenTextDocument(scanDocument),
             vscode.workspace.onDidChangeTextDocument
             (
                 event =>
@@ -486,14 +451,8 @@ export module Clairvoyant
         reload();
     };
 
-    interface Entry
-    {
-        //preview: string;
-        //selection: vscode.Selection;
-        index:number;
-    }
-    const documentTokenEntryMap = new Map<vscode.TextDocument, Map<string, Entry[]>>();
-    const tokenDocumentEntryMap = new Map<string, Map<vscode.TextDocument, Entry[]>>();
+    const documentTokenEntryMap = new Map<vscode.TextDocument, Map<string, number[]>>();
+    const tokenDocumentEntryMap = new Map<string, Map<vscode.TextDocument, number[]>>();
 
     const makeSureTokenDocumentEntryMap = () => Profiler.profile
     (
@@ -512,9 +471,9 @@ export module Clairvoyant
                             tokenDocumentEntryMap.set
                             (
                                 token,
-                                new Map<vscode.TextDocument, Entry[]>
+                                new Map<vscode.TextDocument, number[]>
                                 (
-                                    <[vscode.TextDocument, Entry[]][]>
+                                    <[vscode.TextDocument, number[]][]>
                                     mapEntries(documentTokenEntryMap)
                                         .map
                                         (
@@ -631,7 +590,7 @@ export module Clairvoyant
                             //selection: makeSelection(document, match.index, match[0]),
                         })
                     );
-                    const map = new Map<string, Entry[]>();
+                    const map = new Map<string, number[]>();
                     const tokens = hits.map(i => i.token).filter((i, index, a) => index === a.indexOf(i));
                     tokens.forEach
                     (
@@ -640,7 +599,7 @@ export module Clairvoyant
                             map.set
                             (
                                 token,
-                                hits.filter(i => token === i.token)
+                                hits.filter(i => token === i.token).map(i => i.index)
                             );
                         }
                     );
@@ -687,19 +646,19 @@ export module Clairvoyant
             const result =
             {
 
-                label: `$(rocket) Go to line:${anchor.line +1} row:${anchor.character +1}`,
+                label: `$(rocket) Go to line:${anchor.line +1} row:${anchor.character +1}-${anchor.character +1 +token.length}`,
                 detail: line.length < 1024 ? line.trim().replace(/\s+/gm, " "): "$(eye-closed) TOO LONG LINE",
                 command: async () => showToken({ document, selection: makeSelection(document, index, token) })
             };
             return result;
         }
     );
-    const makeSightShowMenu = (document: vscode.TextDocument, token: string, entries: Entry[]): CommandMenuItem[] => Profiler.profile
+    const makeSightShowMenu = (document: vscode.TextDocument, token: string, indices: number[]): CommandMenuItem[] => Profiler.profile
     (
         "makeSightTokenMenu",
-        () => entries.map
+        () => indices.map
         (
-            entry => makeGotoCommandMenuItem(document, entry.index, token)
+            index => makeGotoCommandMenuItem(document, index, token)
         )
     );
     const makeSightTokenCoreMenu = (token: string): CommandMenuItem[] =>
@@ -713,7 +672,7 @@ export module Clairvoyant
             command: async () => pasteToken(token),
         },
     ]);
-    const makeSightTokenMenu = (token: string, entry: Map<vscode.TextDocument, Entry[]>): CommandMenuItem[] => Profiler.profile
+    const makeSightTokenMenu = (token: string, entry: Map<vscode.TextDocument, number[]>): CommandMenuItem[] => Profiler.profile
     (
         "makeSightTokenMenu",
         () => makeSightTokenCoreMenu(token).concat
@@ -734,12 +693,12 @@ export module Clairvoyant
             )
         )
     );
-    const makeSightFileTokenMenu = (document: vscode.TextDocument, token: string, entries: Entry[]): CommandMenuItem[] => Profiler.profile
+    const makeSightFileTokenMenu = (document: vscode.TextDocument, token: string, indices: number[]): CommandMenuItem[] => Profiler.profile
     (
         "makeSightFileTokenMenu",
-        () => makeSightTokenCoreMenu(token).concat(makeSightShowMenu(document, token, entries))
+        () => makeSightTokenCoreMenu(token).concat(makeSightShowMenu(document, token, indices))
     );
-    const makeSightFileRootMenu = (document: vscode.TextDocument, entries: Map<string, Entry[]>): CommandMenuItem[] => Profiler.profile
+    const makeSightFileRootMenu = (document: vscode.TextDocument, entries: Map<string, number[]>): CommandMenuItem[] => Profiler.profile
     (
         "makeSightFileRootMenu",
         () =>
@@ -845,7 +804,7 @@ export module Clairvoyant
                         ([
                             makeComparer
                             (
-                                (entry: [string, Map<vscode.TextDocument, Entry[]>]) =>
+                                (entry: [string, Map<vscode.TextDocument, number[]>]) =>
                                     -mapValues(entry[1]).map(i => i.length).reduce((a, b) => a +b)
                             ),
                             (a, b) => stringComparer(a[0], b[0])

@@ -3,5 +3,8 @@
     "clairvoyant.scanOpenDocuments.title": "Scan Open Documents",
     "clairvoyant.scanFolder.title": "Scan Folder",
     "clairvoyant.sight.title": "Sight",
-    "clairvoyant.reportProfile.title": "Report Profile"
+    "clairvoyant.reload.title": "Reload",
+    "clairvoyant.reportProfile.title": "Report Profile",
+    "clairvoyant.autoScanMode.description": "Auto scan mode",
+    "clairvoyant.showStatusBarItems.description": "Show status bar items"
 }

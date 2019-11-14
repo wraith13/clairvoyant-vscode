@@ -3,5 +3,8 @@
     "clairvoyant.scanOpenDocuments.title": "開いてるドキュメントをスキャン",
     "clairvoyant.scanFolder.title": "フォルダーをスキャン",
     "clairvoyant.sight.title": "サイト",
-    "clairvoyant.reportProfile.title": "プロファイル結果を表示"
+    "clairvoyant.reload.title": "再読み込み(初期化)",
+    "clairvoyant.reportProfile.title": "プロファイル結果を表示",
+    "clairvoyant.autoScanMode.description": "自動スキャンモード",
+    "clairvoyant.showStatusBarItems.description": "スタータスバー項目の表示"
 }
