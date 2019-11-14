@@ -435,17 +435,28 @@ export module Clairvoyant
 
             //  イベントリスナーの登録
             vscode.workspace.onDidChangeConfiguration(onDidChangeConfiguration),
-            vscode.workspace.onDidChangeWorkspaceFolders(() => scanFolder()),
-            vscode.workspace.onDidOpenTextDocument(scanDocument),
+            vscode.workspace.onDidChangeWorkspaceFolders(() => autoScanMode.get("").onInit()),
             vscode.workspace.onDidChangeTextDocument
             (
                 event =>
                 {
-                    documentTokenEntryMap.delete(event.document);
-                    scanDocument(event.document);
+                    if (autoScanMode.get(event.document.languageId).enabled)
+                    {
+                        documentTokenEntryMap.delete(event.document);
+                        scanDocument(event.document);
+                    }
                 }
             ),
-            vscode.window.onDidChangeActiveTextEditor(textEditor => textEditor && scanDocument(textEditor.document)),
+            vscode.window.onDidChangeActiveTextEditor
+            (
+                textEditor =>
+                {
+                    if (textEditor && autoScanMode.get(textEditor.document.languageId).enabled)
+                    {
+                        scanDocument(textEditor.document);
+                    }
+                }
+            ),
         );
 
         reload();
@@ -463,7 +474,7 @@ export module Clairvoyant
             {
                 mapValues(documentTokenEntryMap)
                     .map(i => mapKeys(i))
-                    .reduce((a, b) => a.concat(b).filter((i, index, a) => index === a.indexOf(i)))
+                    .reduce((a, b) => a.concat(b).filter((i, index, a) => index === a.indexOf(i)), [])
                     .forEach
                     (
                         token =>
@@ -616,8 +627,13 @@ export module Clairvoyant
     const scanOpenDocuments = async () => await Promise.all(vscode.window.visibleTextEditors.filter(i => i.viewColumn).map(async (i) => await scanDocument(i.document)));
     const scanFolder = async () => await Promise.all(vscode.window.visibleTextEditors.filter(i => i.viewColumn).map(async (i) => await scanDocument(i.document)));
 
-    const stripFileName = (path : string) : string => path.substr(0, path.length -stripDirectory(path).length);
-    const stripDirectory = (path : string) : string => path.split('\\').reverse()[0].split('/').reverse()[0];
+    const extractRelativePath = (path : string) : string =>
+    {
+        const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.parse(path));
+        return workspaceFolder && path.startsWith(workspaceFolder.uri.fsPath) ? path.substring(workspaceFolder.uri.fsPath.length): path;
+    };
+    const extractDirectory = (path : string) : string => extractRelativePath(path.substr(0, path.length -extractFileName(path).length));
+    const extractFileName = (path : string) : string => path.split('\\').reverse()[0].split('/').reverse()[0];
     const digest = (text : string) : string => text.replace(/\s+/g, " ").substr(0, 128);
     interface CommandMenuItem extends vscode.QuickPickItem
     {
@@ -683,10 +699,10 @@ export module Clairvoyant
             (
                 entry =>
                 ({
-                    label: `$(file-text) ${stripDirectory(entry[0].fileName)}`,
+                    label: `$(file-text) ${extractFileName(entry[0].fileName)}`,
                     description: entry[0].isUntitled ?
                         digest(entry[0].getText()):
-                        stripFileName(entry[0].fileName),
+                        extractDirectory(entry[0].fileName),
                     detail: `count: ${entry[1].length}`,
                     command: async () =>await showMenu(await busy(() => makeSightShowMenu(entry[0], token, entry[1])), { matchOnDetail: true })
                 })
@@ -754,16 +770,16 @@ export module Clairvoyant
         (
             entry =>
             ({
-                label: `$(file-text) ${stripDirectory(entry[0].fileName)}`,
+                label: `$(file-text) ${extractFileName(entry[0].fileName)}`,
                 description: entry[0].isUntitled ?
                     digest(entry[0].getText()):
-                    stripFileName(entry[0].fileName),
+                    extractDirectory(entry[0].fileName),
                 command: async () =>await showMenu(await busy(() => makeSightFileRootMenu(entry[0], entry[1])))
             })
         )
     );
     const getRootMenuOrder = () => context.globalState.get<string>("clairvoyant.rootMenuOrder", "token");
-    const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
+    const makeSightRootMenu = (tokenDocumentEntryMap: Map<string, Map<vscode.TextDocument, number[]>>): CommandMenuItem[] => Profiler.profile
     (
         "makeSightRootMenu",
         () =>
@@ -774,7 +790,7 @@ export module Clairvoyant
                     command: async () =>
                     {
                         context.globalState.update("clairvoyant.rootMenuOrder", "count");
-                        await sight();
+                        await showMenu(await busy(() => makeSightRootMenu(tokenDocumentEntryMap)));
                     },
                 }:
                 {
@@ -782,7 +798,7 @@ export module Clairvoyant
                     command: async () =>
                     {
                         context.globalState.update("clairvoyant.rootMenuOrder", "token");
-                        await sight();
+                        await showMenu(await busy(() => makeSightRootMenu(tokenDocumentEntryMap)));
                     },
                 },
             {
@@ -795,7 +811,7 @@ export module Clairvoyant
         ])
         .concat
         (
-            mapEntries(makeSureTokenDocumentEntryMap())
+            mapEntries(tokenDocumentEntryMap)
                 .sort
                 (
                     "token" === getRootMenuOrder() ?
@@ -805,7 +821,7 @@ export module Clairvoyant
                             makeComparer
                             (
                                 (entry: [string, Map<vscode.TextDocument, number[]>]) =>
-                                    -mapValues(entry[1]).map(i => i.length).reduce((a, b) => a +b)
+                                    -mapValues(entry[1]).map(i => i.length).reduce((a, b) => a +b, 0)
                             ),
                             (a, b) => stringComparer(a[0], b[0])
                         ])
@@ -818,7 +834,7 @@ export module Clairvoyant
                         description: undefined,
                         detail: mapEntries(entry[1])
                                 .sort(mergeComparer([makeComparer(entry => -entry[1].length), makeComparer(entry => entry[0].fileName)]))
-                                .map(entry => `$(file-text) ${stripDirectory(entry[0].fileName)}(${entry[1].length})`)
+                                .map(entry => `$(file-text) ${extractFileName(entry[0].fileName)}(${entry[1].length})`)
                                 .join(", "),
                         command: async () => await showMenu(await busy(() => makeSightTokenMenu(entry[0], entry[1])), { matchOnDescription: true })
                     })
@@ -826,7 +842,18 @@ export module Clairvoyant
         )
     );
 
-    const sight = async () => await showMenu(await busy(makeSightRootMenu));
+    const sight = async () =>
+    {
+        const tokenDocumentEntryMap =await busy(makeSureTokenDocumentEntryMap);
+        if (tokenDocumentEntryMap.size <= 0)
+        {
+            await vscode.window.showInformationMessage(localeString("No scan data"));
+        }
+        else
+        {
+            await showMenu(await busy(() => makeSightRootMenu(tokenDocumentEntryMap)));
+        }
+    }
 
     export const updateStatusBarItems = () : void =>
     {
