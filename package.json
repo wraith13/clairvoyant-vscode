@@ -1,8 +1,8 @@
 {
 	"name": "clairvoyant",
-	"displayName": "clairvoyant",
-	"description": "Smart search your codes",
-    "icon": "images/clairvoyant.128.png",
+	"displayName": "Clairvoyant",
+	"description": "Smart search your codes.",
+    "icon": "images/clarvoyanthext.128.png",
 	"version": "0.0.1",
 	"publisher": "wraith13",
 	"license": "SEE LICENSE IN LICENSE_1_0.txt",
@@ -29,67 +29,42 @@
 			{
 				"command": "clairvoyant.scanDocument",
 				"title": "%clairvoyant.scanDocument.title%",
-				"category": "clairvoyant"
+				"category": "Clairvoyant"
 			},
 			{
 				"command": "clairvoyant.scanOpenDocuments",
 				"title": "%clairvoyant.scanOpenDocuments.title%",
-				"category": "clairvoyant"
+				"category": "Clairvoyant"
 			},
 			{
 				"command": "clairvoyant.scanFolder",
 				"title": "%clairvoyant.scanFolder.title%",
-				"category": "clairvoyant"
+				"category": "Clairvoyant"
 			},
 			{
 				"command": "clairvoyant.sight",
 				"title": "%clairvoyant.sight.title%",
-				"category": "clairvoyant"
-			},
-			{
-				"command": "clairvoyant.next",
-				"title": "%clairvoyant.next.title%",
-				"category": "clairvoyant"
-			},
-			{
-				"command": "clairvoyant.previous",
-				"title": "%clairvoyant.previous.title%",
-				"category": "clairvoyant"
-			},
-			{
-				"command": "clairvoyant.nextDocument",
-				"title": "%clairvoyant.nextDocument.title%",
-				"category": "clairvoyant"
-			},
-			{
-				"command": "clairvoyant.previousDocument",
-				"title": "%clairvoyant.previousDocument.title%",
-				"category": "clairvoyant"
+				"category": "Clairvoyant"
 			},
 			{
 				"command": "clairvoyant.reload",
 				"title": "%clairvoyant.reload.title%",
-				"category": "clairvoyant"
+				"category": "Clairvoyant"
 			},
 			{
-				"command": "clairvoyant.startProfile",
-				"title": "%clairvoyant.startProfile.title%",
-				"category": "clairvoyant"
-			},
-			{
-				"command": "clairvoyant.stopProfile",
-				"title": "%clairvoyant.stopProfile.title%",
-				"category": "clairvoyant"
+				"command": "clairvoyant.report",
+				"title": "%clairvoyant.report.title%",
+				"category": "Clairvoyant"
 			},
 			{
 				"command": "clairvoyant.reportProfile",
 				"title": "%clairvoyant.reportProfile.title%",
-				"category": "clairvoyant"
+				"category": "Clairvoyant"
 			}
 		],
 		"configuration":[
 			{
-				"title": "clairvoyant",
+				"title": "Clairvoyant",
 				"properties": {
 					"clairvoyant.autoScanMode": {
 						"type": "string",
@@ -104,16 +79,25 @@
 						"description": "%clairvoyant.autoScanMode.description%"
 					},
 					"clairvoyant.showStatusBarItems": {
-						"type": "string",
-						"default": "full",
-						"enum": [
-							"none",
-							"eye only",
-							"eye,next,previous",
-							"full"
-						],
-						"overridable": true,
+						"type": "boolean",
+						"default": true,
 						"description": "%clairvoyant.showStatusBarItems.description%"
+					},
+					"clairvoyant.excludeDirectories": {
+						"type": "array",
+						"items":{
+							"type": "string"
+						},
+						"default": ["out", "bin", "node_modules"],
+						"description": "%clairvoyant.excludeDirectories.description%"
+					},
+					"clairvoyant.excludeExtentions": {
+						"type": "array",
+						"items":{
+							"type": "string"
+						},
+						"default": [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".obj", ".lib", ".out", ".exe", ".dll", ".vsix", ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".wav", "mp3", ".mp4", ".mov"],
+						"description": "%clairvoyant.excludeExtentions.description%"
 					}
 				}
 			}
