@@ -8,5 +8,14 @@
     "clairvoyant.reportProfile.title": "Report Profile",
     "clairvoyant.autoScanMode.description": "Auto scan mode",
     "clairvoyant.showStatusBarItems.description": "Show status bar items",
-    "No scan data": "No scan data"
+    "No scan data": "No scan data",
+    "📊 Profile Report": "📊 Profile Report",
+    "⚖ Overview": "⚖ Overview",
+    "🔬 Busy Details": "🔬 Busy Details",
+    "🚫 Profile has not been started.": "🚫 Profile has not been started.",
+    "Sort by count": "Sort by count",
+    "Sort by token": "Sort by token",
+    "Show by file": "Show by file",
+    "Copy \"${token}\" to clipboard": "Copy \"${token}\" to clipboard",
+    "Paste \"${token}\" to text editor": "Paste \"${token}\" to text editor"
 }

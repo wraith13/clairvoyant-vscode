@@ -8,5 +8,14 @@
     "clairvoyant.reportProfile.title": "プロファイル結果を表示",
     "clairvoyant.autoScanMode.description": "自動スキャンモード",
     "clairvoyant.showStatusBarItems.description": "スタータスバー項目の表示",
-    "No scan data": "スキャンデータがありません"
+    "No scan data": "スキャンデータがありません",
+    "📊 Profile Report": "📊 プロファイル報告",
+    "⚖ Overview": "⚖ 概要",
+    "🔬 Busy Details": "🔬 Busy 内訳",
+    "🚫 Profile has not been started.": "🚫 プロファイルは開始されていません。",
+    "Sort by count": "出現数順で表示",
+    "Sort by token": "トークン順で表示",
+    "Show by file": "ファイル単位で表示",
+    "Copy \"${token}\" to clipboard": "\"${token}\"をクリップボードにコピー",
+    "Paste \"${token}\" to text editor": "\"${token}\"をテキストエディタに貼り付け"
 }

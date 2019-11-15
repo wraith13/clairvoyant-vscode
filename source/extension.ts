@@ -366,7 +366,7 @@ export module Clairvoyant
     const showStatusBarItems = new Config("showStatusBarItems", true);
     const textEditorRevealType = new ConfigMap("textEditorRevealType", "InCenterIfOutsideViewport", textEditorRevealTypeObject);
     const excludeDirectories = new Config("excludeDirectories", ["out", "bin", "node_modules"], stringArrayValidator);
-    const excludeExtentions = new Config("excludeExtentions", [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".exe", ".dll", ".vsix"], stringArrayValidator);
+    const excludeExtentions = new Config("excludeExtentions", [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".obj", ".lib", ".out", ".exe", ".dll", ".vsix", ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".wav", "mp3", ".mp4", ".mov"], stringArrayValidator);
 
     const outputChannel = vscode.window.createOutputChannel("Clairvoyant");
     
@@ -444,6 +444,7 @@ export module Clairvoyant
                     }
                 }
             ),
+            vscode.commands.registerCommand(`${applicationKey}.report`, showReport),
 
             //  ステータスバーアイコンの登録
             eyeLabel = createStatusBarItem
@@ -613,6 +614,21 @@ export module Clairvoyant
         }
     };
 
+    const showReport = async () => await busy
+    (
+        () => Profiler.profile
+        (
+            "showReport",
+            () =>
+            {
+                makeSureTokenDocumentEntryMap();
+                outputChannel.show();
+                outputChannel.appendLine(`files: ${documentTokenEntryMap.size.toLocaleString()}`);
+                outputChannel.appendLine(`unique tokens: ${tokenDocumentEntryMap.size.toLocaleString()}`);
+                outputChannel.appendLine(`total tokens: ${mapValues(documentTokenEntryMap).map(i => mapValues(i).map(i => i.length).reduce((a, b) => a +b, 0)).reduce((a, b) => a +b, 0).toLocaleString()}`);
+            }
+        )
+    );
     const scanDocument = async (document: vscode.TextDocument) => await busy
     (
         () =>
@@ -669,6 +685,30 @@ export module Clairvoyant
                             );
                         }
                     );
+                    /*
+                    Profiler.profile
+                    (
+                        "scanDocument.summary2",
+                        () =>
+                        {
+                            const tokens: { [key: string]: number[] } = { };
+                            hits.forEach
+                            (
+                                hit =>
+                                {
+                                    if (tokens[hit.token])
+                                    {
+                                        tokens[hit.token].push(hit.index);
+                                    }
+                                    else
+                                    {
+                                        tokens[hit.token] = [hit.index];
+                                    }
+                                }
+                            );
+                        }
+                    );
+                    */
                     Profiler.profile
                     (
                         "scanDocument.register",
