@@ -3,6 +3,8 @@
     "clairvoyant.scanOpenDocuments.title": "開いてるドキュメントをスキャン",
     "clairvoyant.scanFolder.title": "フォルダーをスキャン",
     "clairvoyant.sight.title": "サイト",
+    "clairvoyant.back.title": "戻る",
+    "clairvoyant.forward.title": "進む",
     "clairvoyant.sight.busy": "clairvoyant: 処理中",
     "clairvoyant.reload.title": "再読み込み(初期化)",
     "clairvoyant.reportProfile.title": "プロファイル結果を表示",

@@ -47,6 +47,16 @@
 				"category": "Clairvoyant"
 			},
 			{
+				"command": "clairvoyant.back",
+				"title": "%clairvoyant.back.title%",
+				"category": "Clairvoyant"
+			},
+			{
+				"command": "clairvoyant.forward",
+				"title": "%clairvoyant.forward.title%",
+				"category": "Clairvoyant"
+			},
+			{
 				"command": "clairvoyant.reload",
 				"title": "%clairvoyant.reload.title%",
 				"category": "Clairvoyant"

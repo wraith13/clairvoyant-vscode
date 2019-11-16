@@ -3,6 +3,8 @@
     "clairvoyant.scanOpenDocuments.title": "Scan Open Documents",
     "clairvoyant.scanFolder.title": "Scan Folder",
     "clairvoyant.sight.title": "Sight",
+    "clairvoyant.back.title": "Go Back",
+    "clairvoyant.forward.title": "Go Forward",
     "clairvoyant.sight.busy": "clairvoyant: busy",
     "clairvoyant.reload.title": "Reload",
     "clairvoyant.reportProfile.title": "Report Profile",

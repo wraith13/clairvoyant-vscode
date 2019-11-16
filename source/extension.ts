@@ -419,6 +419,8 @@ export module Clairvoyant
             vscode.commands.registerCommand(`${applicationKey}.scanOpenDocuments`, scanOpenDocuments),
             vscode.commands.registerCommand(`${applicationKey}.scanFolder`, scanFolder),
             vscode.commands.registerCommand(`${applicationKey}.sight`, sight),
+            vscode.commands.registerCommand(`${applicationKey}.back`, showTokenUndo),
+            vscode.commands.registerCommand(`${applicationKey}.forward`, showTokenRedo),
             vscode.commands.registerCommand(`${applicationKey}.reload`, reload),
             vscode.commands.registerCommand
             (
@@ -534,11 +536,69 @@ export module Clairvoyant
         }
     );
 
-    const showToken = async (entry: { document: vscode.TextDocument, selection: vscode.Selection }) =>
+    interface ShowTokenCoreEntry
+    {
+        document: vscode.TextDocument;
+        selection: vscode.Selection;
+    }
+    interface ShowTokenDoEntry
+    {
+        redo: ShowTokenCoreEntry;
+        undo: ShowTokenCoreEntry | null;
+    }
+    const showTokenUndoBuffer: ShowTokenDoEntry[] = [];
+    const showTokenRedoBuffer: ShowTokenDoEntry[] = [];
+    const showSelection = async (entry: { document: vscode.TextDocument, selection: vscode.Selection }) =>
     {
         const textEditor = await vscode.window.showTextDocument(entry.document);
         textEditor.selection = entry.selection;
         textEditor.revealRange(entry.selection, textEditorRevealType.get(entry.document.languageId));
+    };
+    const makeShowTokenCoreEntry = () =>
+    {
+        let result: ShowTokenCoreEntry | null = null;
+        const activeTextEditor = vscode.window.activeTextEditor;
+        if (activeTextEditor)
+        {
+            result =
+            {
+                document: activeTextEditor.document,
+                selection: activeTextEditor.selection,
+            };
+        }
+        return result;
+    };
+    const showToken = async (entry: { document: vscode.TextDocument, selection: vscode.Selection }) =>
+    {
+        showTokenUndoBuffer.push
+        ({
+            redo: entry,
+            undo: makeShowTokenCoreEntry(),
+        });
+        showSelection(entry);
+        showTokenRedoBuffer.splice(0, 0);
+    };
+    const showTokenUndo = async () =>
+    {
+        const entry = showTokenUndoBuffer.pop();
+        if (entry)
+        {
+            if (entry.undo)
+            {
+                showSelection(entry.undo);
+            }
+            showTokenRedoBuffer.push(entry);
+        }
+    };
+    const showTokenRedo = async () =>
+    {
+        const entry = showTokenRedoBuffer.pop();
+        if (entry)
+        {
+            entry.undo = makeShowTokenCoreEntry() || entry.undo;
+            showSelection(entry.redo);
+            showTokenUndoBuffer.push(entry);
+        }
     };
 
     const copyToken = async (text: string) => await vscode.env.clipboard.writeText(text);
@@ -846,7 +906,7 @@ export module Clairvoyant
     );
     const makeSightShowMenu = (document: vscode.TextDocument, token: string, indices: number[]): CommandMenuItem[] => Profiler.profile
     (
-        "makeSightTokenMenu",
+        "makeSightShowMenu",
         () => indices.map
         (
             index => makeGotoCommandMenuItem(document, index, token)
@@ -954,10 +1014,33 @@ export module Clairvoyant
         )
     );
     const getRootMenuOrder = () => context.globalState.get<string>("clairvoyant.rootMenuOrder", "token");
+    const makeHistoryMenu = (): CommandMenuItem[] =>
+    {
+        const result: CommandMenuItem[] = [];
+        if (0 < showTokenUndoBuffer.length)
+        {
+            result.push
+            ({
+                label: `$(rocket) ${localeString("clairvoyant.back.title")}`,
+                command: showTokenUndo,
+            });
+        }
+        if (0 < showTokenRedoBuffer.length)
+        {
+            result.push
+            ({
+                label: `$(rocket) ${localeString("clairvoyant.forward.title")}`,
+                command: showTokenRedo,
+            });
+        }
+        return result;
+    };
     const makeSightRootMenu = (tokenDocumentEntryMap: Map<string, Map<vscode.TextDocument, number[]>>): CommandMenuItem[] => Profiler.profile
     (
         "makeSightRootMenu",
         () =>
+        makeHistoryMenu()
+        .concat
         ([
             "token" === getRootMenuOrder() ?
                 {
@@ -1033,7 +1116,7 @@ export module Clairvoyant
     export const updateStatusBarItems = () : void =>
     {
         eyeLabel.text = 0 < isBusy ? "$(sync~spin)": "$(eye)";
-        eyeLabel.tooltip = 0 < isBusy ? localeString("%clairvoyant.sight.busy%"): localeString("%clairvoyant.sight.title%");
+        eyeLabel.tooltip = 0 < isBusy ? localeString("clairvoyant.sight.busy"): localeString("clairvoyant.sight.titles");
         if (showStatusBarItems.get(""))
         {
             eyeLabel.show();
