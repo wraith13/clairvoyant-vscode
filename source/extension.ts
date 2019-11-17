@@ -418,31 +418,8 @@ export module Clairvoyant
             vscode.commands.registerCommand(`${applicationKey}.back`, showTokenUndo),
             vscode.commands.registerCommand(`${applicationKey}.forward`, showTokenRedo),
             vscode.commands.registerCommand(`${applicationKey}.reload`, reload),
-            vscode.commands.registerCommand
-            (
-                `${applicationKey}.reportProfile`, () =>
-                {
-                    outputChannel.show();
-                    if (Profiler.getIsProfiling())
-                    {
-                        outputChannel.appendLine(`${localeString("📊 Profile Report")} - ${new Date()}`);
-                        const overall = Profiler.getOverall();
-                        const total = Profiler.getReport().map(i => i.ticks).reduce((p, c) => p +c);
-                        outputChannel.appendLine(localeString("⚖ Overview"));
-                        outputChannel.appendLine(`- Overall: ${overall.toLocaleString()}ms ( ${percentToDisplayString(1)} )`);
-                        outputChannel.appendLine(`- Busy: ${total.toLocaleString()}ms ( ${percentToDisplayString(total / overall)} )`);
-                        outputChannel.appendLine(localeString("🔬 Busy Details"));
-                        outputChannel.appendLine(`- Total: ${total.toLocaleString()}ms ( ${percentToDisplayString(1)} )`);
-                        Profiler.getReport().forEach(i => outputChannel.appendLine(`- ${i.name}: ${i.ticks.toLocaleString()}ms ( ${percentToDisplayString(i.ticks / total)} )`));
-                        outputChannel.appendLine("");
-                    }
-                    else
-                    {
-                        outputChannel.appendLine(localeString("🚫 Profile has not been started."));
-                    }
-                }
-            ),
-            vscode.commands.registerCommand(`${applicationKey}.report`, showReport),
+            vscode.commands.registerCommand(`${applicationKey}.reportStatistics`, reportStatistics),
+            vscode.commands.registerCommand(`${applicationKey}.reportProfile`, reportProfile),
 
             //  ステータスバーアイコンの登録
             eyeLabel = createStatusBarItem
@@ -645,11 +622,11 @@ export module Clairvoyant
         }
     };
 
-    const showReport = async () => await busy
+    const reportStatistics = async () => await busy
     (
         () => Profiler.profile
         (
-            "showReport",
+            "reportStatistics",
             () =>
             {
                 outputChannel.show();
@@ -659,6 +636,36 @@ export module Clairvoyant
             }
         )
     );
+
+    const reportProfile = async () => await busy
+    (
+        () => Profiler.profile
+        (
+            "reportProfile",
+            () =>
+            {
+                outputChannel.show();
+                if (Profiler.getIsProfiling())
+                {
+                    outputChannel.appendLine(`${localeString("📊 Profile Report")} - ${new Date()}`);
+                    const overall = Profiler.getOverall();
+                    const total = Profiler.getReport().map(i => i.ticks).reduce((p, c) => p +c);
+                    outputChannel.appendLine(localeString("⚖ Overview"));
+                    outputChannel.appendLine(`- Overall: ${overall.toLocaleString()}ms ( ${percentToDisplayString(1)} )`);
+                    outputChannel.appendLine(`- Busy: ${total.toLocaleString()}ms ( ${percentToDisplayString(total / overall)} )`);
+                    outputChannel.appendLine(localeString("🔬 Busy Details"));
+                    outputChannel.appendLine(`- Total: ${total.toLocaleString()}ms ( ${percentToDisplayString(1)} )`);
+                    Profiler.getReport().forEach(i => outputChannel.appendLine(`- ${i.name}: ${i.ticks.toLocaleString()}ms ( ${percentToDisplayString(i.ticks / total)} )`));
+                    outputChannel.appendLine("");
+                }
+                else
+                {
+                    outputChannel.appendLine(localeString("🚫 Profile has not been started."));
+                }
+            }
+        )
+    );
+
     const scanDocument = async (document: vscode.TextDocument, force: boolean = false) => await busy
     (
         () =>
@@ -1043,6 +1050,17 @@ export module Clairvoyant
                 {
                     await showMenu(await busy(makeSightFileListMenu), { matchOnDescription: true });
                 },
+            },
+        ])
+        .concat
+        ([
+            {
+                label: `$(info) ${localeString("clairvoyant.reportStatistics.title")}`,
+                command: reportStatistics,
+            },
+            {
+                label: `$(dashboard) ${localeString("clairvoyant.reportProfile.title")}`,
+                command: reportProfile,
             },
         ])
         .concat

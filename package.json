@@ -62,8 +62,8 @@
 				"category": "Clairvoyant"
 			},
 			{
-				"command": "clairvoyant.report",
-				"title": "%clairvoyant.report.title%",
+				"command": "clairvoyant.reportStatistics",
+				"title": "%clairvoyant.reportStatistics.title%",
 				"category": "Clairvoyant"
 			},
 			{
