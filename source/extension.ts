@@ -704,7 +704,7 @@ export module Clairvoyant
             () =>
             {
                 const textEditor = vscode.window.visibleTextEditors.filter(i => i.document.uri.toString() === document.uri.toString())[0];
-                if (documentTokenEntryMap.get(document) || (textEditor && !textEditor.viewColumn))
+                if (documentTokenEntryMap.get(document) || 0 <= mapKeys(documentTokenEntryMap).map(i => i.uri.toString()).indexOf(document.uri.toString()) || (textEditor && !textEditor.viewColumn))
                 {
                     console.log(`scanDocument SKIP: ${document.fileName}`);
                 }
@@ -800,7 +800,7 @@ export module Clairvoyant
                 .map(async (i) => await scanDocument(i.document)))
         )
     ;
-    const getFiles = async (folder: vscode.Uri): Promise<string[]> =>
+    const getFiles = async (folder: vscode.Uri): Promise<vscode.Uri[]> =>
     {
         try
         {
@@ -808,10 +808,10 @@ export module Clairvoyant
             const rawFiles = (await vscode.workspace.fs.readDirectory(folder)).filter(i => !i[0].startsWith("."));
             const folders = rawFiles.filter(i => vscode.FileType.Directory === i[1]).map(i => i[0]).filter(i => excludeDirectories.get("").indexOf(i) < 0);
             const files = rawFiles.filter(i => vscode.FileType.File === i[1]).map(i => i[0]).filter(i => !isExcludeFile(i));
-            return files.map(i => folder.fsPath +"/" +i)
+            return files.map(i => vscode.Uri.parse(folder.toString() +"/" +i))
             .concat
             (
-                (await Promise.all(folders.map(i => getFiles(vscode.Uri.parse(folder.fsPath +"/" +i)))))
+                (await Promise.all(folders.map(i => getFiles(vscode.Uri.parse(folder.toString() +"/" +i)))))
                     .reduce((a, b) => a.concat(b), [])
             );
         }
@@ -830,7 +830,7 @@ export module Clairvoyant
             if (vscode.workspace.workspaceFolders)
             {
                 const files = (await Promise.all(vscode.workspace.workspaceFolders.map(i => getFiles(i.uri))))
-                    .reduce((a, b) => a.concat(b).filter((i, index, a) => index === a.indexOf(i)), []);
+                    .reduce((a, b) => a.concat(b), []);
                 await Promise.all
                 (
                     files.map
@@ -840,8 +840,11 @@ export module Clairvoyant
                             try
                             {
                                 outputChannel.appendLine(`open document: ${i}`);
-                                const document = vscode.workspace.textDocuments.filter(document => document.uri.fsPath === i)[0] || await vscode.workspace.openTextDocument(vscode.Uri.parse(i));
-                                await scanDocument(document);
+                                await scanDocument
+                                (
+                                    vscode.workspace.textDocuments.filter(document => document.uri.toString() === i.toString())[0] ||
+                                    await vscode.workspace.openTextDocument(i)
+                                );
                             }
                             catch(error)
                             {
