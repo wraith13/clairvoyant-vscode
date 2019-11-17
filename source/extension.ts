@@ -37,9 +37,9 @@ const mergeComparer = <valueT>(comparerList: ((a: valueT, b: valueT) => number)[
     return result;
 };
 
-const mapKeys = <keyT, valueT>(map: Map<keyT, valueT>) => Array.from(map.keys());
-const mapValues = <keyT, valueT>(map: Map<keyT, valueT>) => Array.from(map.values());
-const mapEntries = <keyT, valueT>(map: Map<keyT, valueT>) => Array.from(map.entries());
+//const mapKeys = <keyT, valueT>(map: Map<keyT, valueT>) => Array.from(map.keys());
+//const mapValues = <keyT, valueT>(map: Map<keyT, valueT>) => Array.from(map.values());
+//const mapEntries = <keyT, valueT>(map: Map<keyT, valueT>) => Array.from(map.entries());
 
 export const regExpExecToArray = (regexp: RegExp, text: string) => Profiler.profile
 (
@@ -411,8 +411,8 @@ export module Clairvoyant
                     const activeTextEditor = vscode.window.activeTextEditor;
                     if (activeTextEditor)
                     {
-                        documentTokenEntryMap.delete(activeTextEditor.document);
-                        await scanDocument(activeTextEditor.document);
+                        //documentTokenEntryMap.delete(activeTextEditor.document);
+                        await scanDocument(activeTextEditor.document, true);
                     }
                 }
             ),
@@ -464,10 +464,10 @@ export module Clairvoyant
             (
                 event =>
                 {
-                    if (autoScanMode.get(event.document.languageId).enabled && !isExcludeDocument(event.document))
+                    if (autoScanMode.get(event.document.languageId).enabled && (!isExcludeDocument(event.document)))
                     {
-                        documentTokenEntryMap.delete(event.document);
-                        scanDocument(event.document);
+                        //documentTokenEntryMap.delete(event.document);
+                        scanDocument(event.document, true);
                     }
                 }
             ),
@@ -487,17 +487,24 @@ export module Clairvoyant
     };
 
     const isExcludeFile = (filePath: string) => excludeExtentions.get("").some(i => filePath.toLowerCase().endsWith(i.toLowerCase()));
-    const isExcludeDocument = (document: vscode.TextDocument) => !documentTokenEntryMap.get(document) &&
+    const isExcludeDocument = (document: vscode.TextDocument) => !documentTokenEntryMap[document.uri.toString()] &&
     (
         extractRelativePath(document.uri.toString()).split("/").map(i => 0 <= excludeDirectories.get("").indexOf(i)) ||
-        isExcludeFile(document.uri.fsPath)
+        isExcludeFile(document.uri.toString())
     );
 
-    const documentTokenEntryMap = new Map<vscode.TextDocument, { [key: string]: number[] }>();
-    const tokenDocumentEntryMap = new Map<string, Map<vscode.TextDocument, number[]>>();
+    const toUri = (uri: vscode.Uri | string) => "string" === typeof(uri) ? vscode.Uri.parse(uri): uri;
+    const getDocument = (uri: vscode.Uri | string) => vscode.workspace.textDocuments.filter(document => document.uri.toString() === uri.toString())[0];
+    const getOrOpenDocument = async (uri: vscode.Uri | string) => getDocument(uri) || await vscode.workspace.openTextDocument(toUri(uri));
+
+    //const documentTokenEntryMap = new Map<vscode.TextDocument, { [key: string]: number[] }>();
+    //const tokenDocumentEntryMap = new Map<string, Map<vscode.TextDocument, number[]>>();
+    const documentTokenEntryMap: { [uri: string]: { [token: string]: number[] } } = { };
+    const tokenDocumentEntryMap: { [token: string]: string[] } = { };
 
     const encodeToken = (token: string) => `@${token}`;
     const decodeToken = (token: string) => token.substring(1);
+    /*
     const makeSureTokenDocumentEntryMap = () => Profiler.profile
     (
         "makeSureTokenDocumentEntryMap",
@@ -538,6 +545,7 @@ export module Clairvoyant
             return tokenDocumentEntryMap;
         }
     );
+    */
 
     interface ShowTokenCoreEntry
     {
@@ -629,8 +637,10 @@ export module Clairvoyant
 
     const reload = () =>
     {
-        documentTokenEntryMap.clear();
-        tokenDocumentEntryMap.clear();
+        //documentTokenEntryMap.clear();
+        //tokenDocumentEntryMap.clear();
+        Object.keys(documentTokenEntryMap).forEach(i => delete documentTokenEntryMap[i]);
+        Object.keys(tokenDocumentEntryMap).forEach(i => delete tokenDocumentEntryMap[i]);
         showTokenUndoBuffer.splice(0, 0);
         showTokenRedoBuffer.splice(0, 0);
         onDidChangeConfiguration();
@@ -686,16 +696,16 @@ export module Clairvoyant
             "showReport",
             () =>
             {
-                makeSureTokenDocumentEntryMap();
+                //makeSureTokenDocumentEntryMap();
                 outputChannel.show();
-                outputChannel.appendLine(`files: ${documentTokenEntryMap.size.toLocaleString()}`);
-                outputChannel.appendLine(`unique tokens: ${tokenDocumentEntryMap.size.toLocaleString()}`);
+                outputChannel.appendLine(`files: ${Object.keys(documentTokenEntryMap).length.toLocaleString()}`);
+                outputChannel.appendLine(`unique tokens: ${Object.keys(tokenDocumentEntryMap).length.toLocaleString()}`);
                 //outputChannel.appendLine(`total tokens: ${mapValues(documentTokenEntryMap).map(i => mapValues(i).map(i => i.length).reduce((a, b) => a +b, 0)).reduce((a, b) => a +b, 0).toLocaleString()}`);
-                outputChannel.appendLine(`total tokens: ${mapValues(documentTokenEntryMap).map(i => Object.values(i).map(i => i.length).reduce((a, b) => a +b, 0)).reduce((a, b) => a +b, 0).toLocaleString()}`);
+                outputChannel.appendLine(`total tokens: ${Object.values(documentTokenEntryMap).map(i => Object.values(i).map(i => i.length).reduce((a, b) => a +b, 0)).reduce((a, b) => a +b, 0).toLocaleString()}`);
             }
         )
     );
-    const scanDocument = async (document: vscode.TextDocument) => await busy
+    const scanDocument = async (document: vscode.TextDocument, force: boolean = false) => await busy
     (
         () =>
         Profiler.profile
@@ -703,14 +713,24 @@ export module Clairvoyant
             "scanDocument",
             () =>
             {
-                const textEditor = vscode.window.visibleTextEditors.filter(i => i.document.uri.toString() === document.uri.toString())[0];
-                if (documentTokenEntryMap.get(document) || 0 <= mapKeys(documentTokenEntryMap).map(i => i.uri.toString()).indexOf(document.uri.toString()) || (textEditor && !textEditor.viewColumn))
+                const uri = document.uri.toString();
+                const textEditor = vscode.window.visibleTextEditors.filter(i => i.document.uri.toString() === uri)[0];
+                const old = documentTokenEntryMap[uri];
+                if
+                (
+                    (
+                        !force &&
+                        //0 <= mapKeys(documentTokenEntryMap).map(i => i.uri.toString()).indexOf(document.uri.toString())
+                        old
+                    )
+                    || (textEditor && !textEditor.viewColumn)
+                )
                 {
-                    console.log(`scanDocument SKIP: ${document.fileName}`);
+                    console.log(`scanDocument SKIP: ${uri}`);
                 }
                 else
                 {
-                    outputChannel.appendLine(`scan document: ${document.fileName}`);
+                    outputChannel.appendLine(`scan document: ${uri}`);
                     const text = Profiler.profile("scanDocument.document.getText", () => document.getText());
                     const hits = Profiler.profile
                     (
@@ -779,11 +799,38 @@ export module Clairvoyant
                         "scanDocument.register",
                         () =>
                         {
+                            /*
                             mapKeys(documentTokenEntryMap)
                                 .filter(i => i.fileName === document.fileName)
                                 .forEach(i => documentTokenEntryMap.delete(i));
                             documentTokenEntryMap.set(document, map);
                             tokenDocumentEntryMap.clear();
+                            */
+                            documentTokenEntryMap[uri] = map;
+                            const oldTokens = old ? Object.keys(old): [];
+                            const newTokens = Object.keys(map);
+                            oldTokens.filter(i => newTokens.indexOf(i) < 0).forEach
+                            (
+                                i =>
+                                {
+                                    tokenDocumentEntryMap[i].splice(tokenDocumentEntryMap[i].indexOf(uri), 1);
+                                    if (tokenDocumentEntryMap[i].length <= 0)
+                                    {
+                                        delete tokenDocumentEntryMap[i];
+                                    }
+                                }
+                            );
+                            newTokens.filter(i => oldTokens.indexOf(i) < 0).forEach
+                            (
+                                i =>
+                                {
+                                    if (!tokenDocumentEntryMap[i])
+                                    {
+                                        tokenDocumentEntryMap[i] = [];
+                                    }
+                                    tokenDocumentEntryMap[i].push(uri);
+                                }
+                            );
                         }
                     );
                 }
@@ -804,7 +851,7 @@ export module Clairvoyant
     {
         try
         {
-            outputChannel.appendLine(`scan ${folder.fsPath}`);
+            outputChannel.appendLine(`scan ${folder.toString()}`);
             const rawFiles = (await vscode.workspace.fs.readDirectory(folder)).filter(i => !i[0].startsWith("."));
             const folders = rawFiles.filter(i => vscode.FileType.Directory === i[1]).map(i => i[0]).filter(i => excludeDirectories.get("").indexOf(i) < 0);
             const files = rawFiles.filter(i => vscode.FileType.File === i[1]).map(i => i[0]).filter(i => !isExcludeFile(i));
@@ -817,7 +864,7 @@ export module Clairvoyant
         }
         catch(error)
         {
-            outputChannel.appendLine(`${folder.fsPath}: ${JSON.stringify(error)}`);
+            outputChannel.appendLine(`${folder.toString()}: ${JSON.stringify(error)}`);
             return [];
         }
     };
@@ -840,11 +887,7 @@ export module Clairvoyant
                             try
                             {
                                 outputChannel.appendLine(`open document: ${i}`);
-                                await scanDocument
-                                (
-                                    vscode.workspace.textDocuments.filter(document => document.uri.toString() === i.toString())[0] ||
-                                    await vscode.workspace.openTextDocument(i)
-                                );
+                                await scanDocument(await getOrOpenDocument(i));
                             }
                             catch(error)
                             {
@@ -861,18 +904,18 @@ export module Clairvoyant
     const extractRelativePath = (path : string) : string =>
     {
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.parse(path));
-        return workspaceFolder && path.startsWith(workspaceFolder.uri.fsPath) ? path.substring(workspaceFolder.uri.fsPath.length): path;
+        return workspaceFolder && path.startsWith(workspaceFolder.uri.toString()) ? path.substring(workspaceFolder.uri.toString().length): path;
     };
     const extractDirectory = (path : string) : string => path.substr(0, path.length -extractFileName(path).length);
     const extractDirectoryAndWorkspace = (path : string) : string =>
     {
         const dir = extractDirectory(path);
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.parse(dir));
-        return workspaceFolder && path.startsWith(workspaceFolder.uri.fsPath) ?
+        return workspaceFolder && path.startsWith(workspaceFolder.uri.toString()) ?
             (
                 vscode.workspace.workspaceFolders && 2 <= vscode.workspace.workspaceFolders.length ?
-                    `${workspaceFolder.name}: ${dir.substring(workspaceFolder.uri.fsPath.length)}`:
-                    `${dir.substring(workspaceFolder.uri.fsPath.length)}`
+                    `${workspaceFolder.name}: ${dir.substring(workspaceFolder.uri.toString().length)}`:
+                    `${dir.substring(workspaceFolder.uri.toString().length)}`
             ):
             dir;
     };
@@ -912,12 +955,12 @@ export module Clairvoyant
             return result;
         }
     );
-    const makeSightShowMenu = (document: vscode.TextDocument, token: string, indices: number[]): CommandMenuItem[] => Profiler.profile
+    const makeSightShowMenu = (uri: string, token: string, hits: number[]): CommandMenuItem[] => Profiler.profile
     (
         "makeSightShowMenu",
-        () => indices.map
+        () => hits.map
         (
-            index => makeGotoCommandMenuItem(document, index, token)
+            index => makeGotoCommandMenuItem(getDocument(uri), index, token)
         )
     );
     const makeSightTokenCoreMenu = (token: string): CommandMenuItem[] =>
@@ -931,33 +974,42 @@ export module Clairvoyant
             command: async () => pasteToken(token),
         },
     ]);
-    const makeSightTokenMenu = (token: string, entry: Map<vscode.TextDocument, number[]>): CommandMenuItem[] => Profiler.profile
+    //const makeSightTokenMenu = (token: string, entry: Map<vscode.TextDocument, number[]>): CommandMenuItem[] => Profiler.profile
+    const makeSightTokenMenu = (token: string): CommandMenuItem[] => Profiler.profile
     (
         "makeSightTokenMenu",
         () => makeSightTokenCoreMenu(token).concat
         (
-            mapEntries(entry)
-            .sort(mergeComparer([makeComparer(entry => -entry[1].length), makeComparer(entry => entry[0].fileName)]))
+            //mapEntries(entry)
+            tokenDocumentEntryMap[token].map(i => ({ uri:i, hits: documentTokenEntryMap[i][token] }))
+            //.sort(mergeComparer([makeComparer(entry => -entry[1].length), makeComparer(entry => entry[0].fileName)]))
+            .sort(mergeComparer([makeComparer(entry => -entry.hits.length), makeComparer(entry => entry.uri)]))
             .map
             (
                 entry =>
                 ({
-                    label: `$(file-text) ${extractFileName(entry[0].fileName)}`,
-                    description: entry[0].isUntitled ?
-                        digest(entry[0].getText()):
-                        extractDirectoryAndWorkspace(entry[0].fileName),
-                    detail: `count: ${entry[1].length}`,
-                    command: async () =>await showMenu(await busy(() => makeSightShowMenu(entry[0], token, entry[1])), { matchOnDetail: true })
+                    //label: `$(file-text) ${extractFileName(entry[0].fileName)}`,
+                    label: `$(file-text) ${extractFileName(entry.uri)}`,
+                    //description: entry[0].isUntitled ?
+                    //    digest(entry[0].getText()):
+                    //    extractDirectoryAndWorkspace(entry[0].fileName),
+                    description: entry.uri.startsWith("untitled:") ?
+                        digest(getDocument(entry.uri).getText()):
+                        extractDirectoryAndWorkspace(entry.uri),
+                        detail: `count: ${entry.hits.length}`,
+                    //command: async () =>await showMenu(await busy(() => makeSightShowMenu(entry[0], token, entry[1])), { matchOnDetail: true })
+                    command: async () =>await showMenu(await busy(() => makeSightShowMenu(entry.uri, token, entry.hits)), { matchOnDetail: true })
                 })
             )
         )
     );
-    const makeSightFileTokenMenu = (document: vscode.TextDocument, token: string, indices: number[]): CommandMenuItem[] => Profiler.profile
+    const makeSightFileTokenMenu = (uri: string, token: string, indices: number[]): CommandMenuItem[] => Profiler.profile
     (
         "makeSightFileTokenMenu",
-        () => makeSightTokenCoreMenu(token).concat(makeSightShowMenu(document, token, indices))
+        () => makeSightTokenCoreMenu(token).concat(makeSightShowMenu(uri, token, indices))
     );
-    const makeSightFileRootMenu = (document: vscode.TextDocument, entries: { [key: string]: number[] }): CommandMenuItem[] => Profiler.profile
+    //const makeSightFileRootMenu = (document: string, entries: { [key: string]: number[] }): CommandMenuItem[] => Profiler.profile
+    const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }): CommandMenuItem[] => Profiler.profile
     (
         "makeSightFileRootMenu",
         () =>
@@ -968,7 +1020,7 @@ export module Clairvoyant
                     command: async () =>
                     {
                         context.globalState.update("clairvoyant.rootMenuOrder", "count");
-                        await showMenu(await busy(() => makeSightFileRootMenu(document, entries)));
+                        await showMenu(await busy(() => makeSightFileRootMenu(uri, entries)));
                     },
                 }:
                 {
@@ -976,7 +1028,7 @@ export module Clairvoyant
                     command: async () =>
                     {
                         context.globalState.update("clairvoyant.rootMenuOrder", "token");
-                        await showMenu(await busy(() => makeSightFileRootMenu(document, entries)));
+                        await showMenu(await busy(() => makeSightFileRootMenu(uri, entries)));
                     },
                 },
         ])
@@ -999,7 +1051,7 @@ export module Clairvoyant
                     label: `$(tag) ${decodeToken(entry[0])} `, // この末尾のスペースは showQuickPick の絞り込みでユーザーが他の入力候補を除外する為のモノ
                     description: undefined,
                     detail: `count: ${entry[1].length}`,
-                    command: async () => await showMenu(await busy(() => makeSightFileTokenMenu(document, decodeToken(entry[0]), entry[1])), { matchOnDetail: true })
+                    command: async () => await showMenu(await busy(() => makeSightFileTokenMenu(uri, decodeToken(entry[0]), entry[1])), { matchOnDetail: true })
                 })
             )
         )
@@ -1007,16 +1059,20 @@ export module Clairvoyant
     const makeSightFileListMenu = (): CommandMenuItem[] => Profiler.profile
     (
         "makeSightFileListMenu",
-        () => mapEntries(documentTokenEntryMap)
-        .sort(makeComparer(entry => entry[0].fileName))
+        //() => mapEntries(documentTokenEntryMap)
+        () => Object.entries(documentTokenEntryMap)
+        .sort(makeComparer(entry => entry[0]))
         .map
         (
             entry =>
             ({
-                label: `$(file-text) ${extractFileName(entry[0].fileName)}`,
-                description: entry[0].isUntitled ?
-                    digest(entry[0].getText()):
-                    extractDirectoryAndWorkspace(entry[0].fileName),
+                label: `$(file-text) ${extractFileName(entry[0])}`,
+                //description: entry[0].isUntitled ?
+                //    digest(entry[0].getText()):
+                //    extractDirectoryAndWorkspace(entry[0].fileName),
+                description: entry[0].startsWith("untitled:") ?
+                    digest(getDocument(entry[0]).getText()):
+                    extractDirectoryAndWorkspace(entry[0]),
                 command: async () =>await showMenu(await busy(() => makeSightFileRootMenu(entry[0], entry[1])))
             })
         )
@@ -1043,7 +1099,8 @@ export module Clairvoyant
         }
         return result;
     };
-    const makeSightRootMenu = (tokenDocumentEntryMap: Map<string, Map<vscode.TextDocument, number[]>>): CommandMenuItem[] => Profiler.profile
+    //const makeSightRootMenu = (tokenDocumentEntryMap: Map<string, Map<vscode.TextDocument, number[]>>): CommandMenuItem[] => Profiler.profile
+    const makeSightRootMenu = (tokenDocumentEntryMap: { [token: string]: string[] }): CommandMenuItem[] => Profiler.profile
     (
         "makeSightRootMenu",
         () =>
@@ -1077,7 +1134,8 @@ export module Clairvoyant
         ])
         .concat
         (
-            mapEntries(tokenDocumentEntryMap)
+            //mapEntries(tokenDocumentEntryMap)
+            Object.entries(tokenDocumentEntryMap)
                 .sort
                 (
                     "token" === getRootMenuOrder() ?
@@ -1086,8 +1144,10 @@ export module Clairvoyant
                         ([
                             makeComparer
                             (
-                                (entry: [string, Map<vscode.TextDocument, number[]>]) =>
-                                    -mapValues(entry[1]).map(i => i.length).reduce((a, b) => a +b, 0)
+                                //(entry: [string, Map<vscode.TextDocument, number[]>]) =>
+                                //    -mapValues(entry[1]).map(i => i.length).reduce((a, b) => a +b, 0)
+                                (entry: [string, string[]]) =>
+                                    -entry[1].map(i => documentTokenEntryMap[i][entry[0]].length).reduce((a, b) => a +b, 0)
                             ),
                             (a, b) => stringComparer(a[0], b[0])
                         ])
@@ -1098,11 +1158,16 @@ export module Clairvoyant
                     ({
                         label: `$(tag) ${entry[0]} `, // この末尾のスペースは showQuickPick の絞り込みでユーザーが他の入力候補を除外する為のモノ
                         description: undefined,
-                        detail: mapEntries(entry[1])
-                                .sort(mergeComparer([makeComparer(entry => -entry[1].length), makeComparer(entry => entry[0].fileName)]))
-                                .map(entry => `$(file-text) ${extractFileName(entry[0].fileName)}(${entry[1].length})`)
+                        //detail: mapEntries(entry[1])
+                        //        .sort(mergeComparer([makeComparer(entry => -entry[1].length), makeComparer(entry => entry[0].fileName)]))
+                        //        .map(entry => `$(file-text) ${extractFileName(entry[0].fileName)}(${entry[1].length})`)
+                        //        .join(", "),
+                        //command: async () => await showMenu(await busy(() => makeSightTokenMenu(entry[0], entry[1])), { matchOnDescription: true })
+                        detail: entry[1].map(i => ({ uri:i, hits:documentTokenEntryMap[i][entry[0]]}))
+                                .sort(mergeComparer([makeComparer(d => -d.hits.length), makeComparer(d => d.uri)]))
+                                .map(d => `$(file-text) ${extractFileName(d.uri)}(${d.hits.length})`)
                                 .join(", "),
-                        command: async () => await showMenu(await busy(() => makeSightTokenMenu(entry[0], entry[1])), { matchOnDescription: true })
+                        command: async () => await showMenu(await busy(() => makeSightTokenMenu(entry[0])), { matchOnDescription: true })
                     })
                 )
         )
@@ -1110,8 +1175,9 @@ export module Clairvoyant
 
     const sight = async () =>
     {
-        const tokenDocumentEntryMap =await busy(makeSureTokenDocumentEntryMap);
-        if (tokenDocumentEntryMap.size <= 0)
+        //const tokenDocumentEntryMap =await busy(makeSureTokenDocumentEntryMap);
+        //if (tokenDocumentEntryMap.size <= 0)
+        if (Object.keys(tokenDocumentEntryMap).length <= 0)
         {
             await vscode.window.showInformationMessage(localeString("No scan data"));
         }
