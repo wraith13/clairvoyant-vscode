@@ -655,7 +655,7 @@ export module Clairvoyant
                 outputChannel.show();
                 outputChannel.appendLine(`files: ${Object.keys(documentTokenEntryMap).length.toLocaleString()}`);
                 outputChannel.appendLine(`unique tokens: ${Object.keys(tokenDocumentEntryMap).length.toLocaleString()}`);
-                outputChannel.appendLine(`total tokens: ${Object.values(documentTokenEntryMap).map(i => Object.values(i).map(i => i.length).reduce((a, b) => a +b, 0)).reduce((a, b) => a +b, 0).toLocaleString()}`);
+                outputChannel.appendLine(`total tokens: ${Object.values(tokenCountMap).reduce((a, b) => a +b, 0).toLocaleString()}`);
             }
         )
     );
@@ -747,7 +747,17 @@ export module Clairvoyant
                                 }
                             );
                             oldTokens.forEach(i => tokenCountMap[i] -= old[i].length);
-                            newTokens.forEach(i => tokenCountMap[i] += map[i].length);
+                            newTokens.forEach
+                            (
+                                i =>
+                                {
+                                    if (!tokenCountMap[i])
+                                    {
+                                        tokenCountMap[i] = 0;
+                                    }
+                                    tokenCountMap[i] += map[i].length;
+                                }
+                            );
                         }
                     );
                 }
@@ -1094,19 +1104,27 @@ export module Clairvoyant
         }
     };
 
-    export const updateStatusBarItems = () : void =>
-    {
-        eyeLabel.text = 0 < isBusy ? "$(sync~spin)": "$(eye)";
-        eyeLabel.tooltip = 0 < isBusy ? localeString("clairvoyant.sight.busy"): localeString("clairvoyant.sight.titles");
-        if (showStatusBarItems.get(""))
+    export const updateStatusBarItems = () : void => Profiler.profile
+    (
+        "updateStatusBarItems",
+        () =>
         {
-            eyeLabel.show();
+            if (isBusy <= 1)
+            {
+                if (showStatusBarItems.get(""))
+                {
+                    eyeLabel.text = 0 < isBusy ? "$(sync~spin)": "$(eye)";
+                    eyeLabel.tooltip = `Clairvoyant: ${localeString(0 < isBusy ? "clairvoyant.sight.busy": "clairvoyant.sight.title")}`;
+    
+                    eyeLabel.show();
+                }
+                else
+                {
+                    eyeLabel.hide();
+                }
+            }
         }
-        else
-        {
-            eyeLabel.hide();
-        }
-    };
+    );
 }
 
 export function activate(context: vscode.ExtensionContext): void
