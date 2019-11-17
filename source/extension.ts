@@ -495,6 +495,8 @@ export module Clairvoyant
 
     const documentTokenEntryMap: { [uri: string]: { [token: string]: number[] } } = { };
     const tokenDocumentEntryMap: { [token: string]: string[] } = { };
+    const documentFileMap: { [uri: string]: string } = { };
+    const tokenCountMap: { [token: string]: number } = { };
 
     const encodeToken = (token: string) => `@${token}`;
     const decodeToken = (token: string) => token.substring(1);
@@ -593,6 +595,8 @@ export module Clairvoyant
         //tokenDocumentEntryMap.clear();
         Object.keys(documentTokenEntryMap).forEach(i => delete documentTokenEntryMap[i]);
         Object.keys(tokenDocumentEntryMap).forEach(i => delete tokenDocumentEntryMap[i]);
+        Object.keys(documentFileMap).forEach(i => delete documentFileMap[i]);
+        Object.keys(tokenCountMap).forEach(i => delete tokenCountMap[i]);
         showTokenUndoBuffer.splice(0, 0);
         showTokenRedoBuffer.splice(0, 0);
         onDidChangeConfiguration();
@@ -673,6 +677,7 @@ export module Clairvoyant
                 else
                 {
                     outputChannel.appendLine(`scan document: ${uri}`);
+                    documentFileMap[uri] = extractFileName(uri);
                     const text = Profiler.profile("scanDocument.document.getText", () => document.getText());
                     const hits = Profiler.profile
                     (
@@ -741,6 +746,8 @@ export module Clairvoyant
                                     tokenDocumentEntryMap[i].push(uri);
                                 }
                             );
+                            oldTokens.forEach(i => tokenCountMap[i] -= old[i].length);
+                            newTokens.forEach(i => tokenCountMap[i] += map[i].length);
                         }
                     );
                 }
@@ -1030,34 +1037,48 @@ export module Clairvoyant
         ])
         .concat
         (
-            Object.entries(tokenDocumentEntryMap)
-                .sort
+            Profiler.profile
+            (
+                "makeSightRootMenu.core",
+                () =>
+                Profiler.profile
                 (
-                    "token" === getRootMenuOrder() ?
-                        (a, b) => stringComparer(a[0], b[0]):
-                        mergeComparer
-                        ([
-                            makeComparer
-                            (
-                                (entry: [string, string[]]) =>
-                                    -entry[1].map(i => documentTokenEntryMap[i][entry[0]].length).reduce((a, b) => a +b, 0)
-                            ),
-                            (a, b) => stringComparer(a[0], b[0])
-                        ])
+                    "makeSightRootMenu.sort",
+                    () =>
+                    Object.entries(tokenDocumentEntryMap)
+                    .sort
+                    (
+                        "token" === getRootMenuOrder() ?
+                            (a, b) => stringComparer(a[0], b[0]):
+                            mergeComparer
+                            ([
+                                makeComparer((entry: [string, string[]]) => -tokenCountMap[entry[0]]),
+                                (a, b) => stringComparer(a[0], b[0])
+                            ])
+                    )
                 )
                 .map
                 (
                     entry =>
                     ({
-                        label: `$(tag) ${entry[0]} `, // この末尾のスペースは showQuickPick の絞り込みでユーザーが他の入力候補を除外する為のモノ
+                        label: `$(tag) ${decodeToken(entry[0])} `, // この末尾のスペースは showQuickPick の絞り込みでユーザーが他の入力候補を除外する為のモノ
                         description: undefined,
-                        detail: entry[1].map(i => ({ uri:i, hits:documentTokenEntryMap[i][entry[0]]}))
-                                .sort(mergeComparer([makeComparer(d => -d.hits.length), makeComparer(d => d.uri)]))
-                                .map(d => `$(file-text) ${extractFileName(d.uri)}(${d.hits.length})`)
-                                .join(", "),
+                        detail: entry[1].map
+                            (
+                                i =>
+                                ({
+                                    uri:i,
+                                    file:documentFileMap[i],
+                                    hits:documentTokenEntryMap[i][entry[0]].length
+                                })
+                            )
+                            .sort(mergeComparer([makeComparer(d => -d.hits), makeComparer(d => d.uri)]))
+                            .map(d => `$(file-text) ${d.file}(${d.hits})`)
+                            .join(", "),
                         command: async () => await showMenu(await busy(() => makeSightTokenMenu(entry[0])), { matchOnDescription: true })
                     })
                 )
+            )
         )
     );
 
