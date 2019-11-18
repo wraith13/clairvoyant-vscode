@@ -362,7 +362,7 @@ export module Clairvoyant
     const showStatusBarItems = new Config("showStatusBarItems", true);
     const textEditorRevealType = new ConfigMap("textEditorRevealType", "InCenterIfOutsideViewport", textEditorRevealTypeObject);
     const excludeDirectories = new Config("excludeDirectories", ["out", "bin", "node_modules"], stringArrayValidator);
-    const excludeExtentions = new Config("excludeExtentions", [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".obj", ".lib", ".out", ".exe", ".dll", ".vsix", ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".wav", "mp3", ".mp4", ".mov"], stringArrayValidator);
+    const excludeExtentions = new Config("excludeExtentions", [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".obj", ".lib", ".out", ".exe", ".dll", ".vsix", ".zip", ".tar", ".gz", ".pkg", ".ipa", ".app", ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".wav", "mp3", ".mp4", ".mov"], stringArrayValidator);
 
     const outputChannel = vscode.window.createOutputChannel("Clairvoyant");
     
