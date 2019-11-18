@@ -407,7 +407,6 @@ export module Clairvoyant
                     const activeTextEditor = vscode.window.activeTextEditor;
                     if (activeTextEditor)
                     {
-                        //documentTokenEntryMap.delete(activeTextEditor.document);
                         await scanDocument(activeTextEditor.document, true);
                     }
                 }
@@ -439,7 +438,6 @@ export module Clairvoyant
                 {
                     if (autoScanMode.get(event.document.languageId).enabled && (!isExcludeDocument(event.document)))
                     {
-                        //documentTokenEntryMap.delete(event.document);
                         scanDocument(event.document, true);
                     }
                 }
@@ -774,13 +772,16 @@ export module Clairvoyant
 
     const scanOpenDocuments = async () => await busyAsync
     (
-        async () => await Promise.all
-        (
-            vscode.window.visibleTextEditors
-                .filter(i => i.viewColumn)
-                .map(async (i) => await scanDocument(i.document)))
-        )
-    ;
+        async () =>
+        {
+            await Promise.all
+            (
+                vscode.window.visibleTextEditors
+                    .filter(i => i.viewColumn)
+                    .map(async (i) => await scanDocument(i.document))
+            );
+        }
+    );
     const getFiles = async (folder: vscode.Uri): Promise<vscode.Uri[]> =>
     {
         try
@@ -878,12 +879,12 @@ export module Clairvoyant
         () =>
         {
             const anchor = document.positionAt(index);
-            const line = document.getText(new vscode.Range(anchor.line, 0, anchor.line +1, 0));
+            const line = document.getText(new vscode.Range(anchor.line, 0, anchor.line +1, 0)).substr(0, 256);
             const result =
             {
 
-                label: `$(rocket) Go to line:${anchor.line +1} row:${anchor.character +1}-${anchor.character +1 +token.length}`,
-                detail: line.length < 1024 ? line.trim().replace(/\s+/gm, " "): "$(eye-closed) TOO LONG LINE",
+                label: `$(rocket) ${localeString("clairvoyant.goto.title")} line:${anchor.line +1} row:${anchor.character +1}-${anchor.character +1 +token.length}`,
+                detail: line.trim().replace(/\s+/gm, " "),
                 command: async () => showToken({ document, selection: makeSelection(document, index, token) })
             };
             return result;
@@ -911,7 +912,7 @@ export module Clairvoyant
     const makeSightTokenMenu = (token: string): CommandMenuItem[] => Profiler.profile
     (
         "makeSightTokenMenu",
-        () => makeSightTokenCoreMenu(token).concat
+        () => makeSightTokenCoreMenu(decodeToken(token)).concat
         (
             tokenDocumentEntryMap[token].map(i => ({ uri:i, hits: documentTokenEntryMap[i][token] }))
             .sort(mergeComparer([makeComparer(entry => -entry.hits.length), makeComparer(entry => entry.uri)]))
@@ -924,7 +925,7 @@ export module Clairvoyant
                         digest(getDocument(entry.uri).getText()):
                         extractDirectoryAndWorkspace(entry.uri),
                         detail: `count: ${entry.hits.length}`,
-                    command: async () =>await showMenu(await busy(() => makeSightShowMenu(entry.uri, token, entry.hits)), { matchOnDetail: true })
+                    command: async () =>await showMenu(await busy(() => makeSightShowMenu(entry.uri, decodeToken(token), entry.hits)), { matchOnDetail: true })
                 })
             )
         )
@@ -1004,22 +1005,62 @@ export module Clairvoyant
         const result: CommandMenuItem[] = [];
         if (0 < showTokenUndoBuffer.length)
         {
-            result.push
-            ({
-                label: `$(rocket) ${localeString("clairvoyant.back.title")}`,
-                command: showTokenUndo,
-            });
+            const entry = showTokenUndoBuffer[showTokenUndoBuffer.length -1];
+            if (entry.undo)
+            {
+                const anchor = entry.undo.selection.anchor;
+                const active = entry.undo.selection.active;
+                const line = entry.undo.document.getText(new vscode.Range(anchor.line, 0, anchor.line +1, 0)).substr(0, 256);
+                result.push
+                ({
+                    label: `$(rocket) ${localeString("clairvoyant.back.title")} line:${anchor.line +1} row:${anchor.character +1}` +
+                        (
+                            anchor.line === active.line ?
+                                `-${active.character +1}`:
+                                ` - line:${active.line +1} row:${active.character +1}`
+                        ),
+                    detail: line.trim().replace(/\s+/gm, " "),
+                    command: showTokenUndo,
+                });
+            }
         }
         if (0 < showTokenRedoBuffer.length)
         {
+            const entry = showTokenRedoBuffer[showTokenRedoBuffer.length -1];
+            const anchor = entry.redo.selection.anchor;
+            const line = entry.redo.document.getText(new vscode.Range(anchor.line, 0, anchor.line +1, 0)).substr(0, 256);
             result.push
             ({
-                label: `$(rocket) ${localeString("clairvoyant.forward.title")}`,
+                label: `$(rocket) ${localeString("clairvoyant.forward.title")} line:${anchor.line +1} row:${anchor.character +1}-${entry.redo.selection.active.character}`,
+                detail: line.trim().replace(/\s+/gm, " "),
                 command: showTokenRedo,
             });
         }
         return result;
     };
+    const staticMenu: CommandMenuItem[] =
+    [
+        {
+            label: `$(telescope) ${localeString("clairvoyant.scanDocument.title")}`,
+            command: async () => await vscode.commands.executeCommand(`${applicationKey}.scanDocument`),
+        },
+        {
+            label: `$(telescope) ${localeString("clairvoyant.scanOpenDocuments.title")}`,
+            command: scanOpenDocuments,
+        },
+        {
+            label: `$(telescope) ${localeString("clairvoyant.scanFolder.title")}`,
+            command: scanFolder,
+        },
+        {
+            label: `$(info) ${localeString("clairvoyant.reportStatistics.title")}`,
+            command: reportStatistics,
+        },
+        {
+            label: `$(dashboard) ${localeString("clairvoyant.reportProfile.title")}`,
+            command: reportProfile,
+        },
+    ];
     const makeSightRootMenu = (tokenDocumentEntryMap: { [token: string]: string[] }): CommandMenuItem[] => Profiler.profile
     (
         "makeSightRootMenu",
@@ -1052,17 +1093,7 @@ export module Clairvoyant
                 },
             },
         ])
-        .concat
-        ([
-            {
-                label: `$(info) ${localeString("clairvoyant.reportStatistics.title")}`,
-                command: reportStatistics,
-            },
-            {
-                label: `$(dashboard) ${localeString("clairvoyant.reportProfile.title")}`,
-                command: reportProfile,
-            },
-        ])
+        .concat(staticMenu)
         .concat
         (
             Profiler.profile
@@ -1114,7 +1145,7 @@ export module Clairvoyant
     {
         if (Object.keys(tokenDocumentEntryMap).length <= 0)
         {
-            await vscode.window.showInformationMessage(localeString("No scan data"));
+            await showMenu(staticMenu);
         }
         else
         {
