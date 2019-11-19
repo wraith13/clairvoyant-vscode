@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 
+import packageJson from "../package.json";
 import localeEn from "../package.nls.json";
 import localeJa from "../package.nls.ja.json";
 
@@ -357,12 +358,14 @@ export module Clairvoyant
         "InCenterIfOutsideViewport": vscode.TextEditorRevealType.InCenterIfOutsideViewport,
     });
 
+    const configProperties = packageJson.contributes.configuration[0].properties;
     const enabledProfile = new Config("enabledProfile", true);
     const autoScanMode = new ConfigMap("autoScanMode", "folder", autoScanModeObject);
+    const maxFiles = new Config("maxFiles", 1024);
     const showStatusBarItems = new Config("showStatusBarItems", true);
     const textEditorRevealType = new ConfigMap("textEditorRevealType", "InCenterIfOutsideViewport", textEditorRevealTypeObject);
-    const excludeDirectories = new Config("excludeDirectories", ["out", "bin", "node_modules"], stringArrayValidator);
-    const excludeExtentions = new Config("excludeExtentions", [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".obj", ".lib", ".out", ".exe", ".dll", ".vsix", ".zip", ".tar", ".gz", ".pkg", ".ipa", ".app", ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".wav", "mp3", ".mp4", ".mov"], stringArrayValidator);
+    const excludeDirectories = new Config("excludeDirectories", configProperties["clairvoyant.excludeDirectories"].default, stringArrayValidator);
+    const excludeExtentions = new Config("excludeExtentions", configProperties["clairvoyant.excludeExtentions"].default, stringArrayValidator);
 
     const outputChannel = vscode.window.createOutputChannel("Clairvoyant");
     
@@ -466,12 +469,13 @@ export module Clairvoyant
 
     const toUri = (uri: vscode.Uri | string) => "string" === typeof(uri) ? vscode.Uri.parse(uri): uri;
     const getDocument = (uri: vscode.Uri | string) => vscode.workspace.textDocuments.filter(document => document.uri.toString() === uri.toString())[0];
-    const getOrOpenDocument = async (uri: vscode.Uri | string) => getDocument(uri) || await vscode.workspace.openTextDocument(toUri(uri));
+    const getOrOpenDocument = async (uri: vscode.Uri | string) => documentMap[uri.toString()] || getDocument(uri) || await vscode.workspace.openTextDocument(toUri(uri));
 
     const documentTokenEntryMap: { [uri: string]: { [token: string]: number[] } } = { };
     const tokenDocumentEntryMap: { [token: string]: string[] } = { };
     const documentFileMap: { [uri: string]: string } = { };
     const tokenCountMap: { [token: string]: number } = { };
+    const documentMap: { [uri: string]: vscode.TextDocument } = { };
 
     const encodeToken = (token: string) => `@${token}`;
     const decodeToken = (token: string) => token.substring(1);
@@ -572,6 +576,7 @@ export module Clairvoyant
         Object.keys(tokenDocumentEntryMap).forEach(i => delete tokenDocumentEntryMap[i]);
         Object.keys(documentFileMap).forEach(i => delete documentFileMap[i]);
         Object.keys(tokenCountMap).forEach(i => delete tokenCountMap[i]);
+        Object.keys(documentMap).forEach(i => delete documentMap[i]);
         showTokenUndoBuffer.splice(0, 0);
         showTokenRedoBuffer.splice(0, 0);
         onDidChangeConfiguration();
@@ -581,12 +586,14 @@ export module Clairvoyant
         const old =
         {
             autoScanMode: autoScanMode.getCache(""),
+            maxFiles: maxFiles.getCache(""),
             excludeDirectories: excludeDirectories.getCache(""),
             excludeExtentions: excludeExtentions.getCache("")
         };
         [
             enabledProfile,
             autoScanMode,
+            maxFiles,
             showStatusBarItems,
             textEditorRevealType,
             excludeDirectories,
@@ -597,6 +604,7 @@ export module Clairvoyant
         if
         (
             old.autoScanMode !== autoScanMode.get("") ||
+            old.maxFiles !== maxFiles.get("") ||
             JSON.stringify(old.excludeDirectories) !== JSON.stringify(excludeDirectories.get("")) ||
             JSON.stringify(old.excludeExtentions) !== JSON.stringify(excludeExtentions.get(""))
         )
@@ -673,6 +681,7 @@ export module Clairvoyant
             () =>
             {
                 const uri = document.uri.toString();
+                documentMap[uri] = document;
                 const textEditor = vscode.window.visibleTextEditors.filter(i => i.document.uri.toString() === uri)[0];
                 const old = documentTokenEntryMap[uri];
                 if ((!force && old) || (textEditor && !textEditor.viewColumn))
@@ -895,7 +904,7 @@ export module Clairvoyant
         "makeSightShowMenu",
         () => hits.map
         (
-            index => makeGotoCommandMenuItem(getDocument(uri), index, token)
+            index => makeGotoCommandMenuItem(documentMap[uri], index, token)
         )
     );
     const makeSightTokenCoreMenu = (token: string): CommandMenuItem[] =>
@@ -922,7 +931,7 @@ export module Clairvoyant
                 ({
                     label: `$(file-text) ${extractFileName(entry.uri)}`,
                     description: entry.uri.startsWith("untitled:") ?
-                        digest(getDocument(entry.uri).getText()):
+                        digest(documentMap[entry.uri].getText()):
                         extractDirectoryAndWorkspace(entry.uri),
                         detail: `count: ${entry.hits.length}`,
                     command: async () =>await showMenu(await busy(() => makeSightShowMenu(entry.uri, decodeToken(token), entry.hits)), { matchOnDetail: true })
@@ -974,7 +983,7 @@ export module Clairvoyant
             (
                 entry =>
                 ({
-                    label: `$(tag) ${decodeToken(entry[0])} `, // この末尾のスペースは showQuickPick の絞り込みでユーザーが他の入力候補を除外する為のモノ
+                    label: `$(tag) "${decodeToken(entry[0])}"`,
                     description: undefined,
                     detail: `count: ${entry[1].length}`,
                     command: async () => await showMenu(await busy(() => makeSightFileTokenMenu(uri, decodeToken(entry[0]), entry[1])), { matchOnDetail: true })
@@ -993,7 +1002,7 @@ export module Clairvoyant
             ({
                 label: `$(file-text) ${extractFileName(entry[0])}`,
                 description: entry[0].startsWith("untitled:") ?
-                    digest(getDocument(entry[0]).getText()):
+                    digest(documentMap[entry[0]].getText()):
                     extractDirectoryAndWorkspace(entry[0]),
                 command: async () =>await showMenu(await busy(() => makeSightFileRootMenu(entry[0], entry[1])))
             })
@@ -1120,7 +1129,7 @@ export module Clairvoyant
                 (
                     entry =>
                     ({
-                        label: `$(tag) ${decodeToken(entry[0])} `, // この末尾のスペースは showQuickPick の絞り込みでユーザーが他の入力候補を除外する為のモノ
+                        label: `$(tag) "${decodeToken(entry[0])}"`,
                         description: undefined,
                         detail: entry[1].map
                             (

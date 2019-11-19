@@ -88,6 +88,11 @@
 						"overridable": true,
 						"description": "%clairvoyant.autoScanMode.description%"
 					},
+					"clairvoyant.maxFiles": {
+						"type": "number",
+						"default": 1024,
+						"description": "%clairvoyant.maxFiles.description%"
+					},
 					"clairvoyant.showStatusBarItems": {
 						"type": "boolean",
 						"default": true,
@@ -106,7 +111,7 @@
 						"items":{
 							"type": "string"
 						},
-						"default": [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".obj", ".lib", ".out", ".exe", ".dll", ".vsix", ".zip", ".tar", ".gz", ".pkg", ".ipa", ".app", ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".wav", "mp3", ".mp4", ".mov"],
+						"default": [".min.js", ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".obj", ".lib", ".out", ".exe", ".dll", ".vsix", ".zip", ".tar", ".gz", ".pkg", ".ipa", ".app", ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".wav", "mp3", ".mp4", ".mov"],
 						"description": "%clairvoyant.excludeExtentions.description%"
 					}
 				}
