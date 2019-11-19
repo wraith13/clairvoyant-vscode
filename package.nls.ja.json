@@ -1,7 +1,7 @@
 {
     "clairvoyant.scanDocument.title": "現在のドキュメントをスキャン",
     "clairvoyant.scanOpenDocuments.title": "開いてるドキュメントをスキャン",
-    "clairvoyant.scanFolder.title": "フォルダーをスキャン",
+    "clairvoyant.scanWorkspace.title": "ワークスペースをスキャン",
     "clairvoyant.sight.title": "サイト",
     "clairvoyant.goto.title": "移動",
     "clairvoyant.back.title": "戻る",

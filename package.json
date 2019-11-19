@@ -37,8 +37,8 @@
 				"category": "Clairvoyant"
 			},
 			{
-				"command": "clairvoyant.scanFolder",
-				"title": "%clairvoyant.scanFolder.title%",
+				"command": "clairvoyant.scanWorkspace",
+				"title": "%clairvoyant.scanWorkspace.title%",
 				"category": "Clairvoyant"
 			},
 			{

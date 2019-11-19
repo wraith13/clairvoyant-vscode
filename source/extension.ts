@@ -344,9 +344,9 @@ export module Clairvoyant
             onInit: () => scanOpenDocuments(),
             enabled: true,
         },
-        "folder":
+        "workspace":
         {
-            onInit: () => scanFolder(),
+            onInit: () => scanWorkspace(),
             enabled: true,
         },
     });
@@ -360,7 +360,7 @@ export module Clairvoyant
 
     const configProperties = packageJson.contributes.configuration[0].properties;
     const enabledProfile = new Config("enabledProfile", true);
-    const autoScanMode = new ConfigMap("autoScanMode", "folder", autoScanModeObject);
+    const autoScanMode = new ConfigMap("autoScanMode", "workspace", autoScanModeObject);
     const maxFiles = new Config("maxFiles", 1024);
     const showStatusBarItems = new Config("showStatusBarItems", true);
     const textEditorRevealType = new ConfigMap("textEditorRevealType", "InCenterIfOutsideViewport", textEditorRevealTypeObject);
@@ -415,7 +415,7 @@ export module Clairvoyant
                 }
             ),
             vscode.commands.registerCommand(`${applicationKey}.scanOpenDocuments`, scanOpenDocuments),
-            vscode.commands.registerCommand(`${applicationKey}.scanFolder`, scanFolder),
+            vscode.commands.registerCommand(`${applicationKey}.scanWorkspace`, scanWorkspace),
             vscode.commands.registerCommand(`${applicationKey}.sight`, sight),
             vscode.commands.registerCommand(`${applicationKey}.back`, showTokenUndo),
             vscode.commands.registerCommand(`${applicationKey}.forward`, showTokenRedo),
@@ -812,11 +812,11 @@ export module Clairvoyant
             return [];
         }
     };
-    const scanFolder = async () => await busyAsync
+    const scanWorkspace = async () => await busyAsync
     (
         async () =>
         {
-            outputChannel.appendLine(`begin scan folder`);
+            outputChannel.appendLine(`begin scan workspace`);
             await scanOpenDocuments();
             if (vscode.workspace.workspaceFolders)
             {
@@ -841,7 +841,7 @@ export module Clairvoyant
                     )
                 );
             }
-            outputChannel.appendLine(`scan folder complete!`);
+            outputChannel.appendLine(`scan workspace complete!`);
         }
     );
 
@@ -1059,7 +1059,7 @@ export module Clairvoyant
         },
         {
             label: `$(telescope) ${localeString("clairvoyant.scanFolder.title")}`,
-            command: scanFolder,
+            command: scanWorkspace,
         },
         {
             label: `$(info) ${localeString("clairvoyant.reportStatistics.title")}`,
