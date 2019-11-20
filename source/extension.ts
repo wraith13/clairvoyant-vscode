@@ -336,11 +336,6 @@ export module Clairvoyant
             onInit: () => { },
             enabled: false,
         },
-        "current document":
-        {
-            onInit: () => { },
-            enabled: true,
-        },
         "open documents":
         {
             onInit: () => scanOpenDocuments(),
@@ -364,6 +359,7 @@ export module Clairvoyant
     const maxFiles = new Config<number>("maxFiles");
     const showStatusBarItems = new Config<boolean>("showStatusBarItems");
     const textEditorRevealType = new ConfigMap("textEditorRevealType", textEditorRevealTypeObject);
+    const isExcludeStartsWidhDot = new Config<boolean>("isExcludeStartsWidhDot");
     const excludeDirectories = new Config("excludeDirectories", stringArrayValidator);
     const excludeExtentions = new Config("excludeExtentions", stringArrayValidator);
 
@@ -461,9 +457,10 @@ export module Clairvoyant
     };
 
     const isExcludeFile = (filePath: string) => excludeExtentions.get("").some(i => filePath.toLowerCase().endsWith(i.toLowerCase()));
+    const startsWithDot = (path: string) => isExcludeStartsWidhDot.get("") && path.startsWith(".");
     const isExcludeDocument = (document: vscode.TextDocument) => !documentTokenEntryMap[document.uri.toString()] &&
     (
-        extractRelativePath(document.uri.toString()).split("/").map(i => 0 <= excludeDirectories.get("").indexOf(i)) ||
+        extractRelativePath(document.uri.toString()).split("/").some(i => 0 <= excludeDirectories.get("").indexOf(i) || startsWithDot(i)) ||
         isExcludeFile(document.uri.toString())
     );
 
@@ -588,15 +585,18 @@ export module Clairvoyant
         {
             autoScanMode: autoScanMode.getCache(""),
             maxFiles: maxFiles.getCache(""),
+            isExcludeStartsWidhDot: isExcludeStartsWidhDot.getCache(""),
             excludeDirectories: excludeDirectories.getCache(""),
-            excludeExtentions: excludeExtentions.getCache("")
+            excludeExtentions: excludeExtentions.getCache(""),
         };
         [
             autoScanMode,
             maxFiles,
             showStatusBarItems,
             textEditorRevealType,
+            isExcludeStartsWidhDot,
             excludeDirectories,
+            excludeExtentions,
         ]
         .forEach(i => i.clear());
         updateStatusBarItems();
@@ -604,6 +604,7 @@ export module Clairvoyant
         (
             old.autoScanMode !== autoScanMode.get("") ||
             old.maxFiles !== maxFiles.get("") ||
+            old.isExcludeStartsWidhDot !== isExcludeStartsWidhDot.get("") ||
             JSON.stringify(old.excludeDirectories) !== JSON.stringify(excludeDirectories.get("")) ||
             JSON.stringify(old.excludeExtentions) !== JSON.stringify(excludeExtentions.get(""))
         )
@@ -792,7 +793,7 @@ export module Clairvoyant
         try
         {
             outputChannel.appendLine(`scan ${folder.toString()}`);
-            const rawFiles = (await vscode.workspace.fs.readDirectory(folder)).filter(i => !i[0].startsWith("."));
+            const rawFiles = (await vscode.workspace.fs.readDirectory(folder)).filter(i => !startsWithDot(i[0]));
             const folders = rawFiles.filter(i => vscode.FileType.Directory === i[1]).map(i => i[0]).filter(i => excludeDirectories.get("").indexOf(i) < 0);
             const files = rawFiles.filter(i => vscode.FileType.File === i[1]).map(i => i[0]).filter(i => !isExcludeFile(i));
             return files.map(i => vscode.Uri.parse(folder.toString() +"/" +i))
@@ -818,26 +819,40 @@ export module Clairvoyant
             {
                 const files = (await Promise.all(vscode.workspace.workspaceFolders.map(i => getFiles(i.uri))))
                     .reduce((a, b) => a.concat(b), []);
-                await Promise.all
+                if
                 (
-                    files.map
+                    maxFiles.get("") <= Object.keys(documentMap)
+                        .concat(files.map(i => i.toString()))
+                        .filter((i, index, self) => index === self.indexOf(i))
+                        .length
+                )
+                {
+                    vscode.window.showWarningMessage(localeString("Max Files Error"));
+                    outputChannel.appendLine(`Max Files Error!!!`);
+                }
+                else
+                {
+                    await Promise.all
                     (
-                        async (i) =>
-                        {
-                            try
+                        files.map
+                        (
+                            async (i) =>
                             {
-                                outputChannel.appendLine(`open document: ${i}`);
-                                await scanDocument(await getOrOpenDocument(i));
+                                try
+                                {
+                                    outputChannel.appendLine(`open document: ${i}`);
+                                    await scanDocument(await getOrOpenDocument(i));
+                                }
+                                catch(error)
+                                {
+                                    outputChannel.appendLine(`error: ${JSON.stringify(error)}`);
+                                }
                             }
-                            catch(error)
-                            {
-                                outputChannel.appendLine(`error: ${JSON.stringify(error)}`);
-                            }
-                        }
-                    )
-                );
+                        )
+                    );
+                }
+                outputChannel.appendLine(`scan workspace complete!`);
             }
-            outputChannel.appendLine(`scan workspace complete!`);
         }
     );
 
@@ -1060,7 +1075,7 @@ export module Clairvoyant
             command: scanOpenDocuments,
         },
         {
-            label: `$(telescope) ${localeString("clairvoyant.scanFolder.title")}`,
+            label: `$(telescope) ${localeString("clairvoyant.scanWorkspace.title")}`,
             command: scanWorkspace,
         },
         {

@@ -108,7 +108,12 @@
 							"InCenterIfOutsideViewport"
 						],
 						"overridable": true,
-						"description": "%clairvoyant.autoScanMode.description%"
+						"description": "%clairvoyant.textEditorRevealType.description%"
+					},
+					"clairvoyant.isExcludeStartsWidhDot": {
+						"type": "boolean",
+						"default": true,
+						"description": "%clairvoyant.isExcludeStartsWidhDot.description%"
 					},
 					"clairvoyant.excludeDirectories": {
 						"type": "array",
@@ -123,7 +128,7 @@
 						"items":{
 							"type": "string"
 						},
-						"default": [".min.js", ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".obj", ".lib", ".out", ".exe", ".dll", ".vsix", ".zip", ".tar", ".gz", ".pkg", ".ipa", ".app", ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".wav", "mp3", ".mp4", ".mov"],
+						"default": ["package-lock.json", ".min.js", ".map", ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".eot", ".ttf", ".woff", ".ico", ".obj", ".lib", ".out", ".exe", ".dll", ".vsix", ".zip", ".tar", ".gz", ".pkg", ".ipa", ".app", ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".wav", "mp3", ".mp4", ".mov"],
 						"description": "%clairvoyant.excludeExtentions.description%"
 					}
 				}
