@@ -3,7 +3,7 @@
 	"displayName": "Clairvoyant",
 	"description": "Smart search your codes.",
 	"icon": "images/clairvoyanthext.128.png",
-	"version": "0.0.1",
+	"version": "1.0.0",
 	"publisher": "wraith13",
 	"license": "SEE LICENSE IN LICENSE_1_0.txt",
 	"engines": {
@@ -81,7 +81,6 @@
 						"default": "open documents",
 						"enum": [
 							"none",
-							"current document",
 							"open documents",
 							"workspace"
 						],
