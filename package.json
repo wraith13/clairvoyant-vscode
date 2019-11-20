@@ -2,7 +2,7 @@
 	"name": "clairvoyant",
 	"displayName": "Clairvoyant",
 	"description": "Smart search your codes.",
-    "icon": "images/clairvoyanthext.128.png",
+	"icon": "images/clairvoyanthext.128.png",
 	"version": "0.0.1",
 	"publisher": "wraith13",
 	"license": "SEE LICENSE IN LICENSE_1_0.txt",
@@ -78,12 +78,12 @@
 				"properties": {
 					"clairvoyant.autoScanMode": {
 						"type": "string",
-						"default": "folder",
+						"default": "open documents",
 						"enum": [
 							"none",
 							"current document",
 							"open documents",
-							"folder"
+							"workspace"
 						],
 						"overridable": true,
 						"description": "%clairvoyant.autoScanMode.description%"
@@ -97,6 +97,18 @@
 						"type": "boolean",
 						"default": true,
 						"description": "%clairvoyant.showStatusBarItems.description%"
+					},
+					"clairvoyant.textEditorRevealType": {
+						"type": "string",
+						"default": "InCenterIfOutsideViewport",
+						"enum": [
+							"AtTop",
+							"Default",
+							"InCenter",
+							"InCenterIfOutsideViewport"
+						],
+						"overridable": true,
+						"description": "%clairvoyant.autoScanMode.description%"
 					},
 					"clairvoyant.excludeDirectories": {
 						"type": "array",

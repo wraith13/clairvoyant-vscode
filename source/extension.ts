@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 
 import packageJson from "../package.json";
+const configProperties = Object.freeze(packageJson.contributes.configuration[0].properties);
+
 import localeEn from "../package.nls.json";
 import localeJa from "../package.nls.ja.json";
 
@@ -232,16 +234,17 @@ export module Clairvoyant
     }
     class Config<valueT>
     {
+        public defaultValue: valueT;
+
         public constructor
         (
             public name: string,
-            public defaultValue: valueT,
             public validator?: (value: valueT) => boolean,
             public minValue?: valueT,
             public maxValue?: valueT
         )
         {
-
+            this.defaultValue = (<any>configProperties)[`${applicationKey}.${name}`].default;
         }
 
         regulate = (rawKey: string, value: valueT): valueT =>
@@ -312,13 +315,12 @@ export module Clairvoyant
         public constructor
         (
             public name: string,
-            public defaultValue: keyof ObjectT,
             public mapObject: ObjectT
         )
         {
         }
 
-        config = new Config<keyof ObjectT>(this.name, this.defaultValue, makeEnumValidator(this.mapObject));
+        config = new Config<keyof ObjectT>(this.name, makeEnumValidator(this.mapObject));
         public get = (key: string) => this.mapObject[this.config.cache.get(key)];
         public getCache = (key: string) => this.mapObject[this.config.cache.getCache(key)];
         public clear = this.config.cache.clear;
@@ -358,14 +360,12 @@ export module Clairvoyant
         "InCenterIfOutsideViewport": vscode.TextEditorRevealType.InCenterIfOutsideViewport,
     });
 
-    const configProperties = packageJson.contributes.configuration[0].properties;
-    const enabledProfile = new Config("enabledProfile", true);
-    const autoScanMode = new ConfigMap("autoScanMode", "workspace", autoScanModeObject);
-    const maxFiles = new Config("maxFiles", 1024);
-    const showStatusBarItems = new Config("showStatusBarItems", true);
-    const textEditorRevealType = new ConfigMap("textEditorRevealType", "InCenterIfOutsideViewport", textEditorRevealTypeObject);
-    const excludeDirectories = new Config("excludeDirectories", configProperties["clairvoyant.excludeDirectories"].default, stringArrayValidator);
-    const excludeExtentions = new Config("excludeExtentions", configProperties["clairvoyant.excludeExtentions"].default, stringArrayValidator);
+    const autoScanMode = new ConfigMap("autoScanMode", autoScanModeObject);
+    const maxFiles = new Config<number>("maxFiles");
+    const showStatusBarItems = new Config<boolean>("showStatusBarItems");
+    const textEditorRevealType = new ConfigMap("textEditorRevealType", textEditorRevealTypeObject);
+    const excludeDirectories = new Config("excludeDirectories", stringArrayValidator);
+    const excludeExtentions = new Config("excludeExtentions", stringArrayValidator);
 
     const outputChannel = vscode.window.createOutputChannel("Clairvoyant");
     
@@ -434,7 +434,7 @@ export module Clairvoyant
 
             //  イベントリスナーの登録
             vscode.workspace.onDidChangeConfiguration(onDidChangeConfiguration),
-            vscode.workspace.onDidChangeWorkspaceFolders(() => autoScanMode.get("").onInit()),
+            vscode.workspace.onDidChangeWorkspaceFolders(reload),
             vscode.workspace.onDidChangeTextDocument
             (
                 event =>
@@ -476,6 +476,7 @@ export module Clairvoyant
     const documentFileMap: { [uri: string]: string } = { };
     const tokenCountMap: { [token: string]: number } = { };
     const documentMap: { [uri: string]: vscode.TextDocument } = { };
+    let isMaxFilesNoticed = false;
 
     const encodeToken = (token: string) => `@${token}`;
     const decodeToken = (token: string) => token.substring(1);
@@ -570,8 +571,6 @@ export module Clairvoyant
 
     const reload = () =>
     {
-        //documentTokenEntryMap.clear();
-        //tokenDocumentEntryMap.clear();
         Object.keys(documentTokenEntryMap).forEach(i => delete documentTokenEntryMap[i]);
         Object.keys(tokenDocumentEntryMap).forEach(i => delete tokenDocumentEntryMap[i]);
         Object.keys(documentFileMap).forEach(i => delete documentFileMap[i]);
@@ -579,6 +578,8 @@ export module Clairvoyant
         Object.keys(documentMap).forEach(i => delete documentMap[i]);
         showTokenUndoBuffer.splice(0, 0);
         showTokenRedoBuffer.splice(0, 0);
+        Profiler.start();
+        isMaxFilesNoticed = false;
         onDidChangeConfiguration();
     };
     const onDidChangeConfiguration = () =>
@@ -591,7 +592,6 @@ export module Clairvoyant
             excludeExtentions: excludeExtentions.getCache("")
         };
         [
-            enabledProfile,
             autoScanMode,
             maxFiles,
             showStatusBarItems,
@@ -599,7 +599,6 @@ export module Clairvoyant
             excludeDirectories,
         ]
         .forEach(i => i.clear());
-        startOrStopProfile();
         updateStatusBarItems();
         if
         (
@@ -610,21 +609,6 @@ export module Clairvoyant
         )
         {
             autoScanMode.get("").onInit();
-        }
-    };
-
-    const startOrStopProfile = () =>
-    {
-        if (Profiler.getIsProfiling() !== enabledProfile.get(""))
-        {
-            if (enabledProfile.get(""))
-            {
-                Profiler.start();
-            }
-            else
-            {
-                Profiler.stop();
-            }
         }
     };
 
@@ -681,7 +665,6 @@ export module Clairvoyant
             () =>
             {
                 const uri = document.uri.toString();
-                documentMap[uri] = document;
                 const textEditor = vscode.window.visibleTextEditors.filter(i => i.document.uri.toString() === uri)[0];
                 const old = documentTokenEntryMap[uri];
                 if ((!force && old) || (textEditor && !textEditor.viewColumn))
@@ -690,90 +673,103 @@ export module Clairvoyant
                 }
                 else
                 {
-                    outputChannel.appendLine(`scan document: ${uri}`);
-                    documentFileMap[uri] = extractFileName(uri);
-                    const text = Profiler.profile("scanDocument.document.getText", () => document.getText());
-                    const hits = Profiler.profile
-                    (
-                        "scanDocument.scan",
-                        () => regExpExecToArray
-                        (
-                            /\w+/gm,
-                            text
-                        )
-                        .map
-                        (
-                            match =>
-                            ({
-                                token: match[0],
-                                index: match.index,
-                            })
-                        )
-                    );
-                    const map: { [key: string]: number[] } = { };
-                    Profiler.profile
-                    (
-                        "scanDocument.summary",
-                        () =>
+                    if (!documentFileMap[uri] && maxFiles.get("") <= Object.keys(documentMap).length)
+                    {
+                        if (!isMaxFilesNoticed)
                         {
-                            hits.forEach
-                            (
-                                hit =>
-                                {
-                                    const key = encodeToken(hit.token);
-                                    if (!map[key])
-                                    {
-                                        map[key] = [];
-                                    }
-                                    map[key].push(hit.index);
-                                }
-                            );
+                            isMaxFilesNoticed = true;
+                            vscode.window.showWarningMessage(localeString("Max Files Error"));
+                            outputChannel.appendLine(`Max Files Error!!!`);
                         }
-                    );
-                    Profiler.profile
-                    (
-                        "scanDocument.register",
-                        () =>
-                        {
-                            documentTokenEntryMap[uri] = map;
-                            const oldTokens = old ? Object.keys(old): [];
-                            const newTokens = Object.keys(map);
-                            oldTokens.filter(i => newTokens.indexOf(i) < 0).forEach
+                    }
+                    else
+                    {
+                        outputChannel.appendLine(`scan document: ${uri}`);
+                        documentMap[uri] = document;
+                        documentFileMap[uri] = extractFileName(uri);
+                        const text = Profiler.profile("scanDocument.document.getText", () => document.getText());
+                        const hits = Profiler.profile
+                        (
+                            "scanDocument.scan",
+                            () => regExpExecToArray
                             (
-                                i =>
-                                {
-                                    tokenDocumentEntryMap[i].splice(tokenDocumentEntryMap[i].indexOf(uri), 1);
-                                    if (tokenDocumentEntryMap[i].length <= 0)
-                                    {
-                                        delete tokenDocumentEntryMap[i];
-                                    }
-                                }
-                            );
-                            newTokens.filter(i => oldTokens.indexOf(i) < 0).forEach
+                                /\w+/gm,
+                                text
+                            )
+                            .map
                             (
-                                i =>
-                                {
-                                    if (!tokenDocumentEntryMap[i])
+                                match =>
+                                ({
+                                    token: match[0],
+                                    index: match.index,
+                                })
+                            )
+                        );
+                        const map: { [key: string]: number[] } = { };
+                        Profiler.profile
+                        (
+                            "scanDocument.summary",
+                            () =>
+                            {
+                                hits.forEach
+                                (
+                                    hit =>
                                     {
-                                        tokenDocumentEntryMap[i] = [];
+                                        const key = encodeToken(hit.token);
+                                        if (!map[key])
+                                        {
+                                            map[key] = [];
+                                        }
+                                        map[key].push(hit.index);
                                     }
-                                    tokenDocumentEntryMap[i].push(uri);
-                                }
-                            );
-                            oldTokens.forEach(i => tokenCountMap[i] -= old[i].length);
-                            newTokens.forEach
-                            (
-                                i =>
-                                {
-                                    if (!tokenCountMap[i])
+                                );
+                            }
+                        );
+                        Profiler.profile
+                        (
+                            "scanDocument.register",
+                            () =>
+                            {
+                                documentTokenEntryMap[uri] = map;
+                                const oldTokens = old ? Object.keys(old): [];
+                                const newTokens = Object.keys(map);
+                                oldTokens.filter(i => newTokens.indexOf(i) < 0).forEach
+                                (
+                                    i =>
                                     {
-                                        tokenCountMap[i] = 0;
+                                        tokenDocumentEntryMap[i].splice(tokenDocumentEntryMap[i].indexOf(uri), 1);
+                                        if (tokenDocumentEntryMap[i].length <= 0)
+                                        {
+                                            delete tokenDocumentEntryMap[i];
+                                        }
                                     }
-                                    tokenCountMap[i] += map[i].length;
-                                }
-                            );
-                        }
-                    );
+                                );
+                                newTokens.filter(i => oldTokens.indexOf(i) < 0).forEach
+                                (
+                                    i =>
+                                    {
+                                        if (!tokenDocumentEntryMap[i])
+                                        {
+                                            tokenDocumentEntryMap[i] = [];
+                                        }
+                                        tokenDocumentEntryMap[i].push(uri);
+                                    }
+                                );
+                                oldTokens.forEach(i => tokenCountMap[i] -= old[i].length);
+                                newTokens.forEach
+                                (
+                                    i =>
+                                    {
+                                        if (!tokenCountMap[i])
+                                        {
+                                            tokenCountMap[i] = 0;
+                                        }
+                                        tokenCountMap[i] += map[i].length;
+                                    }
+                                );
+                            }
+                        );
+                    }
                 }
             }
         )
@@ -882,18 +878,26 @@ export module Clairvoyant
         "makeSelection",
         () => new vscode.Selection(document.positionAt(index), document.positionAt(index +token.length))
     );
+    const makePreview = (document: vscode.TextDocument, anchor: vscode.Position) => Profiler.profile
+    (
+        "makePreview",
+        () =>
+        {
+            const line = document.getText(new vscode.Range(anchor.line, 0, anchor.line +1, 0)).substr(0, 128);
+            return line.trim().replace(/\s+/gm, " ");
+        }
+    );
     const makeGotoCommandMenuItem = (document: vscode.TextDocument, index: number, token: string) => Profiler.profile
     (
         "makeGotoCommandMenuItem",
         () =>
         {
             const anchor = document.positionAt(index);
-            const line = document.getText(new vscode.Range(anchor.line, 0, anchor.line +1, 0)).substr(0, 256);
             const result =
             {
 
                 label: `$(rocket) ${localeString("clairvoyant.goto.title")} line:${anchor.line +1} row:${anchor.character +1}-${anchor.character +1 +token.length}`,
-                detail: line.trim().replace(/\s+/gm, " "),
+                detail: makePreview(document, anchor),
                 command: async () => showToken({ document, selection: makeSelection(document, index, token) })
             };
             return result;
@@ -1019,7 +1023,6 @@ export module Clairvoyant
             {
                 const anchor = entry.undo.selection.anchor;
                 const active = entry.undo.selection.active;
-                const line = entry.undo.document.getText(new vscode.Range(anchor.line, 0, anchor.line +1, 0)).substr(0, 256);
                 result.push
                 ({
                     label: `$(rocket) ${localeString("clairvoyant.back.title")} line:${anchor.line +1} row:${anchor.character +1}` +
@@ -1028,7 +1031,7 @@ export module Clairvoyant
                                 `-${active.character +1}`:
                                 ` - line:${active.line +1} row:${active.character +1}`
                         ),
-                    detail: line.trim().replace(/\s+/gm, " "),
+                    detail: makePreview(entry.undo.document, anchor),
                     command: showTokenUndo,
                 });
             }
@@ -1037,11 +1040,10 @@ export module Clairvoyant
         {
             const entry = showTokenRedoBuffer[showTokenRedoBuffer.length -1];
             const anchor = entry.redo.selection.anchor;
-            const line = entry.redo.document.getText(new vscode.Range(anchor.line, 0, anchor.line +1, 0)).substr(0, 256);
             result.push
             ({
                 label: `$(rocket) ${localeString("clairvoyant.forward.title")} line:${anchor.line +1} row:${anchor.character +1}-${entry.redo.selection.active.character}`,
-                detail: line.trim().replace(/\s+/gm, " "),
+                detail: makePreview(entry.redo.document, anchor),
                 command: showTokenRedo,
             });
         }

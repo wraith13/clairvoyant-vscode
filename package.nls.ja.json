@@ -20,5 +20,6 @@
     "Sort by token": "トークン順で表示",
     "Show by file": "ファイル単位で表示",
     "Copy \"${token}\" to clipboard": "\"${token}\"をクリップボードにコピー",
-    "Paste \"${token}\" to text editor": "\"${token}\"をテキストエディタに貼り付け"
+    "Paste \"${token}\" to text editor": "\"${token}\"をテキストエディタに貼り付け",
+    "Max Files Error": "Clairvoyant: ファイルの最大数に到達しました。`clairvoyant.maxFiles`, `clairvoyant.excludeDirectories`, `clairvoyant.excludeExtentions` の設定を編集してから `Clairvoyant: Reload` を実行してください。"
 }

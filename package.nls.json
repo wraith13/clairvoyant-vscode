@@ -20,5 +20,6 @@
     "Sort by token": "Sort by token",
     "Show by file": "Show by file",
     "Copy \"${token}\" to clipboard": "Copy \"${token}\" to clipboard",
-    "Paste \"${token}\" to text editor": "Paste \"${token}\" to text editor"
+    "Paste \"${token}\" to text editor": "Paste \"${token}\" to text editor",
+    "Max Files Error": "Clairvoyant: The maximum number of files has been reached. Edit `clairvoyant.maxFiles` and `clairvoyant.excludeDirectories` and `clairvoyant.excludeExtentions` settings and do `Clairvoyant: Reload`."
 }
