@@ -4,8 +4,8 @@ out/test/**
 source/**
 .gitignore
 vsc-extension-quickstart.md
-images/clairvoyanthext.1024.png
-images/clairvoyanthext.ico
+images/clairvoyanthex.1024.png
+images/clairvoyanthex.ico
 **/tsconfig.json
 **/tslint.json
 **/*.map
