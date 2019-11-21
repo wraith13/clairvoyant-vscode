@@ -1,7 +1,8 @@
 # Clairvoyant
 
+<!--
 [![Visual Studio Marketplace](https://vsmarketplacebadge.apphb.com/version/wraith13.clairvoyant.svg) ![installs](https://vsmarketplacebadge.apphb.com/installs/wraith13.clairvoyant.svg) ![rating](https://vsmarketplacebadge.apphb.com/rating/wraith13.clairvoyant.svg)](https://marketplace.visualstudio.com/items?itemName=wraith13.clairvoyant)
-
+-->
 Smart search your codes.
 
 ## Features
