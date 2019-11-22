@@ -4,6 +4,12 @@ All notable changes to the "clairvoyant" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## 1.0.2 - 2019-11-2?
+
+### Added
+
+- show the destination file in the go type menu.
+
 ## 1.0.1 - 2019-11-22
 
 ### Added

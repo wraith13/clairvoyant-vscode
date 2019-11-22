@@ -950,28 +950,36 @@ export module Clairvoyant
             return line.trim().replace(/\s+/gm, " ");
         }
     );
-    const makeGotoCommandMenuItem = (document: vscode.TextDocument, index: number, token: string) => Profiler.profile
+    const makeGoCommandMenuItem = (label: string, entry: ShowTokenCoreEntry, command: () => Promise<void> = async () => showToken(entry)) => Profiler.profile
     (
-        "makeGotoCommandMenuItem",
+        "makeGoCommandMenuItem",
         () =>
-        {
-            const anchor = document.positionAt(index);
-            const result =
-            {
+        ({
 
-                label: `$(rocket) ${localeString("clairvoyant.goto.title")} line:${anchor.line +1} row:${anchor.character +1}-${anchor.character +1 +token.length}`,
-                detail: makePreview(document, anchor),
-                command: async () => showToken({ document, selection: makeSelection(document, index, token) })
-            };
-            return result;
-        }
+            label: `$(rocket) ${localeString(label)} line:${entry.selection.anchor.line +1} row:${entry.selection.anchor.character +1}` +
+            (
+                entry.selection.anchor.line === entry.selection.active.line ?
+                    `-${entry.selection.active.character +1}`:
+                    ` - line:${entry.selection.active.line +1} row:${entry.selection.active.character +1}`
+            ),
+            description: extractRelativePath(entry.document.uri.toString()),
+            detail: makePreview(entry.document, entry.selection.anchor),
+            command,
+        })
     );
     const makeSightShowMenu = (uri: string, token: string, hits: number[]): CommandMenuItem[] => Profiler.profile
     (
         "makeSightShowMenu",
         () => hits.map
         (
-            index => makeGotoCommandMenuItem(documentMap[uri], index, token)
+            index => makeGoCommandMenuItem
+            (
+                "clairvoyant.goto.title",
+                {
+                    document: documentMap[uri],
+                    selection: makeSelection(documentMap[uri], index, token)
+                }
+            )
         )
     );
     const makeSightTokenCoreMenu = (token: string): CommandMenuItem[] =>
@@ -1084,31 +1092,28 @@ export module Clairvoyant
             const entry = showTokenUndoBuffer[showTokenUndoBuffer.length -1];
             if (entry.undo)
             {
-                const anchor = entry.undo.selection.anchor;
-                const active = entry.undo.selection.active;
                 result.push
-                ({
-                    label: `$(rocket) ${localeString("clairvoyant.back.title")} line:${anchor.line +1} row:${anchor.character +1}` +
-                        (
-                            anchor.line === active.line ?
-                                `-${active.character +1}`:
-                                ` - line:${active.line +1} row:${active.character +1}`
-                        ),
-                    detail: makePreview(entry.undo.document, anchor),
-                    command: showTokenUndo,
-                });
+                (
+                    makeGoCommandMenuItem
+                    (
+                        "clairvoyant.back.title",
+                        entry.undo,
+                        showTokenUndo
+                    )
+                );
             }
         }
         if (0 < showTokenRedoBuffer.length)
         {
-            const entry = showTokenRedoBuffer[showTokenRedoBuffer.length -1];
-            const anchor = entry.redo.selection.anchor;
             result.push
-            ({
-                label: `$(rocket) ${localeString("clairvoyant.forward.title")} line:${anchor.line +1} row:${anchor.character +1}-${entry.redo.selection.active.character}`,
-                detail: makePreview(entry.redo.document, anchor),
-                command: showTokenRedo,
-            });
+            (
+                makeGoCommandMenuItem
+                (
+                    "clairvoyant.forward.title",
+                    showTokenRedoBuffer[showTokenRedoBuffer.length -1].redo,
+                    showTokenRedo
+                )
+            );
         }
         return result;
     };
