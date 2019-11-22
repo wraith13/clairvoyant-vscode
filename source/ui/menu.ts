@@ -26,7 +26,6 @@ const mergeComparer = <valueT>(comparerList: ((a: valueT, b: valueT) => number)[
     return result;
 };
 
-
 interface CommandMenuItem extends vscode.QuickPickItem
 {
     command: () => Promise<void>;
@@ -220,28 +219,18 @@ const makeHistoryMenu = (): CommandMenuItem[] =>
     }
     return result;
 };
-export const staticMenu: CommandMenuItem[] =
+const makeStaticMenuItem = (octicon: string, command: string): CommandMenuItem =>
+({
+    label: octicon +" " +Locale.string(`${command}.title`),
+    command: async () => await vscode.commands.executeCommand(command),
+});
+export const makeStaticMenu = (): CommandMenuItem[] =>
 [
-    {
-        label: `$(telescope) ${Locale.string("clairvoyant.scanDocument.title")}`,
-        command: async () => await vscode.commands.executeCommand(`clairvoyant.scanDocument`),
-    },
-    {
-        label: `$(telescope) ${Locale.string("clairvoyant.scanOpenDocuments.title")}`,
-        command: Scan.scanOpenDocuments,
-    },
-    {
-        label: `$(telescope) ${Locale.string("clairvoyant.scanWorkspace.title")}`,
-        command: Scan.scanWorkspace,
-    },
-    {
-        label: `$(info) ${Locale.string("clairvoyant.reportStatistics.title")}`,
-        command: Clairvoyant.reportStatistics,
-    },
-    {
-        label: `$(dashboard) ${Locale.string("clairvoyant.reportProfile.title")}`,
-        command: Clairvoyant.reportProfile,
-    },
+    makeStaticMenuItem("$(telescope)", "clairvoyant.scanDocument"),
+    makeStaticMenuItem("$(telescope)", "clairvoyant.scanOpenDocuments"),
+    makeStaticMenuItem("$(telescope)", "clairvoyant.scanWorkspace"),
+    makeStaticMenuItem("$(info)", "clairvoyant.reportStatistics"),
+    makeStaticMenuItem("$(dashboard)", "clairvoyant.reportProfile"),
 ];
 export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
 (
@@ -275,7 +264,7 @@ export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
             },
         },
     ])
-    .concat(staticMenu)
+    .concat(makeStaticMenu())
     .concat
     (
         Profiler.profile

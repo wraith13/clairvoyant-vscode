@@ -352,7 +352,7 @@ export const sight = async () =>
 {
     if (Object.keys(Scan.tokenDocumentEntryMap).length <= 0)
     {
-        await Menu.show(Menu.staticMenu);
+        await Menu.show(Menu.makeStaticMenu());
     }
     else
     {
