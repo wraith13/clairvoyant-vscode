@@ -441,6 +441,24 @@ export module Clairvoyant
                     }
                 }
             ),
+            vscode.workspace.onDidCloseTextDocument
+            (
+                async (document) =>
+                {
+                    if (documentTokenEntryMap[document.uri.toString()])
+                    {
+                        try
+                        {
+                            await vscode.workspace.fs.stat(document.uri);
+                        }
+                        catch(error)
+                        {
+                            console.log(`vscode.workspace.onDidCloseTextDocument: ${error}`); // 一応ログにエラーを吐いておく
+                            detachDocument(document);
+                        }
+                    }
+                }
+            ),
             vscode.window.onDidChangeActiveTextEditor
             (
                 textEditor =>
@@ -772,6 +790,36 @@ export module Clairvoyant
                         );
                     }
                 }
+            }
+        )
+    );
+    const detachDocument = async (document: vscode.TextDocument) => await busy
+    (
+        () =>
+        Profiler.profile
+        (
+            "detachDocument",
+            () =>
+            {
+                const uri = document.uri.toString();
+                outputChannel.appendLine(`detach document: ${uri}`);
+                const old = documentTokenEntryMap[uri];
+                const oldTokens = old ? Object.keys(old): [];
+                oldTokens.forEach
+                (
+                    i =>
+                    {
+                        tokenDocumentEntryMap[i].splice(tokenDocumentEntryMap[i].indexOf(uri), 1);
+                        if (tokenDocumentEntryMap[i].length <= 0)
+                        {
+                            delete tokenDocumentEntryMap[i];
+                        }
+                    }
+                );
+                oldTokens.forEach(i => tokenCountMap[i] -= old[i].length);
+                delete documentTokenEntryMap[uri];
+                delete documentFileMap[uri];
+                delete documentMap[uri];
             }
         )
     );
