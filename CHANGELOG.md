@@ -4,11 +4,12 @@ All notable changes to the "clairvoyant" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## 1.0.3 - 2019-11-23
+## 1.1.0 - 2019-11-23
 
 ### Added
 
 - show the destination file in the go type menu.
+- `clairvoyant.targetProtocols` setting.
 
 ### Fixed
 

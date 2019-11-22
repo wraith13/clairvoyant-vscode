@@ -58,6 +58,7 @@ This extension contributes the following settings by [`settings.json`](https://c
 * `clairvoyant.isExcludeStartsWidhDot`: exclude path starts widh `.`
 * `clairvoyant.excludeDirectories`: exclude directories
 * `clairvoyant.excludeExtentions`: exculde file extentions
+* `clairvoyant.targetProtocols`: target dcoument protocols ( You can exclude `untitled:` or add `output:` or others. )
 
 ## Keyboard shortcut Settings
 

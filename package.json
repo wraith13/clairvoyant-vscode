@@ -134,6 +134,14 @@
 						},
 						"default": ["package-lock.json", ".min.js", ".map", ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".eot", ".ttf", ".woff", ".ico", ".obj", ".lib", ".out", ".exe", ".dll", ".vsix", ".zip", ".tar", ".gz", ".pkg", ".ipa", ".app", ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".wav", "mp3", ".mp4", ".mov"],
 						"description": "%clairvoyant.excludeExtentions.description%"
+					},
+					"clairvoyant.targetProtocols": {
+						"type": "array",
+						"items":{
+							"type": "string"
+						},
+						"default": ["file:", "untitled:"],
+						"description": "%clairvoyant.targetProtocols.description%"
 					}
 				}
 			}

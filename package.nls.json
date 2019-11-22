@@ -17,6 +17,7 @@
     "clairvoyant.isExcludeStartsWidhDot.description": "Exclude path starts widh `.`",
     "clairvoyant.excludeDirectories.description": "Exclude directories",
     "clairvoyant.excludeExtentions.description": "Exculde file extentions",
+    "clairvoyant.targetProtocols.description": "Target dcoument protocols",
     "📊 Profile Report": "📊 Profile Report",
     "⚖ Overview": "⚖ Overview",
     "🔬 Busy Details": "🔬 Busy Details",

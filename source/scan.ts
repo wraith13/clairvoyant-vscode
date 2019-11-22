@@ -75,9 +75,8 @@ export const scanDocument = async (document: vscode.TextDocument, force: boolean
         () =>
         {
             const uri = document.uri.toString();
-            const textEditor = vscode.window.visibleTextEditors.filter(i => i.document.uri.toString() === uri)[0];
             const old = documentTokenEntryMap[uri];
-            if ((!force && old) || (textEditor && !textEditor.viewColumn))
+            if ((!force && old) || !Clairvoyant.isTargetProtocol(uri))
             {
                 console.log(`scanDocument SKIP: ${uri}`);
             }
@@ -221,7 +220,7 @@ export const scanOpenDocuments = async () => await Clairvoyant.busy.doAsync
         await Promise.all
         (
             vscode.window.visibleTextEditors
-                .filter(i => i.viewColumn)
+                .filter(i => Clairvoyant.isTargetProtocol(i.document.uri.toString()))
                 .map(async (i) => await scanDocument(i.document))
         );
     }

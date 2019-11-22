@@ -51,6 +51,7 @@ export const textEditorRevealType = new Config.MapEntry("textEditorRevealType", 
 export const isExcludeStartsWidhDot = new Config.Entry<boolean>("isExcludeStartsWidhDot");
 export const excludeDirectories = new Config.Entry("excludeDirectories", Config.stringArrayValidator);
 export const excludeExtentions = new Config.Entry("excludeExtentions", Config.stringArrayValidator);
+export const targetProtocols = new Config.Entry("targetProtocols", Config.stringArrayValidator);
 
 export const outputChannel = vscode.window.createOutputChannel("Clairvoyant");
 
@@ -163,13 +164,16 @@ export const initialize = (aContext: vscode.ExtensionContext): void =>
     reload();
 };
 
+export const isTargetProtocol = (uri: string) => targetProtocols.get("").some(i => uri.startsWith(i));
 export const isExcludeFile = (filePath: string) => excludeExtentions.get("").some(i => filePath.toLowerCase().endsWith(i.toLowerCase()));
 export const startsWithDot = (path: string) => isExcludeStartsWidhDot.get("") && path.startsWith(".");
-export const isExcludeDocument = (document: vscode.TextDocument) => !Scan.documentTokenEntryMap[document.uri.toString()] &&
-(
-    File.extractRelativePath(document.uri.toString()).split("/").some(i => 0 <= excludeDirectories.get("").indexOf(i) || startsWithDot(i)) ||
-    isExcludeFile(document.uri.toString())
-);
+export const isExcludeDocument = (document: vscode.TextDocument) =>
+    !Scan.documentTokenEntryMap[document.uri.toString()] &&
+    (
+        !isTargetProtocol(document.uri.toString()) ||
+        File.extractRelativePath(document.uri.toString()).split("/").some(i => 0 <= excludeDirectories.get("").indexOf(i) || startsWithDot(i)) ||
+        isExcludeFile(document.uri.toString())
+    );
 
 export const encodeToken = (token: string) => `@${token}`;
 export const decodeToken = (token: string) => token.substring(1);
@@ -280,6 +284,7 @@ const onDidChangeConfiguration = () =>
         isExcludeStartsWidhDot: isExcludeStartsWidhDot.getCache(""),
         excludeDirectories: excludeDirectories.getCache(""),
         excludeExtentions: excludeExtentions.getCache(""),
+        targetProtocols: targetProtocols.getCache(""),
     };
     [
         autoScanMode,
@@ -289,6 +294,7 @@ const onDidChangeConfiguration = () =>
         isExcludeStartsWidhDot,
         excludeDirectories,
         excludeExtentions,
+        targetProtocols,
     ]
     .forEach(i => i.clear());
     updateStatusBarItems();
@@ -298,7 +304,8 @@ const onDidChangeConfiguration = () =>
         old.maxFiles !== maxFiles.get("") ||
         old.isExcludeStartsWidhDot !== isExcludeStartsWidhDot.get("") ||
         JSON.stringify(old.excludeDirectories) !== JSON.stringify(excludeDirectories.get("")) ||
-        JSON.stringify(old.excludeExtentions) !== JSON.stringify(excludeExtentions.get(""))
+        JSON.stringify(old.excludeExtentions) !== JSON.stringify(excludeExtentions.get("")) ||
+        JSON.stringify(old.targetProtocols) !== JSON.stringify(targetProtocols.get(""))
     )
     {
         autoScanMode.get("").onInit();
