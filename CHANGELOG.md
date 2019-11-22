@@ -4,11 +4,15 @@ All notable changes to the "clairvoyant" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## 1.0.2 - 2019-11-2?
+## 1.0.3 - 2019-11-23
 
 ### Added
 
 - show the destination file in the go type menu.
+
+### Fixed
+
+- Fixed an issue that automatic scan does not run when reloading.
 
 ## 1.0.1 - 2019-11-22
 

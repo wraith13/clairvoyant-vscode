@@ -22,7 +22,7 @@ const autoScanModeObject = Object.freeze
 ({
     "none":
     {
-        onInit: () => { },
+        onInit: () => updateStatusBarItems(),
         enabled: false,
     },
     "open documents":
@@ -264,11 +264,12 @@ export const pasteToken = async (text: string) =>
 
 export const reload = () =>
 {
+    outputChannel.appendLine(Locale.string("♻️ Reload Clairvoyant!"));
     Scan.reload();
     showTokenUndoBuffer.splice(0, 0);
     showTokenRedoBuffer.splice(0, 0);
     Profiler.start();
-    onDidChangeConfiguration();
+    autoScanMode.get("").onInit();
 };
 const onDidChangeConfiguration = () =>
 {
