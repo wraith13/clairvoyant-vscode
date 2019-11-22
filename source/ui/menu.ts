@@ -1,8 +1,10 @@
 import * as vscode from 'vscode';
+
 import * as Profiler from "../lib/profiler";
 import * as Locale from "../lib/locale";
 import * as Busy from "../lib/busy";
 import * as File from "../lib/file";
+
 import * as Clairvoyant from "../clairvoyant";
 import * as Scan from "../scan";
 

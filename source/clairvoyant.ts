@@ -4,8 +4,11 @@ import * as Profiler from "./lib/profiler";
 import * as Config from "./lib/config";
 import * as Locale from "./lib/locale";
 import * as Busy from "./lib/busy";
-import * as File from "./lib/file";
+import * as File from "./lib/file"
+;
 import * as Menu from "./ui/menu";
+import * as StatusBar from "./ui/statusbar";
+
 import * as Scan from "./scan";
 
 const roundCenti = (value : number) : number => Math.round(value *100) /100;
@@ -14,15 +17,13 @@ const percentToDisplayString = (value : number, locales?: string | string[]) : s
 const applicationKey = Config.applicationKey;
 export let context: vscode.ExtensionContext;
 
-let eyeLabel: vscode.StatusBarItem;
-
-export const busy = new Busy.Entry(() => updateStatusBarItems());
+export const busy = new Busy.Entry(() => StatusBar.update());
 
 const autoScanModeObject = Object.freeze
 ({
     "none":
     {
-        onInit: () => updateStatusBarItems(),
+        onInit: () => StatusBar.update(),
         enabled: false,
     },
     "open documents":
@@ -55,34 +56,6 @@ export const targetProtocols = new Config.Entry("targetProtocols", Config.string
 
 export const outputChannel = vscode.window.createOutputChannel("Clairvoyant");
 
-const createStatusBarItem =
-(
-    properties :
-    {
-        alignment ? : vscode.StatusBarAlignment,
-        text ? : string,
-        command ? : string,
-        tooltip ? : string
-    }
-)
-: vscode.StatusBarItem =>
-{
-    const result = vscode.window.createStatusBarItem(properties.alignment);
-    if (undefined !== properties.text)
-    {
-        result.text = properties.text;
-    }
-    if (undefined !== properties.command)
-    {
-        result.command = properties.command;
-    }
-    if (undefined !== properties.tooltip)
-    {
-        result.tooltip = properties.tooltip;
-    }
-    return result;
-};
-
 export const initialize = (aContext: vscode.ExtensionContext): void =>
 {
     context = aContext;
@@ -110,13 +83,7 @@ export const initialize = (aContext: vscode.ExtensionContext): void =>
         vscode.commands.registerCommand(`${applicationKey}.reportProfile`, reportProfile),
 
         //  ステータスバーアイコンの登録
-        eyeLabel = createStatusBarItem
-        ({
-            alignment: vscode.StatusBarAlignment.Right,
-            text: "$(eye)",
-            command: `${applicationKey}.sight`,
-            tooltip: Locale.string("%clairvoyant.sight.title%")
-        }),
+        StatusBar.make(),
 
         //  イベントリスナーの登録
         vscode.workspace.onDidChangeConfiguration(onDidChangeConfiguration),
@@ -297,7 +264,7 @@ const onDidChangeConfiguration = () =>
         targetProtocols,
     ]
     .forEach(i => i.clear());
-    updateStatusBarItems();
+    StatusBar.update();
     if
     (
         old.autoScanMode !== autoScanMode.get("") ||
@@ -367,33 +334,3 @@ export const sight = async () =>
         await Menu.show(await busy.do(() => Menu.makeSightRootMenu()));
     }
 };
-
-//
-//  Status Bar Items
-//
-
-export const updateStatusBarItems = () : void => Profiler.profile
-(
-    "updateStatusBarItems",
-    () =>
-    {
-        if (showStatusBarItems.get(""))
-        {
-            if (busy.isBusy())
-            {
-                eyeLabel.text = "$(sync~spin)";
-                eyeLabel.tooltip = `Clairvoyant: ${Locale.string("clairvoyant.sight.busy")}`;
-            }
-            else
-            {
-                eyeLabel.text = "$(eye)";
-                eyeLabel.tooltip = `Clairvoyant: ${Locale.string("clairvoyant.sight.title")}`;
-            }
-            eyeLabel.show();
-        }
-        else
-        {
-            eyeLabel.hide();
-        }
-    }
-);
