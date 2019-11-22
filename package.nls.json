@@ -18,6 +18,7 @@
     "clairvoyant.excludeDirectories.description": "Exclude directories",
     "clairvoyant.excludeExtentions.description": "Exculde file extentions",
     "clairvoyant.targetProtocols.description": "Target dcoument protocols",
+    "clairvoyant.backMenu.title": "back to the previous menu",
     "📊 Profile Report": "📊 Profile Report",
     "⚖ Overview": "⚖ Overview",
     "🔬 Busy Details": "🔬 Busy Details",

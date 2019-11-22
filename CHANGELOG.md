@@ -10,6 +10,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 - show the destination file in the go type menu.
 - `clairvoyant.targetProtocols` setting.
+- add "back to the previous menu" menu item.
 
 ### Fixed
 
