@@ -1,22 +1,14 @@
 import * as vscode from 'vscode';
 
-import packageJson from "../package.json";
-const configProperties = Object.freeze(packageJson.contributes.configuration[0].properties);
+import * as Profiler from "./lib/profiler";
+import * as Config from "./lib/config";
+import * as Locale from "./lib/locale";
+import * as Busy from "./lib/busy";
 
-import localeEn from "../package.nls.json";
-import localeJa from "../package.nls.ja.json";
+//
+//  utilities
+//
 
-interface LocaleEntry
-{
-    [key : string] : string;
-}
-const localeTableKey = <string>JSON.parse(<string>process.env.VSCODE_NLS_CONFIG).locale;
-const localeTable = Object.assign(localeEn, ((<{[key : string] : LocaleEntry}>{
-    ja : localeJa
-})[localeTableKey] || { }));
-const localeString = (key : string) : string => localeTable[key] || key;
-
-const getTicks = () => new Date().getTime();
 const roundCenti = (value : number) : number => Math.round(value *100) /100;
 const percentToDisplayString = (value : number, locales?: string | string[]) : string =>`${roundCenti(value).toLocaleString(locales, { style: "percent" })}`;
 
@@ -40,7 +32,7 @@ const mergeComparer = <valueT>(comparerList: ((a: valueT, b: valueT) => number)[
     return result;
 };
 
-export const regExpExecToArray = (regexp: RegExp, text: string) => Profiler.profile
+const regExpExecToArray = (regexp: RegExp, text: string) => Profiler.profile
 (
     `regExpExecToArray(/${regexp.source}/${regexp.flags})`,
     () =>
@@ -59,276 +51,40 @@ export const regExpExecToArray = (regexp: RegExp, text: string) => Profiler.prof
     }
 );
 
-export const timeout = (wait: number) => new Promise((resolve) => setTimeout(resolve, wait));
-
-export module Profiler
+const extractRelativePath = (path : string) : string =>
 {
-    let profileScore: { [scope: string]: number } = { };
-    let entryStack: ProfileEntry[] = [ ];
-    let isProfiling = false;
-    let startAt = 0;
-    let endAt = 0;
-    let debugCount = 0;
-    
-    export class ProfileEntry
-    {
-        startTicks: number;
-        childrenTicks: number;
+    const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.parse(path));
+    return workspaceFolder && path.startsWith(workspaceFolder.uri.toString()) ? path.substring(workspaceFolder.uri.toString().length): path;
+};
+const extractDirectory = (path : string) : string => path.substr(0, path.length -extractFileName(path).length);
+const extractDirectoryAndWorkspace = (path : string) : string =>
+{
+    const dir = extractDirectory(path);
+    const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.parse(dir));
+    return workspaceFolder && path.startsWith(workspaceFolder.uri.toString()) ?
+        (
+            vscode.workspace.workspaceFolders && 2 <= vscode.workspace.workspaceFolders.length ?
+                `${workspaceFolder.name}: ${dir.substring(workspaceFolder.uri.toString().length)}`:
+                `${dir.substring(workspaceFolder.uri.toString().length)}`
+        ):
+        dir;
+};
+const extractFileName = (path : string) : string => path.split('\\').reverse()[0].split('/').reverse()[0];
+const digest = (text : string) : string => text.replace(/\s+/g, " ").substr(0, 128);
 
-        public constructor(public name: string)
-        {
-            this.childrenTicks = 0;
-            if (isProfiling)
-            {
-                this.startTicks = getTicks();
-                entryStack.push(this);
-                if (this.name.startsWith("DEBUG:"))
-                {
-                    ++debugCount;
-                }
-                debug(`${"*".repeat(entryStack.length)} ${this.name} begin`);
-            }
-            else
-            {
-                this.startTicks = 0;
-            }
-        }
-        public end()
-        {
-            if (0 !== this.startTicks)
-            {
-                debug(`${"*".repeat(entryStack.length)} ${this.name} end`);
-                if (this.name.startsWith("DEBUG:"))
-                {
-                    --debugCount;
-                }
-                const wholeTicks = getTicks() -this.startTicks;
-                if (undefined === profileScore[this.name])
-                {
-                    profileScore[this.name] = 0;
-                }
-                profileScore[this.name] += wholeTicks -this.childrenTicks;
-                entryStack.pop();
-                if (0 < entryStack.length)
-                {
-                    entryStack[entryStack.length -1].childrenTicks += wholeTicks;
-                }
-            }
-        }
-    }
-    export const profile = <ResultT>(name: string, target: ()=>ResultT): ResultT =>
-    {
-        const entry = new ProfileEntry(name);
-        try
-        {
-            return target();
-        }
-        catch(error) // 現状(VS Code v1.32.3)、こうしておかないとデバッグコンソールに例外情報が出力されない為の処置。
-        {
-            console.error(`Exception at: ${name}`);
-            console.error(error);
-            throw error; // ※この再送出により外側のこの関数で再び catch し重複してエラーが出力されることに注意。
-        }
-        finally
-        {
-            entry.end();
-        }
-    };
-
-    export const getIsProfiling = () => isProfiling;
-
-    export const start = () =>
-    {
-        isProfiling = true;
-        profileScore = { };
-        entryStack = [ ];
-        startAt = getTicks();
-    };
-    export const stop = () =>
-    {
-        isProfiling = false;
-        endAt = getTicks();
-    };
-    export const getOverall = () => (isProfiling ? getTicks(): endAt) - startAt;
-    export const getReport = () =>
-        Object.keys(profileScore)
-            .map
-            (
-                name =>
-                ({
-                    name,
-                    ticks: profileScore[name]
-                })
-            )
-            .sort((a, b) => b.ticks -a.ticks);
-
-    export const debug = (text: string, object?: any) =>
-    {
-        if (0 < debugCount)
-        {
-            if (undefined !== object)
-            {
-                console.log(text);
-            }
-            else
-            {
-                console.log(`${text}: ${JSON.stringify(object)}`);
-            }
-        }
-    };
-}
+//
+//  Clairvoyant
+//
 
 export module Clairvoyant
 {
-    const applicationKey = "clairvoyant";
+    const applicationKey = Config.applicationKey;
     let context: vscode.ExtensionContext;
 
     let eyeLabel: vscode.StatusBarItem;
 
-    let isBusy = 0;
-    const busy = async <valueT>(busyFunction: () => valueT) =>
-    {
-        try
-        {
-            ++isBusy;
-            updateStatusBarItems();
-            await timeout(1);
-            return busyFunction();
-        }
-        finally
-        {
-            --isBusy;
-            updateStatusBarItems();
-        }
-    };
-    const busyAsync = async <valueT>(busyFunction: () => Promise<valueT>) =>
-    {
-        try
-        {
-            ++isBusy;
-            updateStatusBarItems();
-            await timeout(1);
-            return await busyFunction();
-        }
-        finally
-        {
-            --isBusy;
-            updateStatusBarItems();
-        }
-    };
-
-    class Cache<keyT, valueT>
-    {
-        cache: { [key: string]: valueT } = { };
-        public constructor(public loader: (key: keyT) => valueT)
-        {
-
-        }
-
-        public get = (key: keyT): valueT => this.getCore(key, JSON.stringify(key));
-        private getCore = (key: keyT, keyJson: string): valueT => undefined === this.cache[keyJson] ?
-            (this.cache[keyJson] = this.loader(key)):
-            this.cache[keyJson]
-        public getCache = (key: keyT): valueT => this.cache[JSON.stringify(key)];
-        public clear = () => this.cache = { };
-    }
-    class Config<valueT>
-    {
-        public defaultValue: valueT;
-
-        public constructor
-        (
-            public name: string,
-            public validator?: (value: valueT) => boolean,
-            public minValue?: valueT,
-            public maxValue?: valueT
-        )
-        {
-            this.defaultValue = (<any>configProperties)[`${applicationKey}.${name}`].default;
-        }
-
-        regulate = (rawKey: string, value: valueT): valueT =>
-        {
-            let result = value;
-            if (this.validator && !this.validator(result))
-            {
-                // settings.json をテキストとして直接編集してる時はともかく GUI での編集時に無駄にエラー表示が行われてしまうので、エンドユーザーに対するエラー表示は行わない。
-                //vscode.window.showErrorMessage(`${rawKey} setting value is invalid! Please check your settings.`);
-                console.error(`"${rawKey}" setting value(${JSON.stringify(value)}) is invalid! Please check your settings.`);
-                result = this.defaultValue;
-            }
-            else
-            {
-                if (undefined !== this.minValue && result < this.minValue)
-                {
-                    result = this.minValue;
-                }
-                else
-                if (undefined !== this.maxValue && this.maxValue < result)
-                {
-                    result = this.maxValue;
-                }
-            }
-            return result;
-        }
-
-        cache = new Cache
-        (
-            (lang: string): valueT =>
-            {
-                let result: valueT;
-                if (undefined === lang || null === lang || 0 === lang.length)
-                {
-                    result = <valueT>vscode.workspace.getConfiguration(applicationKey)[this.name];
-                    if (undefined === result)
-                    {
-                        result = this.defaultValue;
-                    }
-                    else
-                    {
-                        result = this.regulate(`${applicationKey}.${this.name}`, result);
-                    }
-                }
-                else
-                {
-                    const langSection = vscode.workspace.getConfiguration(`[${lang}]`, null);
-                    result = <valueT>langSection[`${applicationKey}.${this.name}`];
-                    if (undefined === result)
-                    {
-                        result = this.get("");
-                    }
-                    else
-                    {
-                        result = this.regulate(`[${lang}].${applicationKey}.${this.name}`, result);
-                    }
-                }
-                return result;
-            }
-        );
-
-        public get = this.cache.get;
-        public getCache = this.cache.getCache;
-        public clear = this.cache.clear;
-    }
-    class ConfigMap<ObjectT>
-    {
-        public constructor
-        (
-            public name: string,
-            public mapObject: ObjectT
-        )
-        {
-        }
-
-        config = new Config<keyof ObjectT>(this.name, makeEnumValidator(this.mapObject));
-        public get = (key: string) => this.mapObject[this.config.cache.get(key)];
-        public getCache = (key: string) => this.mapObject[this.config.cache.getCache(key)];
-        public clear = this.config.cache.clear;
-    }
+    const busy = new Busy.Entry(() => updateStatusBarItems());
     
-    const makeEnumValidator = <ObjectT>(mapObject: ObjectT): (value: keyof ObjectT) => boolean => (value: keyof ObjectT): boolean => 0 <= Object.keys(mapObject).indexOf(value.toString());
-    const stringArrayValidator = (value: string[]) => "[object Array]" === Object.prototype.toString.call(value) && value.map(i => "string" === typeof i).reduce((a, b) => a && b, true);
-
     const autoScanModeObject = Object.freeze
     ({
         "none":
@@ -355,13 +111,13 @@ export module Clairvoyant
         "InCenterIfOutsideViewport": vscode.TextEditorRevealType.InCenterIfOutsideViewport,
     });
 
-    const autoScanMode = new ConfigMap("autoScanMode", autoScanModeObject);
-    const maxFiles = new Config<number>("maxFiles");
-    const showStatusBarItems = new Config<boolean>("showStatusBarItems");
-    const textEditorRevealType = new ConfigMap("textEditorRevealType", textEditorRevealTypeObject);
-    const isExcludeStartsWidhDot = new Config<boolean>("isExcludeStartsWidhDot");
-    const excludeDirectories = new Config("excludeDirectories", stringArrayValidator);
-    const excludeExtentions = new Config("excludeExtentions", stringArrayValidator);
+    const autoScanMode = new Config.MapEntry("autoScanMode", autoScanModeObject);
+    const maxFiles = new Config.Entry<number>("maxFiles");
+    const showStatusBarItems = new Config.Entry<boolean>("showStatusBarItems");
+    const textEditorRevealType = new Config.MapEntry("textEditorRevealType", textEditorRevealTypeObject);
+    const isExcludeStartsWidhDot = new Config.Entry<boolean>("isExcludeStartsWidhDot");
+    const excludeDirectories = new Config.Entry("excludeDirectories", Config.stringArrayValidator);
+    const excludeExtentions = new Config.Entry("excludeExtentions", Config.stringArrayValidator);
 
     const outputChannel = vscode.window.createOutputChannel("Clairvoyant");
     
@@ -425,7 +181,7 @@ export module Clairvoyant
                 alignment: vscode.StatusBarAlignment.Right,
                 text: "$(eye)",
                 command: `${applicationKey}.sight`,
-                tooltip: localeString("%clairvoyant.sight.title%")
+                tooltip: Locale.string("%clairvoyant.sight.title%")
             }),
 
             //  イベントリスナーの登録
@@ -631,7 +387,7 @@ export module Clairvoyant
         }
     };
 
-    const reportStatistics = async () => await busy
+    const reportStatistics = async () => await busy.do
     (
         () => Profiler.profile
         (
@@ -646,7 +402,7 @@ export module Clairvoyant
         )
     );
 
-    const reportProfile = async () => await busy
+    const reportProfile = async () => await busy.do
     (
         () => Profiler.profile
         (
@@ -656,26 +412,30 @@ export module Clairvoyant
                 outputChannel.show();
                 if (Profiler.getIsProfiling())
                 {
-                    outputChannel.appendLine(`${localeString("📊 Profile Report")} - ${new Date()}`);
+                    outputChannel.appendLine(`${Locale.string("📊 Profile Report")} - ${new Date()}`);
                     const overall = Profiler.getOverall();
                     const total = Profiler.getReport().map(i => i.ticks).reduce((p, c) => p +c);
-                    outputChannel.appendLine(localeString("⚖ Overview"));
+                    outputChannel.appendLine(Locale.string("⚖ Overview"));
                     outputChannel.appendLine(`- Overall: ${overall.toLocaleString()}ms ( ${percentToDisplayString(1)} )`);
                     outputChannel.appendLine(`- Busy: ${total.toLocaleString()}ms ( ${percentToDisplayString(total / overall)} )`);
-                    outputChannel.appendLine(localeString("🔬 Busy Details"));
+                    outputChannel.appendLine(Locale.string("🔬 Busy Details"));
                     outputChannel.appendLine(`- Total: ${total.toLocaleString()}ms ( ${percentToDisplayString(1)} )`);
                     Profiler.getReport().forEach(i => outputChannel.appendLine(`- ${i.name}: ${i.ticks.toLocaleString()}ms ( ${percentToDisplayString(i.ticks / total)} )`));
                     outputChannel.appendLine("");
                 }
                 else
                 {
-                    outputChannel.appendLine(localeString("🚫 Profile has not been started."));
+                    outputChannel.appendLine(Locale.string("🚫 Profile has not been started."));
                 }
             }
         )
     );
 
-    const scanDocument = async (document: vscode.TextDocument, force: boolean = false) => await busy
+    //
+    //  Scan
+    //
+
+    const scanDocument = async (document: vscode.TextDocument, force: boolean = false) => await busy.do
     (
         () =>
         Profiler.profile
@@ -697,7 +457,7 @@ export module Clairvoyant
                         if (!isMaxFilesNoticed)
                         {
                             isMaxFilesNoticed = true;
-                            vscode.window.showWarningMessage(localeString("Max Files Error"));
+                            vscode.window.showWarningMessage(Locale.string("Max Files Error"));
                             outputChannel.appendLine(`Max Files Error!!!`);
                         }
                     }
@@ -793,7 +553,7 @@ export module Clairvoyant
             }
         )
     );
-    const detachDocument = async (document: vscode.TextDocument) => await busy
+    const detachDocument = async (document: vscode.TextDocument) => await busy.do
     (
         () =>
         Profiler.profile
@@ -823,8 +583,7 @@ export module Clairvoyant
             }
         )
     );
-
-    const scanOpenDocuments = async () => await busyAsync
+    const scanOpenDocuments = async () => await busy.doAsync
     (
         async () =>
         {
@@ -857,7 +616,7 @@ export module Clairvoyant
             return [];
         }
     };
-    const scanWorkspace = async () => await busyAsync
+    const scanWorkspace = async () => await busy.doAsync
     (
         async () =>
         {
@@ -875,7 +634,7 @@ export module Clairvoyant
                         .length
                 )
                 {
-                    vscode.window.showWarningMessage(localeString("Max Files Error"));
+                    vscode.window.showWarningMessage(Locale.string("Max Files Error"));
                     outputChannel.appendLine(`Max Files Error!!!`);
                 }
                 else
@@ -904,26 +663,10 @@ export module Clairvoyant
         }
     );
 
-    const extractRelativePath = (path : string) : string =>
-    {
-        const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.parse(path));
-        return workspaceFolder && path.startsWith(workspaceFolder.uri.toString()) ? path.substring(workspaceFolder.uri.toString().length): path;
-    };
-    const extractDirectory = (path : string) : string => path.substr(0, path.length -extractFileName(path).length);
-    const extractDirectoryAndWorkspace = (path : string) : string =>
-    {
-        const dir = extractDirectory(path);
-        const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.parse(dir));
-        return workspaceFolder && path.startsWith(workspaceFolder.uri.toString()) ?
-            (
-                vscode.workspace.workspaceFolders && 2 <= vscode.workspace.workspaceFolders.length ?
-                    `${workspaceFolder.name}: ${dir.substring(workspaceFolder.uri.toString().length)}`:
-                    `${dir.substring(workspaceFolder.uri.toString().length)}`
-            ):
-            dir;
-    };
-    const extractFileName = (path : string) : string => path.split('\\').reverse()[0].split('/').reverse()[0];
-    const digest = (text : string) : string => text.replace(/\s+/g, " ").substr(0, 128);
+    //
+    //  Menu
+    //
+
     interface CommandMenuItem extends vscode.QuickPickItem
     {
         command: () => Promise<void>;
@@ -956,7 +699,7 @@ export module Clairvoyant
         () =>
         ({
 
-            label: `$(rocket) ${localeString(label)} line:${entry.selection.anchor.line +1} row:${entry.selection.anchor.character +1}` +
+            label: `$(rocket) ${Locale.string(label)} line:${entry.selection.anchor.line +1} row:${entry.selection.anchor.character +1}` +
             (
                 entry.selection.anchor.line === entry.selection.active.line ?
                     `-${entry.selection.active.character +1}`:
@@ -985,11 +728,11 @@ export module Clairvoyant
     const makeSightTokenCoreMenu = (token: string): CommandMenuItem[] =>
     ([
         {
-            label: `$(clippy) ${localeString("Copy \"${token}\" to clipboard").replace("${token}", token)}`,
+            label: `$(clippy) ${Locale.string("Copy \"${token}\" to clipboard").replace("${token}", token)}`,
             command: async () => copyToken(token),
         },
         {
-            label: `$(clippy) ${localeString("Paste \"${token}\" to text editor").replace("${token}", token)}`,
+            label: `$(clippy) ${Locale.string("Paste \"${token}\" to text editor").replace("${token}", token)}`,
             command: async () => pasteToken(token),
         },
     ]);
@@ -1009,7 +752,7 @@ export module Clairvoyant
                         digest(documentMap[entry.uri].getText()):
                         extractDirectoryAndWorkspace(entry.uri),
                         detail: `count: ${entry.hits.length}`,
-                    command: async () =>await showMenu(await busy(() => makeSightShowMenu(entry.uri, decodeToken(token), entry.hits)), { matchOnDetail: true })
+                    command: async () =>await showMenu(await busy.do(() => makeSightShowMenu(entry.uri, decodeToken(token), entry.hits)), { matchOnDetail: true })
                 })
             )
         )
@@ -1026,19 +769,19 @@ export module Clairvoyant
         ([
             "token" === getRootMenuOrder() ?
                 {
-                    label: `$(list-ordered) ${localeString("Sort by count")}`,
+                    label: `$(list-ordered) ${Locale.string("Sort by count")}`,
                     command: async () =>
                     {
                         context.globalState.update("clairvoyant.rootMenuOrder", "count");
-                        await showMenu(await busy(() => makeSightFileRootMenu(uri, entries)));
+                        await showMenu(await busy.do(() => makeSightFileRootMenu(uri, entries)));
                     },
                 }:
                 {
-                    label: `$(list-ordered) ${localeString("Sort by token")}`,
+                    label: `$(list-ordered) ${Locale.string("Sort by token")}`,
                     command: async () =>
                     {
                         context.globalState.update("clairvoyant.rootMenuOrder", "token");
-                        await showMenu(await busy(() => makeSightFileRootMenu(uri, entries)));
+                        await showMenu(await busy.do(() => makeSightFileRootMenu(uri, entries)));
                     },
                 },
         ])
@@ -1061,7 +804,7 @@ export module Clairvoyant
                     label: `$(tag) "${decodeToken(entry[0])}"`,
                     description: undefined,
                     detail: `count: ${entry[1].length}`,
-                    command: async () => await showMenu(await busy(() => makeSightFileTokenMenu(uri, decodeToken(entry[0]), entry[1])), { matchOnDetail: true })
+                    command: async () => await showMenu(await busy.do(() => makeSightFileTokenMenu(uri, decodeToken(entry[0]), entry[1])), { matchOnDetail: true })
                 })
             )
         )
@@ -1079,7 +822,7 @@ export module Clairvoyant
                 description: entry[0].startsWith("untitled:") ?
                     digest(documentMap[entry[0]].getText()):
                     extractDirectoryAndWorkspace(entry[0]),
-                command: async () =>await showMenu(await busy(() => makeSightFileRootMenu(entry[0], entry[1])))
+                command: async () =>await showMenu(await busy.do(() => makeSightFileRootMenu(entry[0], entry[1])))
             })
         )
     );
@@ -1120,23 +863,23 @@ export module Clairvoyant
     const staticMenu: CommandMenuItem[] =
     [
         {
-            label: `$(telescope) ${localeString("clairvoyant.scanDocument.title")}`,
+            label: `$(telescope) ${Locale.string("clairvoyant.scanDocument.title")}`,
             command: async () => await vscode.commands.executeCommand(`${applicationKey}.scanDocument`),
         },
         {
-            label: `$(telescope) ${localeString("clairvoyant.scanOpenDocuments.title")}`,
+            label: `$(telescope) ${Locale.string("clairvoyant.scanOpenDocuments.title")}`,
             command: scanOpenDocuments,
         },
         {
-            label: `$(telescope) ${localeString("clairvoyant.scanWorkspace.title")}`,
+            label: `$(telescope) ${Locale.string("clairvoyant.scanWorkspace.title")}`,
             command: scanWorkspace,
         },
         {
-            label: `$(info) ${localeString("clairvoyant.reportStatistics.title")}`,
+            label: `$(info) ${Locale.string("clairvoyant.reportStatistics.title")}`,
             command: reportStatistics,
         },
         {
-            label: `$(dashboard) ${localeString("clairvoyant.reportProfile.title")}`,
+            label: `$(dashboard) ${Locale.string("clairvoyant.reportProfile.title")}`,
             command: reportProfile,
         },
     ];
@@ -1149,26 +892,26 @@ export module Clairvoyant
         ([
             "token" === getRootMenuOrder() ?
                 {
-                    label: `$(list-ordered) ${localeString("Sort by count")}`,
+                    label: `$(list-ordered) ${Locale.string("Sort by count")}`,
                     command: async () =>
                     {
                         context.globalState.update("clairvoyant.rootMenuOrder", "count");
-                        await showMenu(await busy(() => makeSightRootMenu(tokenDocumentEntryMap)));
+                        await showMenu(await busy.do(() => makeSightRootMenu(tokenDocumentEntryMap)));
                     },
                 }:
                 {
-                    label: `$(list-ordered) ${localeString("Sort by token")}`,
+                    label: `$(list-ordered) ${Locale.string("Sort by token")}`,
                     command: async () =>
                     {
                         context.globalState.update("clairvoyant.rootMenuOrder", "token");
-                        await showMenu(await busy(() => makeSightRootMenu(tokenDocumentEntryMap)));
+                        await showMenu(await busy.do(() => makeSightRootMenu(tokenDocumentEntryMap)));
                     },
                 },
             {
-                label: `$(list-ordered) ${localeString("Show by file")}`,
+                label: `$(list-ordered) ${Locale.string("Show by file")}`,
                 command: async () =>
                 {
-                    await showMenu(await busy(makeSightFileListMenu), { matchOnDescription: true });
+                    await showMenu(await busy.do(makeSightFileListMenu), { matchOnDescription: true });
                 },
             },
         ])
@@ -1213,7 +956,7 @@ export module Clairvoyant
                             .sort(mergeComparer([makeComparer(d => -d.hits), makeComparer(d => d.uri)]))
                             .map(d => `$(file-text) ${d.file}(${d.hits})`)
                             .join(", "),
-                        command: async () => await showMenu(await busy(() => makeSightTokenMenu(entry[0])), { matchOnDescription: true })
+                        command: async () => await showMenu(await busy.do(() => makeSightTokenMenu(entry[0])), { matchOnDescription: true })
                     })
                 )
             )
@@ -1228,28 +971,36 @@ export module Clairvoyant
         }
         else
         {
-            await showMenu(await busy(() => makeSightRootMenu(tokenDocumentEntryMap)));
+            await showMenu(await busy.do(() => makeSightRootMenu(tokenDocumentEntryMap)));
         }
     };
+
+    //
+    //  Status Bar Items
+    //
 
     export const updateStatusBarItems = () : void => Profiler.profile
     (
         "updateStatusBarItems",
         () =>
         {
-            if (isBusy <= 1)
+            if (showStatusBarItems.get(""))
             {
-                if (showStatusBarItems.get(""))
+                if (busy.isBusy())
                 {
-                    eyeLabel.text = 0 < isBusy ? "$(sync~spin)": "$(eye)";
-                    eyeLabel.tooltip = `Clairvoyant: ${localeString(0 < isBusy ? "clairvoyant.sight.busy": "clairvoyant.sight.title")}`;
-    
-                    eyeLabel.show();
+                    eyeLabel.text = "$(sync~spin)";
+                    eyeLabel.tooltip = `Clairvoyant: ${Locale.string("clairvoyant.sight.busy")}`;
                 }
                 else
                 {
-                    eyeLabel.hide();
+                    eyeLabel.text = "$(eye)";
+                    eyeLabel.tooltip = `Clairvoyant: ${Locale.string("clairvoyant.sight.title")}`;
                 }
+                eyeLabel.show();
+            }
+            else
+            {
+                eyeLabel.hide();
             }
         }
     );
