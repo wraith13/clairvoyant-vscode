@@ -186,6 +186,7 @@ export const showToken = async (entry: { document: vscode.TextDocument, selectio
     });
     showSelection(entry);
     showTokenRedoBuffer.splice(0, 0);
+    onUpdateHistory();
 };
 export const showTokenUndo = async () =>
 {
@@ -197,6 +198,7 @@ export const showTokenUndo = async () =>
             showSelection(entry.undo);
         }
         showTokenRedoBuffer.push(entry);
+        onUpdateHistory();
     }
 };
 export const showTokenRedo = async () =>
@@ -207,7 +209,12 @@ export const showTokenRedo = async () =>
         entry.undo = makeShowTokenCoreEntry() || entry.undo;
         showSelection(entry.redo);
         showTokenUndoBuffer.push(entry);
+        onUpdateHistory();
     }
+};
+const onUpdateHistory = () =>
+{
+    Menu.removeCache(`root.full`);
 };
 
 export const copyToken = async (text: string) => await vscode.env.clipboard.writeText(text);
@@ -237,6 +244,7 @@ export const reload = () =>
 {
     outputChannel.appendLine(Locale.map("♻️ Reload Clairvoyant!"));
     Scan.reload();
+    Menu.reload();
     showTokenUndoBuffer.splice(0, 0);
     showTokenRedoBuffer.splice(0, 0);
     Profiler.start();

@@ -4,13 +4,19 @@ All notable changes to the "clairvoyant" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## ?.?.0 - 2019-??-??
+
+### Added
+
+- added sight menu cache for performance.
+
 ## 1.1.0 - 2019-11-23
 
 ### Added
 
 - show the destination file in the go type menu.
 - `clairvoyant.targetProtocols` setting.
-- add "back to the previous menu" menu item.
+- added "back to the previous menu" menu item.
 
 ### Changed
 

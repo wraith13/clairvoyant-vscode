@@ -3,6 +3,7 @@ import * as Profiler from "./lib/profiler";
 import * as Locale from "./lib/locale";
 import * as File from "./lib/file";
 import * as Clairvoyant from "./clairvoyant";
+import * as Menu from './ui/menu';
 
 const regExpExecToArray = (regexp: RegExp, text: string) => Profiler.profile
 (
@@ -64,6 +65,14 @@ export const reload = () =>
     Object.keys(tokenCountMap).forEach(i => delete tokenCountMap[i]);
     Object.keys(documentMap).forEach(i => delete documentMap[i]);
     isMaxFilesNoticed = false;
+};
+export const onUpdateTokens = () =>
+{
+    Menu.removeCache("root");
+};
+export const onUpdateFileList = () =>
+{
+    Menu.removeCache("filelist");
 };
 
 export const scanDocument = async (document: vscode.TextDocument, force: boolean = false) => await Clairvoyant.busy.do
@@ -176,6 +185,12 @@ export const scanDocument = async (document: vscode.TextDocument, force: boolean
                                     tokenCountMap[i] += map[i].length;
                                 }
                             );
+
+                            if (!old)
+                            {
+                                onUpdateFileList();
+                            }
+                            onUpdateTokens();
                         }
                     );
                 }
@@ -210,6 +225,8 @@ export const detachDocument = async (document: vscode.TextDocument) => await Cla
             delete documentTokenEntryMap[uri];
             delete documentFileMap[uri];
             delete documentMap[uri];
+            onUpdateFileList();
+            onUpdateTokens();
         }
     )
 );
