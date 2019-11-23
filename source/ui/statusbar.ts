@@ -40,7 +40,7 @@ export const make = () => eyeLabel = create
     alignment: vscode.StatusBarAlignment.Right,
     text: "$(eye)",
     command: `clairvoyant.sight`,
-    tooltip: Locale.string("clairvoyant.sight.title")
+    tooltip: Locale.map("clairvoyant.sight.title")
 });
 
 export const update = () : void => Profiler.profile
@@ -53,12 +53,12 @@ export const update = () : void => Profiler.profile
             if (Clairvoyant.busy.isBusy())
             {
                 eyeLabel.text = "$(sync~spin)";
-                eyeLabel.tooltip = `Clairvoyant: ${Locale.string("clairvoyant.sight.busy")}`;
+                eyeLabel.tooltip = `Clairvoyant: ${Locale.map("clairvoyant.sight.busy")}`;
             }
             else
             {
                 eyeLabel.text = "$(eye)";
-                eyeLabel.tooltip = `Clairvoyant: ${Locale.string("clairvoyant.sight.title")}`;
+                eyeLabel.tooltip = `Clairvoyant: ${Locale.map("clairvoyant.sight.title")}`;
             }
             eyeLabel.show();
         }

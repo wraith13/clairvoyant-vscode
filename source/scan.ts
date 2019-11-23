@@ -87,7 +87,7 @@ export const scanDocument = async (document: vscode.TextDocument, force: boolean
                     if (!isMaxFilesNoticed)
                     {
                         isMaxFilesNoticed = true;
-                        vscode.window.showWarningMessage(Locale.string("Max Files Error"));
+                        vscode.window.showWarningMessage(Locale.map("Max Files Error"));
                         Clairvoyant.outputChannel.appendLine(`Max Files Error!!!`);
                     }
                 }
@@ -243,7 +243,7 @@ export const scanWorkspace = async () => await Clairvoyant.busy.doAsync
                     .length
             )
             {
-                vscode.window.showWarningMessage(Locale.string("Max Files Error"));
+                vscode.window.showWarningMessage(Locale.map("Max Files Error"));
                 Clairvoyant.outputChannel.appendLine(`Max Files Error!!!`);
             }
             else

@@ -235,7 +235,7 @@ export const pasteToken = async (text: string) =>
 
 export const reload = () =>
 {
-    outputChannel.appendLine(Locale.string("♻️ Reload Clairvoyant!"));
+    outputChannel.appendLine(Locale.map("♻️ Reload Clairvoyant!"));
     Scan.reload();
     showTokenUndoBuffer.splice(0, 0);
     showTokenRedoBuffer.splice(0, 0);
@@ -304,20 +304,20 @@ export const reportProfile = async () => await busy.do
             outputChannel.show();
             if (Profiler.getIsProfiling())
             {
-                outputChannel.appendLine(`${Locale.string("📊 Profile Report")} - ${new Date()}`);
+                outputChannel.appendLine(`${Locale.map("📊 Profile Report")} - ${new Date()}`);
                 const overall = Profiler.getOverall();
                 const total = Profiler.getReport().map(i => i.ticks).reduce((p, c) => p +c);
-                outputChannel.appendLine(Locale.string("⚖ Overview"));
+                outputChannel.appendLine(Locale.map("⚖ Overview"));
                 outputChannel.appendLine(`- Overall: ${overall.toLocaleString()}ms ( ${percentToDisplayString(1)} )`);
                 outputChannel.appendLine(`- Busy: ${total.toLocaleString()}ms ( ${percentToDisplayString(total / overall)} )`);
-                outputChannel.appendLine(Locale.string("🔬 Busy Details"));
+                outputChannel.appendLine(Locale.map("🔬 Busy Details"));
                 outputChannel.appendLine(`- Total: ${total.toLocaleString()}ms ( ${percentToDisplayString(1)} )`);
                 Profiler.getReport().forEach(i => outputChannel.appendLine(`- ${i.name}: ${i.ticks.toLocaleString()}ms ( ${percentToDisplayString(i.ticks / total)} )`));
                 outputChannel.appendLine("");
             }
             else
             {
-                outputChannel.appendLine(Locale.string("🚫 Profile has not been started."));
+                outputChannel.appendLine(Locale.map("🚫 Profile has not been started."));
             }
         }
     )

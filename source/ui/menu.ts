@@ -42,7 +42,7 @@ export const show = async (items: CommandMenuItem[], options?: vscode.QuickPickO
 };
 const makeBackMenu = (make: () => CommandMenuItem[]): CommandMenuItem =>
 ({
-    label: `$(reply) ${Locale.string("clairvoyant.backMenu.title")}`,
+    label: `$(reply) ${Locale.map("clairvoyant.backMenu.title")}`,
     command: async () => await show(await Clairvoyant.busy.do(make)),
 });
 const makeSelection = (document: vscode.TextDocument, index: number, token: string) => Profiler.profile
@@ -59,13 +59,13 @@ const makePreview = (document: vscode.TextDocument, anchor: vscode.Position) => 
         return line.trim().replace(/\s+/gm, " ");
     }
 );
-const makeGoCommandMenuItem = (label: string, entry: Clairvoyant.ShowTokenCoreEntry, command: () => Promise<void> = async () => Clairvoyant.showToken(entry)) => Profiler.profile
+const makeGoCommandMenuItem = (label: Locale.KeyType, entry: Clairvoyant.ShowTokenCoreEntry, command: () => Promise<void> = async () => Clairvoyant.showToken(entry)) => Profiler.profile
 (
     "makeGoCommandMenuItem",
     () =>
     ({
 
-        label: `$(rocket) ${Locale.string(label)} line:${entry.selection.anchor.line +1} row:${entry.selection.anchor.character +1}` +
+        label: `$(rocket) ${Locale.map(label)} line:${entry.selection.anchor.line +1} row:${entry.selection.anchor.character +1}` +
         (
             entry.selection.anchor.line === entry.selection.active.line ?
                 `-${entry.selection.active.character +1}`:
@@ -97,11 +97,11 @@ const makeSightShowMenu = (uri: string, token: string, hits: number[]): CommandM
 const makeSightTokenCoreMenu = (token: string): CommandMenuItem[] =>
 ([
     {
-        label: `$(clippy) ${Locale.string("Copy \"${token}\" to clipboard").replace("${token}", token)}`,
+        label: `$(clippy) ${Locale.map("Copy \"${token}\" to clipboard").replace("${token}", token)}`,
         command: async () => Clairvoyant.copyToken(token),
     },
     {
-        label: `$(clippy) ${Locale.string("Paste \"${token}\" to text editor").replace("${token}", token)}`,
+        label: `$(clippy) ${Locale.map("Paste \"${token}\" to text editor").replace("${token}", token)}`,
         command: async () => Clairvoyant.pasteToken(token),
     },
 ]);
@@ -170,7 +170,7 @@ const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }
         [
             "token" === getRootMenuOrder() ?
                 {
-                    label: `$(list-ordered) ${Locale.string("Sort by count")}`,
+                    label: `$(list-ordered) ${Locale.map("Sort by count")}`,
                     command: async () =>
                     {
                         Clairvoyant.context.globalState.update("clairvoyant.rootMenuOrder", "count");
@@ -178,7 +178,7 @@ const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }
                     },
                 }:
                 {
-                    label: `$(list-ordered) ${Locale.string("Sort by token")}`,
+                    label: `$(list-ordered) ${Locale.map("Sort by token")}`,
                     command: async () =>
                     {
                         Clairvoyant.context.globalState.update("clairvoyant.rootMenuOrder", "token");
@@ -275,18 +275,18 @@ const makeHistoryMenu = (): CommandMenuItem[] =>
     }
     return result;
 };
-const makeStaticMenuItem = (octicon: string, command: string): CommandMenuItem =>
+const makeStaticMenuItem = (octicon: string, label: Locale.KeyType, command: string): CommandMenuItem =>
 ({
-    label: octicon +" " +Locale.string(`${command}.title`),
+    label: octicon +" " +Locale.map(label),
     command: async () => await vscode.commands.executeCommand(command),
 });
 export const makeStaticMenu = (): CommandMenuItem[] =>
 [
-    makeStaticMenuItem("$(telescope)", "clairvoyant.scanDocument"),
-    makeStaticMenuItem("$(telescope)", "clairvoyant.scanOpenDocuments"),
-    makeStaticMenuItem("$(telescope)", "clairvoyant.scanWorkspace"),
-    makeStaticMenuItem("$(info)", "clairvoyant.reportStatistics"),
-    makeStaticMenuItem("$(dashboard)", "clairvoyant.reportProfile"),
+    makeStaticMenuItem("$(telescope)", "clairvoyant.scanDocument.title", "clairvoyant.scanDocument"),
+    makeStaticMenuItem("$(telescope)", "clairvoyant.scanOpenDocuments.title", "clairvoyant.scanOpenDocuments"),
+    makeStaticMenuItem("$(telescope)", "clairvoyant.scanWorkspace.title", "clairvoyant.scanWorkspace"),
+    makeStaticMenuItem("$(info)", "clairvoyant.reportStatistics.title", "clairvoyant.reportStatistics"),
+    makeStaticMenuItem("$(dashboard)", "clairvoyant.reportProfile.title", "clairvoyant.reportProfile"),
 ];
 export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
 (
@@ -297,7 +297,7 @@ export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
         [
             "token" === getRootMenuOrder() ?
                 {
-                    label: `$(list-ordered) ${Locale.string("Sort by count")}`,
+                    label: `$(list-ordered) ${Locale.map("Sort by count")}`,
                     command: async () =>
                     {
                         Clairvoyant.context.globalState.update("clairvoyant.rootMenuOrder", "count");
@@ -305,7 +305,7 @@ export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
                     },
                 }:
                 {
-                    label: `$(list-ordered) ${Locale.string("Sort by token")}`,
+                    label: `$(list-ordered) ${Locale.map("Sort by token")}`,
                     command: async () =>
                     {
                         Clairvoyant.context.globalState.update("clairvoyant.rootMenuOrder", "token");
@@ -313,7 +313,7 @@ export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
                     },
                 },
             {
-                label: `$(list-ordered) ${Locale.string("Show by file")}`,
+                label: `$(list-ordered) ${Locale.map("Show by file")}`,
                 command: async () =>
                 {
                     await show(await Clairvoyant.busy.do(() => makeSightFileListMenu()), { matchOnDescription: true });

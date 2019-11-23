@@ -1,6 +1,8 @@
 import localeEn from "../../package.nls.json";
 import localeJa from "../../package.nls.ja.json";
 
+export type KeyType = keyof typeof localeEn;
+
 interface LocaleEntry
 {
     [key : string] : string;
@@ -10,3 +12,4 @@ const localeTable = Object.assign(localeEn, ((<{[key : string] : LocaleEntry}>{
     ja : localeJa
 })[localeTableKey] || { }));
 export const string = (key : string) : string => localeTable[key] || key;
+export const map = (key : KeyType) : string => string(key);
