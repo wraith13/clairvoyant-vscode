@@ -32,9 +32,9 @@ interface CommandMenuItem extends vscode.QuickPickItem
     command: () => Promise<void>;
 }
 const makeEmptyList = (): CommandMenuItem[] => [];
-export const show = async (items: CommandMenuItem[], options?: vscode.QuickPickOptions) =>
+export const show = async (itemMaker: () => CommandMenuItem[], options?: vscode.QuickPickOptions) =>
 {
-    const select = await vscode.window.showQuickPick(items, options);
+    const select = await vscode.window.showQuickPick(await Clairvoyant.busy.do(itemMaker), options);
     if (select)
     {
         await select.command();
@@ -43,7 +43,7 @@ export const show = async (items: CommandMenuItem[], options?: vscode.QuickPickO
 const makeBackMenu = (make: () => CommandMenuItem[]): CommandMenuItem =>
 ({
     label: `$(reply) ${Locale.map("clairvoyant.backMenu.title")}`,
-    command: async () => await show(await Clairvoyant.busy.do(make)),
+    command: async () => await show(make),
 });
 const makeSelection = (document: vscode.TextDocument, index: number, token: string) => Profiler.profile
 (
@@ -126,17 +126,14 @@ const makeSightTokenMenu = (token: string): CommandMenuItem[] => Profiler.profil
                         detail: `count: ${entry.hits.length}`,
                     command: async () =>await show
                     (
-                        await Clairvoyant.busy.do
+                        () => makeEmptyList().concat
                         (
-                            () => makeEmptyList().concat
+                            makeBackMenu(() => makeSightTokenMenu(token)),
+                            makeSightShowMenu
                             (
-                                makeBackMenu(() => makeSightTokenMenu(token)),
-                                makeSightShowMenu
-                                (
-                                    entry.uri,
-                                    Clairvoyant.decodeToken(token),
-                                    entry.hits
-                                )
+                                entry.uri,
+                                Clairvoyant.decodeToken(token),
+                                entry.hits
                             )
                         ),
                         { matchOnDetail: true }
@@ -174,7 +171,7 @@ const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }
                     command: async () =>
                     {
                         Clairvoyant.context.globalState.update("clairvoyant.rootMenuOrder", "count");
-                        await show(await Clairvoyant.busy.do(() => makeSightFileRootMenu(uri, entries)));
+                        await show(() => makeSightFileRootMenu(uri, entries));
                     },
                 }:
                 {
@@ -182,7 +179,7 @@ const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }
                     command: async () =>
                     {
                         Clairvoyant.context.globalState.update("clairvoyant.rootMenuOrder", "token");
-                        await show(await Clairvoyant.busy.do(() => makeSightFileRootMenu(uri, entries)));
+                        await show(() => makeSightFileRootMenu(uri, entries));
                     },
                 },
         ],
@@ -205,14 +202,12 @@ const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }
                 detail: `count: ${entry[1].length}`,
                 command: async () => await show
                 (
-                    await Clairvoyant.busy.do
+                    () => makeSightFileTokenMenu
                     (
-                        () => makeSightFileTokenMenu
-                        (
-                            () => makeSightFileRootMenu(uri, entries),
-                            uri,
-                            Clairvoyant.decodeToken(entry[0]),
-                            entry[1])
+                        () => makeSightFileRootMenu(uri, entries),
+                        uri,
+                        Clairvoyant.decodeToken(entry[0]),
+                        entry[1]
                     ),
                     { matchOnDetail: true }
                 )
@@ -236,7 +231,7 @@ const makeSightFileListMenu = (): CommandMenuItem[] => Profiler.profile
                     description: entry[0].startsWith("untitled:") ?
                         File.makeDigest(Scan.documentMap[entry[0]].getText()):
                         File.extractDirectoryAndWorkspace(entry[0]),
-                    command: async () =>await show(await Clairvoyant.busy.do(() => makeSightFileRootMenu(entry[0], entry[1])))
+                    command: async () =>await show(() => makeSightFileRootMenu(entry[0], entry[1]))
                 })
             )
     )
@@ -301,7 +296,7 @@ export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
                     command: async () =>
                     {
                         Clairvoyant.context.globalState.update("clairvoyant.rootMenuOrder", "count");
-                        await show(await Clairvoyant.busy.do(() => makeSightRootMenu()));
+                        await show(makeSightRootMenu);
                     },
                 }:
                 {
@@ -309,15 +304,12 @@ export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
                     command: async () =>
                     {
                         Clairvoyant.context.globalState.update("clairvoyant.rootMenuOrder", "token");
-                        await show(await Clairvoyant.busy.do(() => makeSightRootMenu()));
+                        await show(makeSightRootMenu);
                     },
                 },
             {
                 label: `$(list-ordered) ${Locale.map("Show by file")}`,
-                command: async () =>
-                {
-                    await show(await Clairvoyant.busy.do(() => makeSightFileListMenu()), { matchOnDescription: true });
-                },
+                command: async () => await show(makeSightFileListMenu, { matchOnDescription: true }),
             },
         ],
         makeStaticMenu(),
@@ -359,7 +351,7 @@ export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
                         .sort(mergeComparer([makeComparer(d => -d.hits), makeComparer(d => d.uri)]))
                         .map(d => `$(file-text) ${d.file}(${d.hits})`)
                         .join(", "),
-                    command: async () => await show(await Clairvoyant.busy.do(() => makeSightTokenMenu(entry[0])), { matchOnDescription: true })
+                    command: async () => await show(() => makeSightTokenMenu(entry[0]), { matchOnDescription: true })
                 })
             )
         )
