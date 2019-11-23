@@ -3,7 +3,7 @@
 	"displayName": "Clairvoyant",
 	"description": "Smart search your codes.",
 	"icon": "images/clairvoyanthex.128.png",
-	"version": "1.0.1",
+	"version": "1.1.0",
 	"publisher": "wraith13",
 	"license": "SEE LICENSE IN LICENSE_1_0.txt",
 	"engines": {
