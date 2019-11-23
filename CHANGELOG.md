@@ -12,6 +12,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - `clairvoyant.targetProtocols` setting.
 - add "back to the previous menu" menu item.
 
+### Changed
+
+- Modified Japanese message considering selectivity
+
 ### Fixed
 
 - Fixed an issue that automatic scan does not run when reloading.
