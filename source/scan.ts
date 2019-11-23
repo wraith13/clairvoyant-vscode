@@ -31,7 +31,7 @@ const getFiles = async (folder: vscode.Uri): Promise<vscode.Uri[]> =>
 {
     try
     {
-        Clairvoyant.outputChannel.appendLine(`scan ${folder.toString()}`);
+        Clairvoyant.outputChannel.appendLine(`scan directory ${folder.toString()}`);
         const rawFiles = (await vscode.workspace.fs.readDirectory(folder)).filter(i => !Clairvoyant.startsWithDot(i[0]));
         const folders = rawFiles.filter(i => vscode.FileType.Directory === i[1]).map(i => i[0]).filter(i => Clairvoyant.excludeDirectories.get("").indexOf(i) < 0);
         const files = rawFiles.filter(i => vscode.FileType.File === i[1]).map(i => i[0]).filter(i => !Clairvoyant.isExcludeFile(i));

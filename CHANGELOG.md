@@ -15,6 +15,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ### Changed
 
 - Modified Japanese message considering selectivity
+- Modified message: "scan" -> "scan directory"
 
 ### Fixed
 
