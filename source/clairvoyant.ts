@@ -331,9 +331,9 @@ export const reportProfile = async () => await busy.do
     )
 );
 
-export const sight = async () => await Menu.show
-(
-    Object.keys(Scan.tokenDocumentEntryMap).length <= 0 ?
+export const sight = async () => await Menu.Show.root
+({
+    makeItemList: Object.keys(Scan.tokenDocumentEntryMap).length <= 0 ?
         Menu.makeStaticMenu:
         Menu.makeSightRootMenu
-);
+});
