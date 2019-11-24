@@ -10,6 +10,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 - added sight menu cache for performance.
 
+### Changed
+
+- Modified Japanese message considering selectivity
+
 ## 1.1.0 - 2019-11-23
 
 ### Added
