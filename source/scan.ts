@@ -74,6 +74,11 @@ export const onUpdateFileList = () =>
 {
     Menu.removeCache("filelist");
 };
+export const onUpdateDocument = (uri: string) =>
+{
+    Menu.removeCache(uri);
+    Menu.removePreviewCache(uri);
+};
 
 export const scanDocument = async (document: vscode.TextDocument, force: boolean = false) => await Clairvoyant.busy.do
 (
@@ -191,6 +196,7 @@ export const scanDocument = async (document: vscode.TextDocument, force: boolean
                                 onUpdateFileList();
                             }
                             onUpdateTokens();
+                            onUpdateDocument(uri);
                         }
                     );
                 }
@@ -227,6 +233,7 @@ export const detachDocument = async (document: vscode.TextDocument) => await Cla
             delete documentMap[uri];
             onUpdateFileList();
             onUpdateTokens();
+            onUpdateDocument(uri);
         }
     )
 );

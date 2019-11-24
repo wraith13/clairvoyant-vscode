@@ -6,6 +6,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## 2.0.1 - 2019-11-??
 
+### Added
+
+- The scope of the menu cache has been expanded.
+
 ### Fixed
 
 - Fixed an issue where the description of `clairvoyant.goWithReopenMenu` was not displayed correctly.
