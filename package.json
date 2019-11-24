@@ -142,6 +142,11 @@
 						},
 						"default": ["file:", "untitled:"],
 						"description": "%clairvoyant.targetProtocols.description%"
+					},
+					"clairvoyant.goWithReopenMenu": {
+						"type": "boolean",
+						"default": true,
+						"description": "%clairvoyant.goWithReopenMenu.description%"
 					}
 				}
 			}

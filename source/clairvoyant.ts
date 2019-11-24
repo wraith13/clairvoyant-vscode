@@ -53,6 +53,7 @@ export const isExcludeStartsWidhDot = new Config.Entry<boolean>("isExcludeStarts
 export const excludeDirectories = new Config.Entry("excludeDirectories", Config.stringArrayValidator);
 export const excludeExtentions = new Config.Entry("excludeExtentions", Config.stringArrayValidator);
 export const targetProtocols = new Config.Entry("targetProtocols", Config.stringArrayValidator);
+export const goWithReopenMenu = new Config.Entry<boolean>("goWithReopenMenu");
 
 export const outputChannel = vscode.window.createOutputChannel("Clairvoyant");
 
@@ -270,6 +271,7 @@ const onDidChangeConfiguration = () =>
         excludeDirectories,
         excludeExtentions,
         targetProtocols,
+        goWithReopenMenu,
     ]
     .forEach(i => i.clear());
     StatusBar.update();

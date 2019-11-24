@@ -153,7 +153,14 @@ const makeGoCommandMenuItem =
         ),
         description: File.extractRelativePath(entry.document.uri.toString()),
         detail: makePreview(entry.document, entry.selection.anchor),
-        command,
+        command: async () =>
+        {
+            await command();
+            if (Clairvoyant.goWithReopenMenu.get(entry.document.languageId))
+            {
+                Show.update();
+            }
+        },
     })
 );
 const makeSightShowMenu = (uri: string, token: string, hits: number[]): CommandMenuItem[] => Profiler.profile

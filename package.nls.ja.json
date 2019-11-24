@@ -18,6 +18,7 @@
     "clairvoyant.excludeDirectories.description": "除外するディレクトリ",
     "clairvoyant.excludeExtentions.description": "除外するファイル拡張子",
     "clairvoyant.targetProtocols.description": "対象とするドキュメントのプロトコル",
+    "clairvoyant.goWithReopenMenu.title": "Go系メニューの選択時にメニューを再オープンします",
     "clairvoyant.backMenu.title": "back: 一つ前のメニューに戻る",
     "♻️ Reload Clairvoyant!": "♻️ Clairvoyantをリロード",
     "📊 Profile Report": "📊 プロファイル報告",

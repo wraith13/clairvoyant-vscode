@@ -18,6 +18,7 @@
     "clairvoyant.excludeDirectories.description": "Exclude directories",
     "clairvoyant.excludeExtentions.description": "Exculde file extentions",
     "clairvoyant.targetProtocols.description": "Target dcoument protocols",
+    "clairvoyant.goWithReopenMenu.title": "Re-open menu when go type menu is selected",
     "clairvoyant.backMenu.title": "back to the previous menu",
     "♻️ Reload Clairvoyant!": "♻️ Reload Clairvoyant!",
     "📊 Profile Report": "📊 Profile Report",

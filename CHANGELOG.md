@@ -4,15 +4,17 @@ All notable changes to the "clairvoyant" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## ?.?.0 - 2019-??-??
+## 2.0.0 - 2019-11-25
 
 ### Added
 
 - added sight menu cache for performance.
+- `clairvoyant.goWithReopenMenu` setting.
 
 ### Changed
 
-- Modified Japanese message considering selectivity
+- Modified Japanese message considering selectivity.
+- Re-open menu when go type menu is selected.
 
 ## 1.1.0 - 2019-11-23
 
@@ -24,7 +26,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### Changed
 
-- Modified Japanese message considering selectivity
+- Modified Japanese message considering selectivity.
 - Modified message: "scan" -> "scan directory"
 
 ### Fixed
