@@ -53,7 +53,6 @@ export const isExcludeStartsWidhDot = new Config.Entry<boolean>("isExcludeStarts
 export const excludeDirectories = new Config.Entry("excludeDirectories", Config.stringArrayValidator);
 export const excludeExtentions = new Config.Entry("excludeExtentions", Config.stringArrayValidator);
 export const targetProtocols = new Config.Entry("targetProtocols", Config.stringArrayValidator);
-export const goWithReopenMenu = new Config.Entry<boolean>("goWithReopenMenu");
 
 export const outputChannel = vscode.window.createOutputChannel("Clairvoyant");
 
@@ -158,11 +157,35 @@ export interface ShowTokenDoEntry
 }
 export const showTokenUndoBuffer: ShowTokenDoEntry[] = [];
 export const showTokenRedoBuffer: ShowTokenDoEntry[] = [];
+const revealSelection = (textEditor: vscode.TextEditor, selection: vscode.Selection) =>
+{
+    textEditor.selection = selection;
+    textEditor.revealRange(selection, textEditorRevealType.get(textEditor.document.languageId));
+};
 const showSelection = async (entry: { document: vscode.TextDocument, selection: vscode.Selection }) =>
 {
-    const textEditor = await vscode.window.showTextDocument(entry.document);
-    textEditor.selection = entry.selection;
-    textEditor.revealRange(entry.selection, textEditorRevealType.get(entry.document.languageId));
+    revealSelection(await vscode.window.showTextDocument(entry.document), entry.selection);
+};
+const getPreviewTextEditor = (document: vscode.TextDocument) =>
+{
+    const uri = document.uri.toString();
+    const activeTextEditor = vscode.window.activeTextEditor;
+    if (activeTextEditor && activeTextEditor.document.uri.toString() === uri)
+    {
+        return activeTextEditor;
+    }
+    else
+    {
+        return vscode.window.visibleTextEditors.filter(i => i.document.uri.toString() === uri)[0];
+    }
+};
+export const previewSelection = (entry: { document: vscode.TextDocument, selection: vscode.Selection }) =>
+{
+    const textEditor = getPreviewTextEditor(entry.document);
+    if (textEditor)
+    {
+        revealSelection(textEditor, entry.selection);
+    }
 };
 const makeShowTokenCoreEntry = () =>
 {
@@ -178,12 +201,24 @@ const makeShowTokenCoreEntry = () =>
     }
     return result;
 };
+let backupSelectionEntry: ShowTokenCoreEntry | null = null;
+export const backupSelection = () =>
+{
+    backupSelectionEntry = makeShowTokenCoreEntry();
+};
+export const rollbackSelection = () =>
+{
+    if (backupSelectionEntry)
+    {
+        showSelection(backupSelectionEntry);
+    }
+};
 export const showToken = async (entry: { document: vscode.TextDocument, selection: vscode.Selection }) =>
 {
     showTokenUndoBuffer.push
     ({
         redo: entry,
-        undo: makeShowTokenCoreEntry(),
+        undo: backupSelectionEntry || makeShowTokenCoreEntry(),
     });
     showSelection(entry);
     showTokenRedoBuffer.splice(0, 0);
@@ -248,6 +283,7 @@ export const reload = () =>
     Menu.reload();
     showTokenUndoBuffer.splice(0, 0);
     showTokenRedoBuffer.splice(0, 0);
+    backupSelectionEntry = null;
     Profiler.start();
     autoScanMode.get("").onInit();
 };
@@ -271,7 +307,6 @@ const onDidChangeConfiguration = () =>
         excludeDirectories,
         excludeExtentions,
         targetProtocols,
-        goWithReopenMenu,
     ]
     .forEach(i => i.clear());
     StatusBar.update();

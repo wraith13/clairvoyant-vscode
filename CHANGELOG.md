@@ -4,7 +4,18 @@ All notable changes to the "clairvoyant" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## 2.0.1 - 2019-11-??
+## 3.0.0 - 2019-11-25
+
+### Added
+
+- Goto menu jump destination preview with text editor.
+
+### Removed
+
+- `clairvoyant.goWithReopenMenu` setting.
+- Re-open menu when go type menu is selected.
+
+## 2.0.1 - 2019-11-25
 
 ### Added
 

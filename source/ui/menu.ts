@@ -30,6 +30,11 @@ const mergeComparer = <valueT>(comparerList: ((a: valueT, b: valueT) => number)[
 interface CommandMenuItem extends vscode.QuickPickItem
 {
     command: () => Promise<void>;
+    preview?: Clairvoyant.ShowTokenCoreEntry;
+}
+interface CommandMenuOptions extends vscode.QuickPickOptions
+{
+    preview?: vscode.TextDocument;
 }
 const makeEmptyList = (): CommandMenuItem[] => [];
 export const cache: { [key: string]: CommandMenuItem[]} = { };
@@ -57,27 +62,66 @@ export module Show
     interface Entry
     {
         makeItemList: () => CommandMenuItem[];
-        options?: vscode.QuickPickOptions;
+        options?: CommandMenuOptions;
     }
     const menuStack: Entry[] = [];
 
     const show = async (entry: Entry) =>
     {
-        const select = await vscode.window.showQuickPick
-        (
-            await Clairvoyant.busy.do
-            (
-                () => Profiler.profile
-                (
-                    "Menu.Show.show.entry.makeItemList",
-                    entry.makeItemList
-                )
-            ),
-            entry.options
-        );
-        if (select)
+        if (entry.options && entry.options.preview)
         {
-            await select.command();
+            Clairvoyant.backupSelection();
+            await vscode.window.showTextDocument(entry.options.preview);
+            entry.options.onDidSelectItem = (select: CommandMenuItem) =>
+            {
+                if (select.preview)
+                {
+                    Clairvoyant.previewSelection(select.preview);
+                }
+            };
+            const select = await vscode.window.showQuickPick
+            (
+                await Clairvoyant.busy.do
+                (
+                    () => Profiler.profile
+                    (
+                        "Menu.Show.show.entry.makeItemList",
+                        entry.makeItemList
+                    )
+                ),
+                entry.options
+            );
+            if (select)
+            {
+                if (!select.preview)
+                {
+                    Clairvoyant.rollbackSelection();
+                }
+                await select.command();
+            }
+            else
+            {
+                Clairvoyant.rollbackSelection();
+            }
+        }
+        else
+        {
+            const select = await vscode.window.showQuickPick
+            (
+                await Clairvoyant.busy.do
+                (
+                    () => Profiler.profile
+                    (
+                        "Menu.Show.show.entry.makeItemList",
+                        entry.makeItemList
+                    )
+                ),
+                entry.options
+            );
+            if (select)
+            {
+                await select.command();
+            }
         }
     };
 
@@ -153,7 +197,7 @@ const makeGoCommandMenuItem =
 (
     label: Locale.KeyType,
     entry: Clairvoyant.ShowTokenCoreEntry,
-    command: () => Promise<void> = async () => Clairvoyant.showToken(entry)
+    command?: () => Promise<void>
 ) => Profiler.profile
 (
     "makeGoCommandMenuItem",
@@ -168,14 +212,8 @@ const makeGoCommandMenuItem =
         ),
         description: File.extractRelativePath(entry.document.uri.toString()),
         detail: makePreview(entry.document, entry.selection.anchor),
-        command: async () =>
-        {
-            await command();
-            if (Clairvoyant.goWithReopenMenu.get(entry.document.languageId))
-            {
-                Show.update();
-            }
-        },
+        command: command ? command: (async () => Clairvoyant.showToken(entry)),
+        preview: command ? undefined: entry,
     })
 );
 const makeSightShowMenu = (uri: string, token: string, hits: number[]): CommandMenuItem[] => getCacheOrMake
@@ -243,7 +281,11 @@ const makeSightTokenMenu = (token: string): CommandMenuItem[] => getCacheOrMake
                                     entry.hits
                                 )
                             ),
-                            options: { matchOnDetail: true },
+                            options:
+                            {
+                                matchOnDetail: true,
+                                preview: Scan.documentMap[entry.uri],
+                            },
                         })
                     })
                 )
@@ -317,7 +359,11 @@ const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }
                             Clairvoyant.decodeToken(entry[0]),
                             entry[1]
                         ),
-                        options: { matchOnDetail: true },
+                        options:
+                        {
+                            matchOnDetail: true,
+                            preview: Scan.documentMap[uri]
+                        },
                     }),
                 })
             )
