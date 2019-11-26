@@ -45,6 +45,13 @@ const textEditorRevealTypeObject = Object.freeze
     "InCenterIfOutsideViewport": vscode.TextEditorRevealType.InCenterIfOutsideViewport,
 });
 
+const outputChannelVolumeObject = Object.freeze
+({
+    "silent": (level: string) => 0 <= ["silent"].indexOf(level),
+    "regular": (level: string) => 0 <= ["silent", "regular"].indexOf(level),
+    "verbose": (level: string) => 0 <= ["silent", "regular", "verbose"].indexOf(level),
+});
+
 export const autoScanMode = new Config.MapEntry("autoScanMode", autoScanModeObject);
 export const maxFiles = new Config.Entry<number>("maxFiles");
 export const showStatusBarItems = new Config.Entry<boolean>("showStatusBarItems");
@@ -53,11 +60,42 @@ export const isExcludeStartsWidhDot = new Config.Entry<boolean>("isExcludeStarts
 export const excludeDirectories = new Config.Entry("excludeDirectories", Config.stringArrayValidator);
 export const excludeExtentions = new Config.Entry("excludeExtentions", Config.stringArrayValidator);
 export const targetProtocols = new Config.Entry("targetProtocols", Config.stringArrayValidator);
-
-export const outputChannel = vscode.window.createOutputChannel("Clairvoyant");
+const outputChannelVolume = new Config.MapEntry("outputChannelVolume", outputChannelVolumeObject);
+const outputChannel = vscode.window.createOutputChannel("Clairvoyant");
+let muteOutput = false;
+export const showOutput = () => outputChannel.show();
+export const output = (level: keyof typeof outputChannelVolumeObject, text: string) =>
+{
+    if (outputChannelVolume.get("")(level))
+    {
+        if (muteOutput)
+        {
+            console.log(text);
+        }
+        else
+        {
+            outputChannel.append(text);
+        }
+    }
+};
+export const outputLine = (level: keyof typeof outputChannelVolumeObject, text: string) =>
+{
+    if (outputChannelVolume.get("")(level))
+    {
+        if (muteOutput)
+        {
+            console.log(text);
+        }
+        else
+        {
+            outputChannel.appendLine(text);
+        }
+    }
+};
 
 export const initialize = (aContext: vscode.ExtensionContext): void =>
 {
+    outputLine("verbose", "Clairvoyant.initialize() is called.");
     context = aContext;
     context.subscriptions.push
     (
@@ -66,6 +104,7 @@ export const initialize = (aContext: vscode.ExtensionContext): void =>
         (
             `${applicationKey}.scanDocument`, async () =>
             {
+                outputLine("verbose", `"${applicationKey}.scanDocument" is called.`);
                 const activeTextEditor = vscode.window.activeTextEditor;
                 if (activeTextEditor)
                 {
@@ -92,9 +131,20 @@ export const initialize = (aContext: vscode.ExtensionContext): void =>
         (
             event =>
             {
-                if (autoScanMode.get(event.document.languageId).enabled && (!isExcludeDocument(event.document)))
+                try
                 {
-                    Scan.scanDocument(event.document, true);
+                    //  OuputChannel に対するイベント処理中に OuputChannel に書き出すと無限ループになってしまうのでミュートする
+                    muteOutput = event.document.uri.toString().startsWith("output:");
+
+                    outputLine("verbose", `onDidChangeTextDocument("${event.document.uri.toString()}") is called.`);
+                    if (autoScanMode.get(event.document.languageId).enabled && (!isExcludeDocument(event.document)))
+                    {
+                        Scan.scanDocument(event.document, true);
+                    }
+                }
+                finally
+                {
+                    muteOutput = false;
                 }
             }
         ),
@@ -102,6 +152,7 @@ export const initialize = (aContext: vscode.ExtensionContext): void =>
         (
             async (document) =>
             {
+                outputLine("verbose", `onDidCloseTextDocument("${document.uri.toString()}") is called.`);
                 if (Scan.documentTokenEntryMap[document.uri.toString()])
                 {
                     try
@@ -120,6 +171,7 @@ export const initialize = (aContext: vscode.ExtensionContext): void =>
         (
             textEditor =>
             {
+                outputLine("verbose", `onDidChangeActiveTextEditor("${textEditor ? textEditor.document.uri.toString(): "undefined"}") is called.`);
                 if (textEditor && autoScanMode.get(textEditor.document.languageId).enabled && !isExcludeDocument(textEditor.document))
                 {
                     Scan.scanDocument(textEditor.document);
@@ -231,6 +283,7 @@ export const rollbackSelection = () =>
 };
 export const showToken = async (entry: { document: vscode.TextDocument, selection: vscode.Selection }) =>
 {
+    outputLine("verbose", `showToken() is called.`);
     showTokenUndoBuffer.push
     ({
         redo: entry,
@@ -242,6 +295,7 @@ export const showToken = async (entry: { document: vscode.TextDocument, selectio
 };
 export const showTokenUndo = async () =>
 {
+    outputLine("verbose", `showTokenUndo() is called.`);
     const entry = showTokenUndoBuffer.pop();
     if (entry)
     {
@@ -255,6 +309,7 @@ export const showTokenUndo = async () =>
 };
 export const showTokenRedo = async () =>
 {
+    outputLine("verbose", `showTokenRedo() is called.`);
     const entry = showTokenRedoBuffer.pop();
     if (entry)
     {
@@ -266,12 +321,18 @@ export const showTokenRedo = async () =>
 };
 const onUpdateHistory = () =>
 {
+    outputLine("verbose", `onUpdateHistory() is called.`);
     Menu.removeCache(`root.full`);
 };
 
-export const copyToken = async (text: string) => await vscode.env.clipboard.writeText(text);
+export const copyToken = async (text: string) =>
+{
+    outputLine("verbose", `copyToken("${text}") is called.`);
+    await vscode.env.clipboard.writeText(text);
+}
 export const pasteToken = async (text: string) =>
 {
+    outputLine("verbose", `pasteToken("${text}") is called.`);
     const textEditor = vscode.window.activeTextEditor;
     if (textEditor)
     {
@@ -294,7 +355,7 @@ export const pasteToken = async (text: string) =>
 
 export const reload = () =>
 {
-    outputChannel.appendLine(Locale.map("♻️ Reload Clairvoyant!"));
+    outputLine("silent", Locale.map("♻️ Reload Clairvoyant!"));
     Scan.reload();
     Menu.reload();
     showTokenUndoBuffer.splice(0, 0);
@@ -306,6 +367,7 @@ export const reload = () =>
 };
 const onDidChangeConfiguration = () =>
 {
+    outputLine("verbose", `onDidChangeConfiguration() is called.`);
     const old =
     {
         autoScanMode: autoScanMode.getCache(""),
@@ -324,6 +386,7 @@ const onDidChangeConfiguration = () =>
         excludeDirectories,
         excludeExtentions,
         targetProtocols,
+        outputChannelVolume,
     ]
     .forEach(i => i.clear());
     StatusBar.update();
@@ -348,10 +411,12 @@ export const reportStatistics = async () => await busy.do
         "reportStatistics",
         () =>
         {
-            outputChannel.show();
-            outputChannel.appendLine(`files: ${Object.keys(Scan.documentTokenEntryMap).length.toLocaleString()}`);
-            outputChannel.appendLine(`unique tokens: ${Object.keys(Scan.tokenDocumentEntryMap).length.toLocaleString()}`);
-            outputChannel.appendLine(`total tokens: ${Object.values(Scan.tokenCountMap).reduce((a, b) => a +b, 0).toLocaleString()}`);
+            showOutput();
+            outputLine("silent", `${Locale.map("📊 Statistics Report")} - ${new Date()}`);
+            outputLine("silent", `files: ${Object.keys(Scan.documentTokenEntryMap).length.toLocaleString()}`);
+            outputLine("silent", `unique tokens: ${Object.keys(Scan.tokenDocumentEntryMap).length.toLocaleString()}`);
+            outputLine("silent", `total tokens: ${Object.values(Scan.tokenCountMap).reduce((a, b) => a +b, 0).toLocaleString()}`);
+            outputLine("silent", "");
         }
     )
 );
@@ -363,23 +428,23 @@ export const reportProfile = async () => await busy.do
         "reportProfile",
         () =>
         {
-            outputChannel.show();
+            showOutput();
             if (Profiler.getIsProfiling())
             {
-                outputChannel.appendLine(`${Locale.map("📊 Profile Report")} - ${new Date()}`);
+                outputLine("silent", `${Locale.map("📊 Profile Report")} - ${new Date()}`);
                 const overall = Profiler.getOverall();
                 const total = Profiler.getReport().map(i => i.ticks).reduce((p, c) => p +c);
-                outputChannel.appendLine(Locale.map("⚖ Overview"));
-                outputChannel.appendLine(`- Overall: ${overall.toLocaleString()}ms ( ${percentToDisplayString(1)} )`);
-                outputChannel.appendLine(`- Busy: ${total.toLocaleString()}ms ( ${percentToDisplayString(total / overall)} )`);
-                outputChannel.appendLine(Locale.map("🔬 Busy Details"));
-                outputChannel.appendLine(`- Total: ${total.toLocaleString()}ms ( ${percentToDisplayString(1)} )`);
-                Profiler.getReport().forEach(i => outputChannel.appendLine(`- ${i.name}: ${i.ticks.toLocaleString()}ms ( ${percentToDisplayString(i.ticks / total)} )`));
-                outputChannel.appendLine("");
+                outputLine("silent", Locale.map("⚖ Overview"));
+                outputLine("silent", `- Overall: ${overall.toLocaleString()}ms ( ${percentToDisplayString(1)} )`);
+                outputLine("silent", `- Busy: ${total.toLocaleString()}ms ( ${percentToDisplayString(total / overall)} )`);
+                outputLine("silent", Locale.map("🔬 Busy Details"));
+                outputLine("silent", `- Total: ${total.toLocaleString()}ms ( ${percentToDisplayString(1)} )`);
+                Profiler.getReport().forEach(i => outputLine("silent", `- ${i.name}: ${i.ticks.toLocaleString()}ms ( ${percentToDisplayString(i.ticks / total)} )`));
+                outputLine("silent", "");
             }
             else
             {
-                outputChannel.appendLine(Locale.map("🚫 Profile has not been started."));
+                outputLine("silent", Locale.map("🚫 Profile has not been started."));
             }
         }
     )

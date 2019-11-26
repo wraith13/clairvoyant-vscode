@@ -40,11 +40,13 @@ const makeEmptyList = (): CommandMenuItem[] => [];
 export const cache: { [key: string]: CommandMenuItem[]} = { };
 export const reload = () =>
 {
+    Clairvoyant.outputLine("verbose", `Menu.reload() is called.`);
     Object.keys(cache).forEach(i => delete cache[i]);
     Object.keys(previewCache).forEach(i => delete previewCache[i]);
 };
 export const removeCache = (key: string) =>
 {
+    Clairvoyant.outputLine("verbose", `Menu.removeCache("${key}") is called.`);
     Object.keys(cache).filter(i => i.startsWith(key)).forEach(i => delete cache[i]);
     return key;
 };
@@ -172,6 +174,7 @@ const makeSelection = (document: vscode.TextDocument, index: number, token: stri
 const previewCache: { [uri: string] : { [line: number]: string } } = { };
 export const removePreviewCache = (uri: string) =>
 {
+    Clairvoyant.outputLine("verbose", `Menu.removePreviewCache("${uri}") is called.`);
     delete previewCache[uri];
     return uri;
 };

@@ -142,6 +142,17 @@
 						},
 						"default": ["file:", "untitled:"],
 						"description": "%clairvoyant.targetProtocols.description%"
+					},
+					"clairvoyant.outputChannelVolume": {
+						"type": "string",
+						"default": "regular",
+						"enum": [
+							"silent",
+							"regular",
+							"verbose"
+						],
+						"overridable": true,
+						"description": "%clairvoyant.outputChannelVolume.description%"
 					}
 				}
 			}

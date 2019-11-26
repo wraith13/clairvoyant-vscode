@@ -32,7 +32,7 @@ const getFiles = async (folder: vscode.Uri): Promise<vscode.Uri[]> =>
 {
     try
     {
-        Clairvoyant.outputChannel.appendLine(`scan directory ${folder.toString()}`);
+        Clairvoyant.outputLine("regular", `scan directory ${folder.toString()}`);
         const rawFiles = (await vscode.workspace.fs.readDirectory(folder)).filter(i => !Clairvoyant.startsWithDot(i[0]));
         const folders = rawFiles.filter(i => vscode.FileType.Directory === i[1]).map(i => i[0]).filter(i => Clairvoyant.excludeDirectories.get("").indexOf(i) < 0);
         const files = rawFiles.filter(i => vscode.FileType.File === i[1]).map(i => i[0]).filter(i => !Clairvoyant.isExcludeFile(i));
@@ -45,7 +45,7 @@ const getFiles = async (folder: vscode.Uri): Promise<vscode.Uri[]> =>
     }
     catch(error)
     {
-        Clairvoyant.outputChannel.appendLine(`${folder.toString()}: ${JSON.stringify(error)}`);
+        Clairvoyant.outputLine("silent", `${folder.toString()}: ${JSON.stringify(error)}`);
         return [];
     }
 };
@@ -59,6 +59,7 @@ export let isMaxFilesNoticed = false;
 
 export const reload = () =>
 {
+    Clairvoyant.outputLine("verbose", `Scan.reload() is called.`);
     Object.keys(documentTokenEntryMap).forEach(i => delete documentTokenEntryMap[i]);
     Object.keys(tokenDocumentEntryMap).forEach(i => delete tokenDocumentEntryMap[i]);
     Object.keys(documentFileMap).forEach(i => delete documentFileMap[i]);
@@ -68,14 +69,17 @@ export const reload = () =>
 };
 export const onUpdateTokens = () =>
 {
+    Clairvoyant.outputLine("verbose", `Scan.onUpdateTokens() is called.`);
     Menu.removeCache("root");
 };
 export const onUpdateFileList = () =>
 {
+    Clairvoyant.outputLine("verbose", `Scan.onUpdateFileList() is called.`);
     Menu.removeCache("filelist");
 };
 export const onUpdateDocument = (uri: string) =>
 {
+    Clairvoyant.outputLine("verbose", `Scan.onUpdateDocument("${uri}") is called.`);
     Menu.removeCache(uri);
     Menu.removePreviewCache(uri);
 };
@@ -89,6 +93,7 @@ export const scanDocument = async (document: vscode.TextDocument, force: boolean
         () =>
         {
             const uri = document.uri.toString();
+            Clairvoyant.outputLine("verbose", `Scan.scanDocument("${uri}", ${force}) is called.`);
             const old = documentTokenEntryMap[uri];
             if ((!force && old) || !Clairvoyant.isTargetProtocol(uri))
             {
@@ -102,12 +107,12 @@ export const scanDocument = async (document: vscode.TextDocument, force: boolean
                     {
                         isMaxFilesNoticed = true;
                         vscode.window.showWarningMessage(Locale.map("Max Files Error"));
-                        Clairvoyant.outputChannel.appendLine(`Max Files Error!!!`);
+                        Clairvoyant.outputLine("silent", `Max Files Error!!!`);
                     }
                 }
                 else
                 {
-                    Clairvoyant.outputChannel.appendLine(`scan document: ${uri}`);
+                    Clairvoyant.outputLine("regular", `scan document: ${uri}`);
                     documentMap[uri] = document;
                     documentFileMap[uri] = File.extractFileName(uri);
                     const text = Profiler.profile("scanDocument.document.getText", () => document.getText());
@@ -213,7 +218,7 @@ export const detachDocument = async (document: vscode.TextDocument) => await Cla
         () =>
         {
             const uri = document.uri.toString();
-            Clairvoyant.outputChannel.appendLine(`detach document: ${uri}`);
+            Clairvoyant.outputLine("regular", `detach document: ${uri}`);
             const old = documentTokenEntryMap[uri];
             const oldTokens = old ? Object.keys(old): [];
             oldTokens.forEach
@@ -253,7 +258,7 @@ export const scanWorkspace = async () => await Clairvoyant.busy.doAsync
 (
     async () =>
     {
-        Clairvoyant.outputChannel.appendLine(`begin scan workspace`);
+        Clairvoyant.outputLine("regular", `begin scan workspace`);
         await scanOpenDocuments();
         if (vscode.workspace.workspaceFolders)
         {
@@ -268,7 +273,7 @@ export const scanWorkspace = async () => await Clairvoyant.busy.doAsync
             )
             {
                 vscode.window.showWarningMessage(Locale.map("Max Files Error"));
-                Clairvoyant.outputChannel.appendLine(`Max Files Error!!!`);
+                Clairvoyant.outputLine("silent", `Max Files Error!!!`);
             }
             else
             {
@@ -280,18 +285,18 @@ export const scanWorkspace = async () => await Clairvoyant.busy.doAsync
                         {
                             try
                             {
-                                Clairvoyant.outputChannel.appendLine(`open document: ${i}`);
+                                Clairvoyant.outputLine("regular", `open document: ${i}`);
                                 await scanDocument(await getOrOpenDocument(i));
                             }
                             catch(error)
                             {
-                                Clairvoyant.outputChannel.appendLine(`error: ${JSON.stringify(error)}`);
+                                Clairvoyant.outputLine("silent", `error: ${JSON.stringify(error)}`);
                             }
                         }
                     )
                 );
             }
-            Clairvoyant.outputChannel.appendLine(`scan workspace complete!`);
+            Clairvoyant.outputLine("regular", `scan workspace complete!`);
         }
     }
 );
