@@ -201,16 +201,32 @@ const makeShowTokenCoreEntry = () =>
     }
     return result;
 };
-let backupSelectionEntry: ShowTokenCoreEntry | null = null;
-export const backupSelection = () =>
+let groundBackupSelectionEntry: ShowTokenCoreEntry | null = null;
+let targetBackupSelectionEntry: ShowTokenCoreEntry | null = null;
+export const showTextDocumentWithBackupSelection = async (document: vscode.TextDocument) =>
 {
-    backupSelectionEntry = makeShowTokenCoreEntry();
+    groundBackupSelectionEntry = makeShowTokenCoreEntry();
+    if (groundBackupSelectionEntry && groundBackupSelectionEntry.document.uri.toString() === document.uri.toString())
+    {
+        targetBackupSelectionEntry = null;
+    }
+    else
+    {
+        await vscode.window.showTextDocument(document);
+        targetBackupSelectionEntry = makeShowTokenCoreEntry();
+    }
 };
 export const rollbackSelection = () =>
 {
-    if (backupSelectionEntry)
+    if (targetBackupSelectionEntry)
     {
-        showSelection(backupSelectionEntry);
+        previewSelection(targetBackupSelectionEntry);
+        targetBackupSelectionEntry = null;
+    }
+    if (groundBackupSelectionEntry)
+    {
+        showSelection(groundBackupSelectionEntry);
+        groundBackupSelectionEntry = null;
     }
 };
 export const showToken = async (entry: { document: vscode.TextDocument, selection: vscode.Selection }) =>
@@ -218,7 +234,7 @@ export const showToken = async (entry: { document: vscode.TextDocument, selectio
     showTokenUndoBuffer.push
     ({
         redo: entry,
-        undo: backupSelectionEntry || makeShowTokenCoreEntry(),
+        undo: groundBackupSelectionEntry || makeShowTokenCoreEntry(),
     });
     showSelection(entry);
     showTokenRedoBuffer.splice(0, 0);
@@ -283,7 +299,8 @@ export const reload = () =>
     Menu.reload();
     showTokenUndoBuffer.splice(0, 0);
     showTokenRedoBuffer.splice(0, 0);
-    backupSelectionEntry = null;
+    groundBackupSelectionEntry = null;
+    targetBackupSelectionEntry = null;
     Profiler.start();
     autoScanMode.get("").onInit();
 };

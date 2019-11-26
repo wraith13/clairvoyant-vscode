@@ -4,6 +4,12 @@ All notable changes to the "clairvoyant" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## 3.0.1 - 2019-11-26
+
+### Fixed
+
+- Fixed an issue that the cursor position may not be restored correctly.
+
 ## 3.0.0 - 2019-11-25
 
 ### Added

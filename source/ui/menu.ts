@@ -70,8 +70,7 @@ export module Show
     {
         if (entry.options && entry.options.preview)
         {
-            Clairvoyant.backupSelection();
-            await vscode.window.showTextDocument(entry.options.preview);
+            await Clairvoyant.showTextDocumentWithBackupSelection(entry.options.preview);
             entry.options.onDidSelectItem = (select: CommandMenuItem) =>
             {
                 if (select.preview)
