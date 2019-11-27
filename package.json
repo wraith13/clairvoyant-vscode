@@ -3,7 +3,7 @@
 	"displayName": "Clairvoyant",
 	"description": "Smart search your codes.",
 	"icon": "images/clairvoyanthex.128.png",
-	"version": "3.0.1",
+	"version": "3.1.0",
 	"publisher": "wraith13",
 	"license": "SEE LICENSE IN LICENSE_1_0.txt",
 	"engines": {
@@ -153,6 +153,12 @@
 						],
 						"overridable": true,
 						"description": "%clairvoyant.outputChannelVolume.description%"
+					},
+					"clairvoyant.parserRegExp": {
+						"type": "string",
+						"default": "(\\w+[\\w\\-]*\\w+)|\\w+",
+						"overridable": true,
+						"description": "%clairvoyant.parserRegExp.description%"
 					}
 				}
 			}
