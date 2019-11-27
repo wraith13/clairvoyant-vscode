@@ -71,6 +71,7 @@ export const onUpdateTokens = () =>
 {
     Clairvoyant.outputLine("verbose", `Scan.onUpdateTokens() is called.`);
     Menu.removeCache("root");
+    Menu.removeCache("filelist.");
 };
 export const onUpdateFileList = () =>
 {

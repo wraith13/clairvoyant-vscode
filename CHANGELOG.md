@@ -4,6 +4,12 @@ All notable changes to the "clairvoyant" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## 4.0.1 - 2019-11-28
+
+### Fixed
+
+- Fixed an issue where the menu cache may not be cleared.
+
 ## 4.0.0 - 2019-11-27
 
 ### Added
