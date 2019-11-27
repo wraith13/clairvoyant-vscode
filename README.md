@@ -59,6 +59,7 @@ This extension contributes the following settings by [`settings.json`](https://c
 * `clairvoyant.excludeExtentions`: exculde file extentions
 * `clairvoyant.targetProtocols`: target dcoument protocols ( You can exclude `untitled:` or add `output:`, `vscode-userdata:` or others. )
 * `clairvoyant.outputChannelVolume`: output volume
+* `clairvoyant.parserRegExp.description`: parser regular expression ( `Clairvoyant: Reload` is required when changes. )
 
 ## Keyboard shortcut Settings
 

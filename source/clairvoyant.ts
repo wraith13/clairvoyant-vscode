@@ -60,6 +60,7 @@ export const isExcludeStartsWidhDot = new Config.Entry<boolean>("isExcludeStarts
 export const excludeDirectories = new Config.Entry("excludeDirectories", Config.stringArrayValidator);
 export const excludeExtentions = new Config.Entry("excludeExtentions", Config.stringArrayValidator);
 export const targetProtocols = new Config.Entry("targetProtocols", Config.stringArrayValidator);
+export const parserRegExp = new Config.Entry<string>("parserRegExp", value => "string" === typeof value);
 const outputChannelVolume = new Config.MapEntry("outputChannelVolume", outputChannelVolumeObject);
 const outputChannel = vscode.window.createOutputChannel("Clairvoyant");
 let muteOutput = false;
@@ -329,7 +330,7 @@ export const copyToken = async (text: string) =>
 {
     outputLine("verbose", `copyToken("${text}") is called.`);
     await vscode.env.clipboard.writeText(text);
-}
+};
 export const pasteToken = async (text: string) =>
 {
     outputLine("verbose", `pasteToken("${text}") is called.`);
@@ -353,6 +354,23 @@ export const pasteToken = async (text: string) =>
     }
 };
 
+const clearConfig = () =>
+{
+    [
+        autoScanMode,
+        maxFiles,
+        showStatusBarItems,
+        textEditorRevealType,
+        isExcludeStartsWidhDot,
+        excludeDirectories,
+        excludeExtentions,
+        targetProtocols,
+        parserRegExp,
+        outputChannelVolume,
+    ]
+    .forEach(i => i.clear());
+};
+
 export const reload = () =>
 {
     outputLine("silent", Locale.map("♻️ Reload Clairvoyant!"));
@@ -362,6 +380,7 @@ export const reload = () =>
     showTokenRedoBuffer.splice(0, 0);
     groundBackupSelectionEntry = null;
     targetBackupSelectionEntry = null;
+    clearConfig();
     Profiler.start();
     autoScanMode.get("").onInit();
 };
@@ -377,18 +396,7 @@ const onDidChangeConfiguration = () =>
         excludeExtentions: excludeExtentions.getCache(""),
         targetProtocols: targetProtocols.getCache(""),
     };
-    [
-        autoScanMode,
-        maxFiles,
-        showStatusBarItems,
-        textEditorRevealType,
-        isExcludeStartsWidhDot,
-        excludeDirectories,
-        excludeExtentions,
-        targetProtocols,
-        outputChannelVolume,
-    ]
-    .forEach(i => i.clear());
+    clearConfig();
     StatusBar.update();
     if
     (

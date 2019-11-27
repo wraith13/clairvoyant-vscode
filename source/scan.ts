@@ -121,7 +121,7 @@ export const scanDocument = async (document: vscode.TextDocument, force: boolean
                         "scanDocument.scan",
                         () => regExpExecToArray
                         (
-                            /\w+/gm,
+                            new RegExp(Clairvoyant.parserRegExp.get(document.languageId), "gm"),
                             text
                         )
                         .map

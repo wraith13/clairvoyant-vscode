@@ -19,6 +19,7 @@
     "clairvoyant.excludeExtentions.description": "除外するファイル拡張子",
     "clairvoyant.targetProtocols.description": "対象とするドキュメントのプロトコル",
     "clairvoyant.outputChannelVolume.description": "出力ボリューム",
+    "clairvoyant.parserRegExp.description": "パーザー正規表現",
     "clairvoyant.backMenu.title": "back: 一つ前のメニューに戻る",
     "♻️ Reload Clairvoyant!": "♻️ Clairvoyantをリロード",
     "📊 Statistics Report": "📊 統計情報報告",
