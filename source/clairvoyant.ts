@@ -215,9 +215,9 @@ const revealSelection = (textEditor: vscode.TextEditor, selection: vscode.Select
     textEditor.selection = selection;
     textEditor.revealRange(selection, textEditorRevealType.get(textEditor.document.languageId));
 };
-const showSelection = async (entry: { document: vscode.TextDocument, selection: vscode.Selection }) =>
+const showSelection = async (entry: { document: vscode.TextDocument, selection: vscode.Selection }, textEditor?: vscode.TextEditor ) =>
 {
-    revealSelection(await vscode.window.showTextDocument(entry.document), entry.selection);
+    revealSelection(textEditor || await vscode.window.showTextDocument(entry.document), entry.selection);
 };
 const getPreviewTextEditor = (document: vscode.TextDocument) =>
 {
@@ -232,12 +232,13 @@ const getPreviewTextEditor = (document: vscode.TextDocument) =>
         return vscode.window.visibleTextEditors.filter(i => i.document.uri.toString() === uri)[0];
     }
 };
-export const previewSelection = (entry: { document: vscode.TextDocument, selection: vscode.Selection }) =>
+let lastPreviewSelectionEntry: ShowTokenCoreEntry | null = null;
+export const previewSelection = (entry: { document: vscode.TextDocument, selection: vscode.Selection }, textEditor = getPreviewTextEditor(entry.document)) =>
 {
-    const textEditor = getPreviewTextEditor(entry.document);
     if (textEditor)
     {
         revealSelection(textEditor, entry.selection);
+        lastPreviewSelectionEntry = entry;
     }
 };
 const makeShowTokenCoreEntry = () =>
@@ -254,6 +255,7 @@ const makeShowTokenCoreEntry = () =>
     }
     return result;
 };
+let backupTargetTextEditor: vscode.TextEditor | undefined = undefined;
 let groundBackupSelectionEntry: ShowTokenCoreEntry | null = null;
 let targetBackupSelectionEntry: ShowTokenCoreEntry | null = null;
 export const showTextDocumentWithBackupSelection = async (document: vscode.TextDocument) =>
@@ -268,19 +270,60 @@ export const showTextDocumentWithBackupSelection = async (document: vscode.TextD
         await vscode.window.showTextDocument(document);
         targetBackupSelectionEntry = makeShowTokenCoreEntry();
     }
+    lastPreviewSelectionEntry = null;
+    backupTargetTextEditor = vscode.window.activeTextEditor;
 };
-export const rollbackSelection = () =>
+export const rollbackSelection = async () =>
 {
+    if (lastPreviewSelectionEntry)
+    {
+        const currentSelectionEntry = makeShowTokenCoreEntry();
+        if
+        (
+            currentSelectionEntry &&
+            lastPreviewSelectionEntry.document.uri.toString() === currentSelectionEntry.document.uri.toString() &&
+            !lastPreviewSelectionEntry.selection.isEqual(currentSelectionEntry.selection) &&
+            backupTargetTextEditor === vscode.window.activeTextEditor
+        )
+        {
+            targetBackupSelectionEntry = null;
+            groundBackupSelectionEntry = null;
+
+            const data =
+            {
+                entry: lastPreviewSelectionEntry,
+                textEditor: backupTargetTextEditor,
+            }
+            setTimeout
+            (
+                () => previewSelection(data.entry, data.textEditor),
+                0
+            );
+        }
+        lastPreviewSelectionEntry = null;
+    }
+    
     if (targetBackupSelectionEntry)
     {
-        previewSelection(targetBackupSelectionEntry);
+        previewSelection(targetBackupSelectionEntry, backupTargetTextEditor);
         targetBackupSelectionEntry = null;
     }
     if (groundBackupSelectionEntry)
     {
-        showSelection(groundBackupSelectionEntry);
+        showSelection
+        (
+            groundBackupSelectionEntry,
+            await vscode.window.showTextDocument
+            (
+                groundBackupSelectionEntry.document,
+                backupTargetTextEditor ?
+                    backupTargetTextEditor.viewColumn:
+                    undefined
+            )
+        );
         groundBackupSelectionEntry = null;
     }
+    backupTargetTextEditor = undefined;
 };
 export const showToken = async (entry: { document: vscode.TextDocument, selection: vscode.Selection }) =>
 {

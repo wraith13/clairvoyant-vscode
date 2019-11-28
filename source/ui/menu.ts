@@ -96,13 +96,13 @@ export module Show
             {
                 if (!select.preview)
                 {
-                    Clairvoyant.rollbackSelection();
+                    await Clairvoyant.rollbackSelection();
                 }
                 await select.command();
             }
             else
             {
-                Clairvoyant.rollbackSelection();
+                await Clairvoyant.rollbackSelection();
             }
         }
         else

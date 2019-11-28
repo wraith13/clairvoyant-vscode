@@ -4,6 +4,12 @@ All notable changes to the "clairvoyant" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## 4.1.0 - 2019-11-28
+
+### Added
+
+- When Click a text editor displaying a preview, it is confirmed.
+
 ## 4.0.1 - 2019-11-28
 
 ### Fixed
