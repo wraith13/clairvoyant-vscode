@@ -9,6 +9,7 @@ import * as File from "./lib/file"
 import * as Menu from "./ui/menu";
 import * as StatusBar from "./ui/statusbar";
 
+import * as Selection from "./textEditor/selection";
 import * as Scan from "./scan";
 
 const roundCenti = (value : number) : number => Math.round(value *100) /100;
@@ -116,8 +117,8 @@ export const initialize = (aContext: vscode.ExtensionContext): void =>
         vscode.commands.registerCommand(`${applicationKey}.scanOpenDocuments`, Scan.scanOpenDocuments),
         vscode.commands.registerCommand(`${applicationKey}.scanWorkspace`, Scan.scanWorkspace),
         vscode.commands.registerCommand(`${applicationKey}.sight`, sight),
-        vscode.commands.registerCommand(`${applicationKey}.back`, showTokenUndo),
-        vscode.commands.registerCommand(`${applicationKey}.forward`, showTokenRedo),
+        vscode.commands.registerCommand(`${applicationKey}.back`, Selection.getEntry().showTokenUndo),
+        vscode.commands.registerCommand(`${applicationKey}.forward`, Selection.getEntry().showTokenRedo),
         vscode.commands.registerCommand(`${applicationKey}.reload`, reload),
         vscode.commands.registerCommand(`${applicationKey}.reportStatistics`, reportStatistics),
         vscode.commands.registerCommand(`${applicationKey}.reportProfile`, reportProfile),
@@ -172,6 +173,11 @@ export const initialize = (aContext: vscode.ExtensionContext): void =>
         (
             textEditor =>
             {
+                if (textEditor && textEditor.viewColumn)
+                {
+                    outputLine("verbose", `lastValidViemColumn: ${textEditor.viewColumn}`);
+                    Selection.setLastValidViemColumn(textEditor.viewColumn);
+                }
                 outputLine("verbose", `onDidChangeActiveTextEditor("${textEditor ? textEditor.document.uri.toString(): "undefined"}") is called.`);
                 if (textEditor && autoScanMode.get(textEditor.document.languageId).enabled && !isExcludeDocument(textEditor.document))
                 {
@@ -198,176 +204,6 @@ export const isExcludeDocument = (document: vscode.TextDocument) =>
 export const encodeToken = (token: string) => `@${token}`;
 export const decodeToken = (token: string) => token.substring(1);
 
-export interface ShowTokenCoreEntry
-{
-    document: vscode.TextDocument;
-    selection: vscode.Selection;
-}
-export interface ShowTokenDoEntry
-{
-    redo: ShowTokenCoreEntry;
-    undo: ShowTokenCoreEntry | null;
-}
-export const showTokenUndoBuffer: ShowTokenDoEntry[] = [];
-export const showTokenRedoBuffer: ShowTokenDoEntry[] = [];
-const revealSelection = (textEditor: vscode.TextEditor, selection: vscode.Selection) =>
-{
-    textEditor.selection = selection;
-    textEditor.revealRange(selection, textEditorRevealType.get(textEditor.document.languageId));
-};
-const showSelection = async (entry: { document: vscode.TextDocument, selection: vscode.Selection }, textEditor?: vscode.TextEditor ) =>
-{
-    revealSelection(textEditor || await vscode.window.showTextDocument(entry.document), entry.selection);
-};
-const getPreviewTextEditor = (document: vscode.TextDocument) =>
-{
-    const uri = document.uri.toString();
-    const activeTextEditor = vscode.window.activeTextEditor;
-    if (activeTextEditor && activeTextEditor.document.uri.toString() === uri)
-    {
-        return activeTextEditor;
-    }
-    else
-    {
-        return vscode.window.visibleTextEditors.filter(i => i.document.uri.toString() === uri)[0];
-    }
-};
-let lastPreviewSelectionEntry: ShowTokenCoreEntry | null = null;
-export const previewSelection = (entry: { document: vscode.TextDocument, selection: vscode.Selection }, textEditor = getPreviewTextEditor(entry.document)) =>
-{
-    if (textEditor)
-    {
-        revealSelection(textEditor, entry.selection);
-        lastPreviewSelectionEntry = entry;
-    }
-};
-const makeShowTokenCoreEntry = () =>
-{
-    let result: ShowTokenCoreEntry | null = null;
-    const activeTextEditor = vscode.window.activeTextEditor;
-    if (activeTextEditor)
-    {
-        result =
-        {
-            document: activeTextEditor.document,
-            selection: activeTextEditor.selection,
-        };
-    }
-    return result;
-};
-let backupTargetTextEditor: vscode.TextEditor | undefined = undefined;
-let groundBackupSelectionEntry: ShowTokenCoreEntry | null = null;
-let targetBackupSelectionEntry: ShowTokenCoreEntry | null = null;
-export const showTextDocumentWithBackupSelection = async (document: vscode.TextDocument) =>
-{
-    groundBackupSelectionEntry = makeShowTokenCoreEntry();
-    if (groundBackupSelectionEntry && groundBackupSelectionEntry.document.uri.toString() === document.uri.toString())
-    {
-        targetBackupSelectionEntry = null;
-    }
-    else
-    {
-        await vscode.window.showTextDocument(document);
-        targetBackupSelectionEntry = makeShowTokenCoreEntry();
-    }
-    lastPreviewSelectionEntry = null;
-    backupTargetTextEditor = vscode.window.activeTextEditor;
-};
-export const rollbackSelection = async () =>
-{
-    if (lastPreviewSelectionEntry)
-    {
-        const currentSelectionEntry = makeShowTokenCoreEntry();
-        if
-        (
-            currentSelectionEntry &&
-            lastPreviewSelectionEntry.document.uri.toString() === currentSelectionEntry.document.uri.toString() &&
-            !lastPreviewSelectionEntry.selection.isEqual(currentSelectionEntry.selection) &&
-            backupTargetTextEditor === vscode.window.activeTextEditor
-        )
-        {
-            targetBackupSelectionEntry = null;
-            groundBackupSelectionEntry = null;
-
-            const data =
-            {
-                entry: lastPreviewSelectionEntry,
-                textEditor: backupTargetTextEditor,
-            }
-            setTimeout
-            (
-                () => previewSelection(data.entry, data.textEditor),
-                0
-            );
-        }
-        lastPreviewSelectionEntry = null;
-    }
-    
-    if (targetBackupSelectionEntry)
-    {
-        previewSelection(targetBackupSelectionEntry, backupTargetTextEditor);
-        targetBackupSelectionEntry = null;
-    }
-    if (groundBackupSelectionEntry)
-    {
-        showSelection
-        (
-            groundBackupSelectionEntry,
-            await vscode.window.showTextDocument
-            (
-                groundBackupSelectionEntry.document,
-                backupTargetTextEditor ?
-                    backupTargetTextEditor.viewColumn:
-                    undefined
-            )
-        );
-        groundBackupSelectionEntry = null;
-    }
-    backupTargetTextEditor = undefined;
-};
-export const showToken = async (entry: { document: vscode.TextDocument, selection: vscode.Selection }) =>
-{
-    outputLine("verbose", `showToken() is called.`);
-    showTokenUndoBuffer.push
-    ({
-        redo: entry,
-        undo: groundBackupSelectionEntry || makeShowTokenCoreEntry(),
-    });
-    showSelection(entry);
-    showTokenRedoBuffer.splice(0, 0);
-    onUpdateHistory();
-};
-export const showTokenUndo = async () =>
-{
-    outputLine("verbose", `showTokenUndo() is called.`);
-    const entry = showTokenUndoBuffer.pop();
-    if (entry)
-    {
-        if (entry.undo)
-        {
-            showSelection(entry.undo);
-        }
-        showTokenRedoBuffer.push(entry);
-        onUpdateHistory();
-    }
-};
-export const showTokenRedo = async () =>
-{
-    outputLine("verbose", `showTokenRedo() is called.`);
-    const entry = showTokenRedoBuffer.pop();
-    if (entry)
-    {
-        entry.undo = makeShowTokenCoreEntry() || entry.undo;
-        showSelection(entry.redo);
-        showTokenUndoBuffer.push(entry);
-        onUpdateHistory();
-    }
-};
-const onUpdateHistory = () =>
-{
-    outputLine("verbose", `onUpdateHistory() is called.`);
-    Menu.removeCache(`root.full`);
-};
 
 export const copyToken = async (text: string) =>
 {
@@ -419,10 +255,7 @@ export const reload = () =>
     outputLine("silent", Locale.map("♻️ Reload Clairvoyant!"));
     Scan.reload();
     Menu.reload();
-    showTokenUndoBuffer.splice(0, 0);
-    showTokenRedoBuffer.splice(0, 0);
-    groundBackupSelectionEntry = null;
-    targetBackupSelectionEntry = null;
+    Selection.reload();
     clearConfig();
     Profiler.start();
     autoScanMode.get("").onInit();

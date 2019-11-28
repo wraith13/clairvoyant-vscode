@@ -5,6 +5,7 @@ import * as Locale from "../lib/locale";
 import * as File from "../lib/file";
 
 import * as Clairvoyant from "../clairvoyant";
+import * as Selection from "../textEditor/selection";
 import * as Scan from "../scan";
 
 const simpleComparer = <valueT>(a: valueT, b: valueT) =>
@@ -30,7 +31,7 @@ const mergeComparer = <valueT>(comparerList: ((a: valueT, b: valueT) => number)[
 interface CommandMenuItem extends vscode.QuickPickItem
 {
     command: () => Promise<void>;
-    preview?: Clairvoyant.ShowTokenCoreEntry;
+    preview?: Selection.ShowTokenCoreEntry;
 }
 interface CommandMenuOptions extends vscode.QuickPickOptions
 {
@@ -72,12 +73,13 @@ export module Show
     {
         if (entry.options && entry.options.preview)
         {
-            await Clairvoyant.showTextDocumentWithBackupSelection(entry.options.preview);
+            const selectionEntry = Selection.getEntry();
+            await selectionEntry.showTextDocumentWithBackupSelection(entry.options.preview);
             entry.options.onDidSelectItem = (select: CommandMenuItem) =>
             {
                 if (select.preview)
                 {
-                    Clairvoyant.previewSelection(select.preview);
+                    selectionEntry.previewSelection(select.preview);
                 }
             };
             const select = await vscode.window.showQuickPick
@@ -96,13 +98,13 @@ export module Show
             {
                 if (!select.preview)
                 {
-                    await Clairvoyant.rollbackSelection();
+                    await selectionEntry.rollbackSelection();
                 }
                 await select.command();
             }
             else
             {
-                await Clairvoyant.rollbackSelection();
+                await selectionEntry.rollbackSelection();
             }
         }
         else
@@ -198,7 +200,7 @@ const makePreview = (document: vscode.TextDocument, anchor: vscode.Position) => 
 const makeGoCommandMenuItem =
 (
     label: Locale.KeyType,
-    entry: Clairvoyant.ShowTokenCoreEntry,
+    entry: Selection.ShowTokenCoreEntry,
     command?: () => Promise<void>
 ) => Profiler.profile
 (
@@ -214,7 +216,7 @@ const makeGoCommandMenuItem =
         ),
         description: File.extractRelativePath(entry.document.uri.toString()),
         detail: makePreview(entry.document, entry.selection.anchor),
-        command: command ? command: (async () => Clairvoyant.showToken(entry)),
+        command: command ? command: (async () => Selection.getEntry().showToken(entry)),
         preview: command ? undefined: entry,
     })
 );
@@ -408,9 +410,10 @@ const setRootMenuOrder = (order: string) =>
 const makeHistoryMenu = (): CommandMenuItem[] =>
 {
     const result: CommandMenuItem[] = [];
-    if (0 < Clairvoyant.showTokenUndoBuffer.length)
+    const selectionEntry = Selection.getEntry();
+    if (0 < selectionEntry.showTokenUndoBuffer.length)
     {
-        const entry = Clairvoyant.showTokenUndoBuffer[Clairvoyant.showTokenUndoBuffer.length -1];
+        const entry = selectionEntry.showTokenUndoBuffer[selectionEntry.showTokenUndoBuffer.length -1];
         if (entry.undo)
         {
             result.push
@@ -419,20 +422,20 @@ const makeHistoryMenu = (): CommandMenuItem[] =>
                 (
                     "clairvoyant.back.title",
                     entry.undo,
-                    Clairvoyant.showTokenUndo
+                    selectionEntry.showTokenUndo
                 )
             );
         }
     }
-    if (0 < Clairvoyant.showTokenRedoBuffer.length)
+    if (0 < selectionEntry.showTokenRedoBuffer.length)
     {
         result.push
         (
             makeGoCommandMenuItem
             (
                 "clairvoyant.forward.title",
-                Clairvoyant.showTokenRedoBuffer[Clairvoyant.showTokenRedoBuffer.length -1].redo,
-                Clairvoyant.showTokenRedo
+                selectionEntry.showTokenRedoBuffer[selectionEntry.showTokenRedoBuffer.length -1].redo,
+                selectionEntry.showTokenRedo
             )
         );
     }
@@ -451,93 +454,89 @@ export const makeStaticMenu = (): CommandMenuItem[] =>
     makeStaticMenuItem("$(info)", "clairvoyant.reportStatistics.title", "clairvoyant.reportStatistics"),
     makeStaticMenuItem("$(dashboard)", "clairvoyant.reportProfile.title", "clairvoyant.reportProfile"),
 ];
-export const makeSightRootMenu = (): CommandMenuItem[] => getCacheOrMake
+export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
 (
-    `root.full`,
-    () =>Profiler.profile
+    "makeSightRootMenu",
+    () => makeEmptyList().concat
     (
-        "makeSightRootMenu",
-        () => makeEmptyList().concat
+        makeHistoryMenu(),
+        getCacheOrMake
         (
-            makeHistoryMenu(),
-            getCacheOrMake
+            `root.${getRootMenuOrder()}`,
+            () => makeEmptyList().concat
             (
-                `root.${getRootMenuOrder()}`,
-                () => makeEmptyList().concat
-                (
-                    [
-                        "token" === getRootMenuOrder() ?
-                            {
-                                label: `$(list-ordered) ${Locale.map("Sort by count")}`,
-                                command: async () =>
-                                {
-                                    setRootMenuOrder("count");
-                                    await Show.update();
-                                },
-                            }:
-                            {
-                                label: `$(list-ordered) ${Locale.map("Sort by token")}`,
-                                command: async () =>
-                                {
-                                    setRootMenuOrder("token");
-                                    await Show.update();
-                                },
-                            },
+                [
+                    "token" === getRootMenuOrder() ?
                         {
-                            label: `$(list-ordered) ${Locale.map("Show by file")}`,
-                            command: async () => await Show.forward
-                            ({
-                                makeItemList: makeSightFileListMenu,
-                                options: { matchOnDescription: true },
-                            })
+                            label: `$(list-ordered) ${Locale.map("Sort by count")}`,
+                            command: async () =>
+                            {
+                                setRootMenuOrder("count");
+                                await Show.update();
+                            },
+                        }:
+                        {
+                            label: `$(list-ordered) ${Locale.map("Sort by token")}`,
+                            command: async () =>
+                            {
+                                setRootMenuOrder("token");
+                                await Show.update();
+                            },
                         },
-                    ],
-                    makeStaticMenu(),
+                    {
+                        label: `$(list-ordered) ${Locale.map("Show by file")}`,
+                        command: async () => await Show.forward
+                        ({
+                            makeItemList: makeSightFileListMenu,
+                            options: { matchOnDescription: true },
+                        })
+                    },
+                ],
+                makeStaticMenu(),
+                Profiler.profile
+                (
+                    "makeSightRootMenu.core",
+                    () =>
                     Profiler.profile
                     (
-                        "makeSightRootMenu.core",
+                        "makeSightRootMenu.sort",
                         () =>
-                        Profiler.profile
+                        Object.entries(Scan.tokenDocumentEntryMap)
+                        .sort
                         (
-                            "makeSightRootMenu.sort",
-                            () =>
-                            Object.entries(Scan.tokenDocumentEntryMap)
-                            .sort
-                            (
-                                "token" === getRootMenuOrder() ?
-                                    (a, b) => stringComparer(a[0], b[0]):
-                                    mergeComparer
-                                    ([
-                                        makeComparer((entry: [string, string[]]) => -Scan.tokenCountMap[entry[0]]),
-                                        (a, b) => stringComparer(a[0], b[0])
-                                    ])
-                            )
+                            "token" === getRootMenuOrder() ?
+                                (a, b) => stringComparer(a[0], b[0]):
+                                mergeComparer
+                                ([
+                                    makeComparer((entry: [string, string[]]) => -Scan.tokenCountMap[entry[0]]),
+                                    (a, b) => stringComparer(a[0], b[0])
+                                ])
                         )
-                        .map
-                        (
-                            entry =>
+                    )
+                    .map
+                    (
+                        entry =>
+                        ({
+                            label: `$(tag) "${Clairvoyant.decodeToken(entry[0])}"`,
+                            description: undefined,
+                            detail: entry[1].map
+                                (
+                                    i =>
+                                    ({
+                                        uri: i,
+                                        file: Scan.documentFileMap[i],
+                                        hits: Scan.documentTokenEntryMap[i][entry[0]].length
+                                    })
+                                )
+                                .sort(mergeComparer([makeComparer(d => -d.hits), makeComparer(d => d.uri)]))
+                                .map(d => `$(file-text) ${d.file}(${d.hits})`)
+                                .join(", "),
+                            command: async () => await Show.forward
                             ({
-                                label: `$(tag) "${Clairvoyant.decodeToken(entry[0])}"`,
-                                description: undefined,
-                                detail: entry[1].map
-                                    (
-                                        i =>
-                                        ({
-                                            uri: i,
-                                            file: Scan.documentFileMap[i],
-                                            hits: Scan.documentTokenEntryMap[i][entry[0]].length
-                                        })
-                                    )
-                                    .sort(mergeComparer([makeComparer(d => -d.hits), makeComparer(d => d.uri)]))
-                                    .map(d => `$(file-text) ${d.file}(${d.hits})`)
-                                    .join(", "),
-                                command: async () => await Show.forward
-                                ({
-                                    makeItemList: () => makeSightTokenMenu(entry[0]),
-                                    options: { matchOnDescription: true },
-                                })
+                                makeItemList: () => makeSightTokenMenu(entry[0]),
+                                options: { matchOnDescription: true },
                             })
-                        )
+                        })
                     )
                 )
             )

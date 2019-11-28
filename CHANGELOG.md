@@ -4,6 +4,12 @@ All notable changes to the "clairvoyant" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## 4.2.0 - 2019-11-28
+
+### Added
+
+- Separated `Go to` history by viewColumn.
+
 ## 4.1.0 - 2019-11-28
 
 ### Added
