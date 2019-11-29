@@ -159,6 +159,21 @@
 						"default": "(\\w+[\\w\\-]*\\w+)|\\w+",
 						"overridable": true,
 						"description": "%clairvoyant.parserRegExp.description%"
+					},
+					"clairvoyant.enablePreviewIntercept": {
+						"type": "boolean",
+						"default": true,
+						"description": "%clairvoyant.enablePreviewIntercept.description%"
+					},
+					"clairvoyant.gotoHistoryMode": {
+						"type": "string",
+						"default": "by view column",
+						"enum": [
+							"single",
+							"by view column"
+						],
+						"overridable": true,
+						"description": "%clairvoyant.gotoHistoryMode.description%"
 					}
 				}
 			}

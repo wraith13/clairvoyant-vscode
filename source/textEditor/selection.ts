@@ -57,28 +57,31 @@ class Entry
         Clairvoyant.outputLine("verbose", `Selection.Entry(${this.viewColumn}).rollbackSelection() is called.`);
         if (this.lastPreviewSelectionEntry)
         {
-            const currentSelectionEntry = makeShowTokenCoreEntry();
-            if
-            (
-                currentSelectionEntry &&
-                this.lastPreviewSelectionEntry.document.uri.toString() === currentSelectionEntry.document.uri.toString() &&
-                !this.lastPreviewSelectionEntry.selection.isEqual(currentSelectionEntry.selection) &&
-                this.backupTargetTextEditor === vscode.window.activeTextEditor
-            )
+            if (Clairvoyant.enablePreviewIntercept.get(""))
             {
-                this.targetBackupSelectionEntry = null;
-                this.groundBackupSelectionEntry = null;
-
-                const data =
-                {
-                    entry: this.lastPreviewSelectionEntry,
-                    textEditor: this.backupTargetTextEditor,
-                };
-                setTimeout
+                const currentSelectionEntry = makeShowTokenCoreEntry();
+                if
                 (
-                    () => this.previewSelection(data.entry, data.textEditor),
-                    0
-                );
+                    currentSelectionEntry &&
+                    this.lastPreviewSelectionEntry.document.uri.toString() === currentSelectionEntry.document.uri.toString() &&
+                    !this.lastPreviewSelectionEntry.selection.isEqual(currentSelectionEntry.selection) &&
+                    this.backupTargetTextEditor === vscode.window.activeTextEditor
+                )
+                {
+                    this.targetBackupSelectionEntry = null;
+                    this.groundBackupSelectionEntry = null;
+    
+                    const data =
+                    {
+                        entry: this.lastPreviewSelectionEntry,
+                        textEditor: this.backupTargetTextEditor,
+                    };
+                    setTimeout
+                    (
+                        () => this.previewSelection(data.entry, data.textEditor),
+                        0
+                    );
+                }
             }
             this.lastPreviewSelectionEntry = null;
         }
@@ -148,7 +151,7 @@ class Entry
 const entryMap: { [viewColumn: string]: Entry } = { };
 export const getEntry = () =>
 {
-    const key = `@${lastValidViemColumn}`;
+    const key = Clairvoyant.gotoHistoryMode.get("")(lastValidViemColumn);
     if (!entryMap[key])
     {
         entryMap[key] = new Entry(key);

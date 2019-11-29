@@ -45,12 +45,16 @@ const textEditorRevealTypeObject = Object.freeze
     "InCenter": vscode.TextEditorRevealType.InCenter,
     "InCenterIfOutsideViewport": vscode.TextEditorRevealType.InCenterIfOutsideViewport,
 });
-
 const outputChannelVolumeObject = Object.freeze
 ({
     "silent": (level: string) => 0 <= ["silent"].indexOf(level),
     "regular": (level: string) => 0 <= ["silent", "regular"].indexOf(level),
     "verbose": (level: string) => 0 <= ["silent", "regular", "verbose"].indexOf(level),
+});
+const gotoHistoryModeObject = Object.freeze
+({
+    "single": (_lastValidViemColumn: number) => `@0`,
+    "by view column": (lastValidViemColumn: number) => `@${lastValidViemColumn}`,
 });
 
 export const autoScanMode = new Config.MapEntry("autoScanMode", autoScanModeObject);
@@ -61,6 +65,8 @@ export const isExcludeStartsWidhDot = new Config.Entry<boolean>("isExcludeStarts
 export const excludeDirectories = new Config.Entry("excludeDirectories", Config.stringArrayValidator);
 export const excludeExtentions = new Config.Entry("excludeExtentions", Config.stringArrayValidator);
 export const targetProtocols = new Config.Entry("targetProtocols", Config.stringArrayValidator);
+export const enablePreviewIntercept = new Config.Entry<boolean>("enablePreviewIntercept");
+export const gotoHistoryMode = new Config.MapEntry("gotoHistoryMode", gotoHistoryModeObject);
 export const parserRegExp = new Config.Entry<string>("parserRegExp", value => "string" === typeof value);
 const outputChannelVolume = new Config.MapEntry("outputChannelVolume", outputChannelVolumeObject);
 const outputChannel = vscode.window.createOutputChannel("Clairvoyant");
@@ -245,6 +251,8 @@ const clearConfig = () =>
         excludeExtentions,
         targetProtocols,
         parserRegExp,
+        enablePreviewIntercept,
+        gotoHistoryMode,
         outputChannelVolume,
     ]
     .forEach(i => i.clear());
@@ -271,9 +279,14 @@ const onDidChangeConfiguration = () =>
         excludeDirectories: excludeDirectories.getCache(""),
         excludeExtentions: excludeExtentions.getCache(""),
         targetProtocols: targetProtocols.getCache(""),
+        gotoHistoryMode: gotoHistoryMode.getCache(""),
     };
     clearConfig();
     StatusBar.update();
+    if (JSON.stringify(old.gotoHistoryMode) !== JSON.stringify(gotoHistoryMode.get("")))
+    {
+        Selection.reload();
+    }
     if
     (
         old.autoScanMode !== autoScanMode.get("") ||
@@ -284,6 +297,8 @@ const onDidChangeConfiguration = () =>
         JSON.stringify(old.targetProtocols) !== JSON.stringify(targetProtocols.get(""))
     )
     {
+        Scan.reload();
+        Menu.reload();
         autoScanMode.get("").onInit();
     }
 };
