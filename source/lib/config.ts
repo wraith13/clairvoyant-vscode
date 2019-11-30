@@ -22,16 +22,18 @@ class Cache<keyT, valueT>
 export class Entry<valueT>
 {
     public defaultValue: valueT;
+    public minValue: valueT | undefined;
+    public maxValue: valueT | undefined;
 
     public constructor
     (
         public name: string,
-        public validator?: (value: valueT) => boolean,
-        public minValue?: valueT,
-        public maxValue?: valueT
+        public validator?: (value: valueT) => boolean
     )
     {
         this.defaultValue = (<any>properties)[`${applicationKey}.${name}`].default;
+        this.minValue = (<any>properties)[`${applicationKey}.${name}`].minimum;
+        this.maxValue = (<any>properties)[`${applicationKey}.${name}`].maximum;
     }
 
     regulate = (rawKey: string, value: valueT): valueT =>
