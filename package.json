@@ -77,7 +77,7 @@
 				"category": "Clairvoyant"
 			}
 		],
-		"configuration":[
+		"configuration": [
 			{
 				"title": "Clairvoyant",
 				"properties": {
@@ -121,26 +121,67 @@
 					},
 					"clairvoyant.excludeDirectories": {
 						"type": "array",
-						"items":{
+						"items": {
 							"type": "string"
 						},
-						"default": ["out", "bin", "node_modules"],
+						"default": [
+							"out",
+							"bin",
+							"node_modules"
+						],
 						"description": "%clairvoyant.excludeDirectories.description%"
 					},
 					"clairvoyant.excludeExtentions": {
 						"type": "array",
-						"items":{
+						"items": {
 							"type": "string"
 						},
-						"default": ["package-lock.json", ".min.js", ".map", ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".eot", ".ttf", ".woff", ".ico", ".obj", ".lib", ".out", ".exe", ".dll", ".vsix", ".zip", ".tar", ".gz", ".pkg", ".ipa", ".app", ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".wav", "mp3", ".mp4", ".mov"],
+						"default": [
+							"package-lock.json",
+							".min.js",
+							".map",
+							".png",
+							".jpg",
+							".jpeg",
+							".gif",
+							".bmp",
+							".eot",
+							".ttf",
+							".woff",
+							".ico",
+							".obj",
+							".lib",
+							".out",
+							".exe",
+							".dll",
+							".vsix",
+							".zip",
+							".tar",
+							".gz",
+							".pkg",
+							".ipa",
+							".app",
+							".pdf",
+							".doc",
+							".docx",
+							".xls",
+							".xlsx",
+							".wav",
+							"mp3",
+							".mp4",
+							".mov"
+						],
 						"description": "%clairvoyant.excludeExtentions.description%"
 					},
 					"clairvoyant.targetProtocols": {
 						"type": "array",
-						"items":{
+						"items": {
 							"type": "string"
 						},
-						"default": ["file:", "untitled:"],
+						"default": [
+							"file:",
+							"untitled:"
+						],
 						"description": "%clairvoyant.targetProtocols.description%"
 					},
 					"clairvoyant.outputChannelVolume": {
@@ -172,7 +213,6 @@
 							"single",
 							"by view column"
 						],
-						"overridable": true,
 						"description": "%clairvoyant.gotoHistoryMode.description%"
 					}
 				}
@@ -196,5 +236,8 @@
 		"typescript": "^3.6.4",
 		"tslint": "^5.20.0",
 		"vscode-test": "^1.2.2"
+	},
+	"dependencies": {
+		"phi-colors": "^1.0.1"
 	}
 }
