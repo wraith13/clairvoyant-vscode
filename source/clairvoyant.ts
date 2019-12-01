@@ -57,18 +57,18 @@ const gotoHistoryModeObject = Object.freeze
     "by view column": (lastValidViemColumn: number) => `@${lastValidViemColumn}`,
 });
 
-export const autoScanMode = new Config.MapEntry("autoScanMode", autoScanModeObject);
-export const maxFiles = new Config.Entry<number>("maxFiles");
-export const showStatusBarItems = new Config.Entry<boolean>("showStatusBarItems");
-export const textEditorRevealType = new Config.MapEntry("textEditorRevealType", textEditorRevealTypeObject);
-export const isExcludeStartsWidhDot = new Config.Entry<boolean>("isExcludeStartsWidhDot");
-export const excludeDirectories = new Config.Entry("excludeDirectories", Config.stringArrayValidator);
-export const excludeExtentions = new Config.Entry("excludeExtentions", Config.stringArrayValidator);
-export const targetProtocols = new Config.Entry("targetProtocols", Config.stringArrayValidator);
-export const enablePreviewIntercept = new Config.Entry<boolean>("enablePreviewIntercept");
-export const gotoHistoryMode = new Config.MapEntry("gotoHistoryMode", gotoHistoryModeObject);
-export const parserRegExp = new Config.Entry<string>("parserRegExp", value => "string" === typeof value);
-const outputChannelVolume = new Config.MapEntry("outputChannelVolume", outputChannelVolumeObject);
+export const autoScanMode = new Config.MapEntry("clairvoyant.autoScanMode", autoScanModeObject);
+export const maxFiles = new Config.Entry<number>("clairvoyant.maxFiles");
+export const showStatusBarItems = new Config.Entry<boolean>("clairvoyant.showStatusBarItems");
+export const textEditorRevealType = new Config.MapEntry("clairvoyant.textEditorRevealType", textEditorRevealTypeObject);
+export const isExcludeStartsWidhDot = new Config.Entry<boolean>("clairvoyant.isExcludeStartsWidhDot");
+export const excludeDirectories = new Config.Entry("clairvoyant.excludeDirectories", Config.stringArrayValidator);
+export const excludeExtentions = new Config.Entry("clairvoyant.excludeExtentions", Config.stringArrayValidator);
+export const targetProtocols = new Config.Entry("clairvoyant.targetProtocols", Config.stringArrayValidator);
+export const enablePreviewIntercept = new Config.Entry<boolean>("clairvoyant.enablePreviewIntercept");
+export const gotoHistoryMode = new Config.MapEntry("clairvoyant.gotoHistoryMode", gotoHistoryModeObject);
+export const parserRegExp = new Config.Entry<string>("clairvoyant.parserRegExp", value => "string" === typeof value);
+const outputChannelVolume = new Config.MapEntry("clairvoyant.outputChannelVolume", outputChannelVolumeObject);
 const outputChannel = vscode.window.createOutputChannel("Clairvoyant");
 let muteOutput = false;
 export const showOutput = () => outputChannel.show();

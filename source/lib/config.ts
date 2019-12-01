@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import packageJson from "../../package.json";
 export const properties = Object.freeze(packageJson.contributes.configuration[0].properties);
-
 export const applicationKey = packageJson.name;
 
 class Cache<keyT, valueT>
@@ -27,13 +26,13 @@ export class Entry<valueT>
 
     public constructor
     (
-        public name: string,
+        public key: keyof typeof properties,
         public validator?: (value: valueT) => boolean
     )
     {
-        this.defaultValue = (<any>properties)[`${applicationKey}.${name}`].default;
-        this.minValue = (<any>properties)[`${applicationKey}.${name}`].minimum;
-        this.maxValue = (<any>properties)[`${applicationKey}.${name}`].maximum;
+        this.defaultValue = (<any>properties)[key].default;
+        this.minValue = (<any>properties)[key].minimum;
+        this.maxValue = (<any>properties)[key].maximum;
     }
 
     regulate = (rawKey: string, value: valueT): valueT =>
@@ -63,32 +62,33 @@ export class Entry<valueT>
 
     cache = new Cache
     (
-        (lang: string): valueT =>
+        (languageId: string): valueT =>
         {
             let result: valueT;
-            if (undefined === lang || null === lang || 0 === lang.length)
+            if (undefined === languageId || null === languageId || 0 === languageId.length)
             {
-                result = <valueT>vscode.workspace.getConfiguration(applicationKey)[this.name];
+                const name = this.key.replace(/[^.]+\./, "");
+                result = <valueT>vscode.workspace.getConfiguration(applicationKey)[name];
                 if (undefined === result)
                 {
                     result = this.defaultValue;
                 }
                 else
                 {
-                    result = this.regulate(`${applicationKey}.${this.name}`, result);
+                    result = this.regulate(this.key, result);
                 }
             }
             else
             {
-                const langSection = vscode.workspace.getConfiguration(`[${lang}]`, null);
-                result = <valueT>langSection[`${applicationKey}.${this.name}`];
+                const langSection = vscode.workspace.getConfiguration(`[${languageId}]`, null);
+                result = <valueT>langSection[this.key];
                 if (undefined === result)
                 {
                     result = this.get("");
                 }
                 else
                 {
-                    result = this.regulate(`[${lang}].${applicationKey}.${this.name}`, result);
+                    result = this.regulate(`[${languageId}].${this.key}`, result);
                 }
             }
             return result;
@@ -103,15 +103,15 @@ export class MapEntry<ObjectT>
 {
     public constructor
     (
-        public name: string,
+        public key: keyof typeof properties,
         public mapObject: ObjectT
     )
     {
     }
 
-    config = new Entry<keyof ObjectT>(this.name, makeEnumValidator(this.mapObject));
-    public get = (key: string) => this.mapObject[this.config.cache.get(key)];
-    public getCache = (key: string) => this.mapObject[this.config.cache.getCache(key)];
+    config = new Entry<keyof ObjectT>(this.key, makeEnumValidator(this.mapObject));
+    public get = (languageId: string) => this.mapObject[this.config.cache.get(languageId)];
+    public getCache = (languageId: string) => this.mapObject[this.config.cache.getCache(languageId)];
     public clear = this.config.cache.clear;
 }
 
