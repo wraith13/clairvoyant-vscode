@@ -1,6 +1,15 @@
 import * as vscode from 'vscode';
+
+import * as Profiler from "../lib/profiler";
+
 import * as Clairvoyant from "../clairvoyant";
 import * as Menu from '../ui/menu';
+
+export const make = (document: vscode.TextDocument, index: number, token: string) => Profiler.profile
+(
+    "Selection.make",
+    () => new vscode.Selection(document.positionAt(index), document.positionAt(index +token.length))
+);
 
 let lastValidViemColumn: number = 1;
 export const setLastValidViemColumn = (viewColumn: number) => lastValidViemColumn = viewColumn;

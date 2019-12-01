@@ -168,11 +168,6 @@ export module Show
         )
     );
 }
-const makeSelection = (document: vscode.TextDocument, index: number, token: string) => Profiler.profile
-(
-    "makeSelection",
-    () => new vscode.Selection(document.positionAt(index), document.positionAt(index +token.length))
-);
 const previewCache: { [uri: string] : { [line: number]: string } } = { };
 export const removePreviewCache = (uri: string) =>
 {
@@ -235,7 +230,7 @@ const makeSightShowMenu = (uri: string, token: string, hits: number[]): CommandM
                     "clairvoyant.goto.title",
                     {
                         document: Scan.documentMap[uri],
-                        selection: makeSelection(Scan.documentMap[uri], index, token)
+                        selection: Selection.make(Scan.documentMap[uri], index, token)
                     }
                 )
             )
