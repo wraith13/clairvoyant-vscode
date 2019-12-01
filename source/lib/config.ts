@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import packageJson from "../../package.json";
 export const properties = Object.freeze(packageJson.contributes.configuration[0].properties);
+export const applicationName = packageJson.displayName;
 export const applicationKey = packageJson.name;
 
 class Cache<keyT, valueT>

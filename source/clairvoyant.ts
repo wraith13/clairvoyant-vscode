@@ -69,7 +69,7 @@ export const enablePreviewIntercept = new Config.Entry<boolean>("clairvoyant.ena
 export const gotoHistoryMode = new Config.MapEntry("clairvoyant.gotoHistoryMode", gotoHistoryModeObject);
 export const parserRegExp = new Config.Entry<string>("clairvoyant.parserRegExp", value => "string" === typeof value);
 const outputChannelVolume = new Config.MapEntry("clairvoyant.outputChannelVolume", outputChannelVolumeObject);
-const outputChannel = vscode.window.createOutputChannel("Clairvoyant");
+const outputChannel = vscode.window.createOutputChannel(Config.applicationName);
 let muteOutput = false;
 export const showOutput = () => outputChannel.show();
 export const output = (level: keyof typeof outputChannelVolumeObject, text: string) =>
