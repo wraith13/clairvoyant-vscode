@@ -56,6 +56,43 @@ const gotoHistoryModeObject = Object.freeze
     "single": (_lastValidViemColumn: number) => `@0`,
     "by view column": (lastValidViemColumn: number) => `@${lastValidViemColumn}`,
 });
+const highlightModeObject = Object.freeze
+({
+    "none":
+    {
+        active: false,
+        latest: false,
+        trail: false,
+    },
+    "active":
+    {
+        active: true,
+        latest: false,
+        trail: false,
+    },
+    "latest":
+    {
+        active: true,
+        latest: true,
+        trail: false,
+    },
+    "trail":
+    {
+        active: true,
+        latest: true,
+        trail: true,
+    },
+});
+const overviewRulerLaneObject = Object.freeze
+({
+    "none": undefined,
+    "left": vscode.OverviewRulerLane.Left,
+    "center": vscode.OverviewRulerLane.Center,
+    "right": vscode.OverviewRulerLane.Right,
+    "full": vscode.OverviewRulerLane.Full,
+});
+
+const colorValidator = (value: string): boolean => /^#[0-9A-Fa-f]{6}$/.test(value);
 
 export const autoScanMode = new Config.MapEntry("clairvoyant.autoScanMode", autoScanModeObject);
 export const maxFiles = new Config.Entry<number>("clairvoyant.maxFiles");
@@ -68,6 +105,15 @@ export const targetProtocols = new Config.Entry("clairvoyant.targetProtocols", C
 export const enablePreviewIntercept = new Config.Entry<boolean>("clairvoyant.enablePreviewIntercept");
 export const gotoHistoryMode = new Config.MapEntry("clairvoyant.gotoHistoryMode", gotoHistoryModeObject);
 export const parserRegExp = new Config.Entry<string>("clairvoyant.parserRegExp", value => "string" === typeof value);
+export const highlightMode = new Config.MapEntry("clairvoyant.highlightMode", highlightModeObject);
+export const highlightBaseColor = new Config.Entry("clairvoyant.highlightBaseColor", colorValidator);
+export const highlightAlpha = new Config.Entry<number>("clairvoyant.highlightAlpha", value => "number" === typeof value);
+export const activeHighlightAlpha = new Config.Entry<number>("clairvoyant.activeHighlightAlpha", value => "number" === typeof value);
+export const activeHighlightLineAlpha = new Config.Entry<number>("clairvoyant.activeHighlightLineAlpha", value => "number" === typeof value);
+export const latestHighlightAlpha = new Config.Entry<number>("clairvoyant.latestHighlightAlpha", value => "number" === typeof value);
+export const activeHighlightOverviewRulerLane = new Config.MapEntry("clairvoyant.activeHighlightOverviewRulerLane", overviewRulerLaneObject);
+export const latestHighlightOverviewRulerLane = new Config.MapEntry("clairvoyant.latestHighlightOverviewRulerLane", overviewRulerLaneObject);
+export const highlightOverviewRulerLane = new Config.MapEntry("clairvoyant.highlightOverviewRulerLane", overviewRulerLaneObject);
 const outputChannelVolume = new Config.MapEntry("clairvoyant.outputChannelVolume", outputChannelVolumeObject);
 const outputChannel = vscode.window.createOutputChannel(Config.applicationName);
 let muteOutput = false;

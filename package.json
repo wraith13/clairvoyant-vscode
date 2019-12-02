@@ -214,6 +214,86 @@
 							"by view column"
 						],
 						"description": "%clairvoyant.gotoHistoryMode.description%"
+					},
+					"clairvoyant.highlightMode": {
+						"type": "string",
+						"default": "latest",
+						"enum": [
+							"none",
+							"active",
+							"latest",
+							"trail"
+						],
+						"description": "%clairvoyant.highlightMode.description%"
+					},
+					"clairvoyant.highlightBaseColor": {
+						"type": "string",
+						"default": "#5679C9",
+						"description": "%clairvoyant.highlightBaseColor.description%"
+					},
+					"clairvoyant.highlightAlpha": {
+						"type": "number",
+						"default": 45,
+						"minimum": 0,
+						"maximum": 255,
+						"description": "%clairvoyant.highlightAlpha.description%"
+					},
+					"clairvoyant.activeHighlightAlpha": {
+						"type": "number",
+						"default": 75,
+						"minimum": 0,
+						"maximum": 255,
+						"description": "%clairvoyant.activeHighlightAlpha.description%"
+					},
+					"clairvoyant.activeHighlightLineAlpha": {
+						"type": "number",
+						"default": 30,
+						"minimum": 0,
+						"maximum": 255,
+						"description": "%clairvoyant.activeHighlightLineAlpha.description%"
+					},
+					"clairvoyant.latestHighlightAlpha": {
+						"type": "number",
+						"default": 60,
+						"minimum": 0,
+						"maximum": 255,
+						"description": "%clairvoyant.latestHighlightAlpha.description%"
+					},
+					"clairvoyant.activeHighlightOverviewRulerLane": {
+						"type": "string",
+						"default": "full",
+						"enum": [
+							"none",
+							"left",
+							"center",
+							"right",
+							"full"
+						],
+						"description": "%clairvoyant.activeHighlightOverviewRulerLane.description%"
+					},
+					"clairvoyant.latestHighlightOverviewRulerLane": {
+						"type": "string",
+						"default": "full",
+						"enum": [
+							"none",
+							"left",
+							"center",
+							"right",
+							"full"
+						],
+						"description": "%clairvoyant.latestHighlightOverviewRulerLane.description%"
+					},
+					"clairvoyant.highlightOverviewRulerLane": {
+						"type": "string",
+						"default": "center",
+						"enum": [
+							"none",
+							"left",
+							"center",
+							"right",
+							"full"
+						],
+						"description": "%clairvoyant.highlightOverviewRulerLane.description%"
 					}
 				}
 			}
