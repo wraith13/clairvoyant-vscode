@@ -1,24 +1,12 @@
 import * as vscode from 'vscode';
 import packageJson from "../../package.json";
+
+import { Cache } from "./cache";
+
 export const properties = Object.freeze(packageJson.contributes.configuration[0].properties);
 export const applicationName = packageJson.displayName;
 export const applicationKey = packageJson.name;
 
-class Cache<keyT, valueT>
-{
-    cache: { [key: string]: valueT } = { };
-    public constructor(public loader: (key: keyT) => valueT)
-    {
-
-    }
-
-    public get = (key: keyT): valueT => this.getCore(key, JSON.stringify(key));
-    private getCore = (key: keyT, keyJson: string): valueT => undefined === this.cache[keyJson] ?
-        (this.cache[keyJson] = this.loader(key)):
-        this.cache[keyJson]
-    public getCache = (key: keyT): valueT => this.cache[JSON.stringify(key)];
-    public clear = () => this.cache = { };
-}
 export class Entry<valueT>
 {
     public defaultValue: valueT;
