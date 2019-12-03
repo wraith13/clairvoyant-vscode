@@ -10,6 +10,8 @@
     "clairvoyant.reload.title": "再読み込み(初期化)",
     "clairvoyant.reportStatistics.title": "統計情報を表示",
     "clairvoyant.reportProfile.title": "プロファイル情報を表示",
+    "clairvoyant.nextToken.title": "次のトークンへ",
+    "clairvoyant.previousToken.title": "前のトークンへ",
     "clairvoyant.autoScanMode.description": "自動スキャンモード",
     "clairvoyant.maxFiles.description": "ファイルの最大数",
     "clairvoyant.showStatusBarItems.description": "スタータスバー項目の表示",

@@ -76,6 +76,16 @@
 				"command": "clairvoyant.reportProfile",
 				"title": "%clairvoyant.reportProfile.title%",
 				"category": "Clairvoyant"
+			},
+			{
+				"command": "clairvoyant.nextToken",
+				"title": "%clairvoyant.nextToken.title%",
+				"category": "Clairvoyant"
+			},
+			{
+				"command": "clairvoyant.previousToken",
+				"title": "%clairvoyant.previousToken.title%",
+				"category": "Clairvoyant"
 			}
 		],
 		"configuration": [

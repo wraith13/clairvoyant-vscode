@@ -4,6 +4,7 @@ import * as Locale from "./lib/locale";
 import * as File from "./lib/file";
 import * as Clairvoyant from "./clairvoyant";
 import * as Menu from './ui/menu';
+import * as Selection from "./textEditor/selection";
 
 const regExpExecToArray = (regexp: RegExp, text: string) => Profiler.profile
 (
@@ -92,7 +93,7 @@ export const scanDocument = async (document: vscode.TextDocument, force: boolean
     () =>
     Profiler.profile
     (
-        "scanDocument",
+        "Scan.scanDocument",
         () =>
         {
             const uri = document.uri.toString();
@@ -217,7 +218,7 @@ export const detachDocument = async (document: vscode.TextDocument) => await Cla
     () =>
     Profiler.profile
     (
-        "detachDocument",
+        "Scan.detachDocument",
         () =>
         {
             if (isScanedDocment(document))
@@ -305,4 +306,55 @@ export const scanWorkspace = async () => await Clairvoyant.busy.doAsync
             Clairvoyant.outputLine("regular", `scan workspace complete!`);
         }
     }
+);
+
+export const seek = <ResultT>(textEditor: vscode.TextEditor, receiver: (token: string, hits: number[], i: number) => ResultT) => Profiler.profile
+(
+    "Scan.seek",
+    () =>
+    {
+        const document = textEditor.document;
+        if (isScanedDocment(document))
+        {
+            const map = documentTokenEntryMap[document.uri.toString()];
+            const entries = Object.entries(map);
+            for(let i = 0; i < entries.length; ++i)
+            {
+                const entry = entries[i];
+                const token = Clairvoyant.decodeToken(entry[0]);
+                const hits = entry[1];
+                for(let j = 0; j < hits.length; ++j)
+                {
+                    const hit = hits[j];
+                    const selection = Selection.make(document, hit, token);
+                    if (undefined !== selection.intersection(textEditor.selection))
+                    {
+                        return receiver(token, hits, j);
+                    }
+                }
+            }
+        }
+        return undefined;
+    }
+);
+export const getToken = (textEditor: vscode.TextEditor) => seek(textEditor, token => token);
+export const getNextTokenSelection = (textEditor: vscode.TextEditor) => seek
+(
+    textEditor,
+    (token, hits, i) => Selection.make
+    (
+        textEditor.document,
+        hits[(i +1) % hits.length],
+        token
+    )
+);
+export const getPreviousTokenSelection = (textEditor: vscode.TextEditor) => seek
+(
+    textEditor,
+    (token, hits, i) => Selection.make
+    (
+        textEditor.document,
+        hits[(i -1 +hits.length) % hits.length],
+        token
+    )
 );

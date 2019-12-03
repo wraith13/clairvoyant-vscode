@@ -420,6 +420,33 @@ const setRootMenuOrder = (order: string) =>
     Clairvoyant.context.globalState.update("clairvoyant.rootMenuOrder", order);
     removeCache(`root.full`);
 };
+const makeQuickMenu = (): CommandMenuItem[] =>
+{
+    const result: CommandMenuItem[] = [];
+    const activeTextEditor = vscode.window.activeTextEditor;
+    if (undefined !== activeTextEditor)
+    {
+        const token = Scan.getToken(activeTextEditor);
+        if (undefined !== token)
+        {
+            result.push
+            (
+                {
+                    label: `$(rocket) ${Locale.typeableMap("clairvoyant.nextToken.title")}`,
+                    description: `$(tag) ${token}`,
+                    command: async () => await vscode.commands.executeCommand("clairvoyant.nextToken"),
+                },
+                {
+                    label: `$(rocket) ${Locale.typeableMap("clairvoyant.previousToken.title")}`,
+                    description: `$(tag) ${token}`,
+                    command: async () => await vscode.commands.executeCommand("clairvoyant.previousToken"),
+                }
+            );
+        }
+    }
+    return result;
+};
+
 const makeHistoryMenu = (): CommandMenuItem[] =>
 {
     const result: CommandMenuItem[] = [];
@@ -554,6 +581,7 @@ export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
     () => makeEmptyList().concat
     (
         makeHistoryMenu(),
+        makeQuickMenu(),
         makeHighlightRootMenu(),
         getCacheOrMake
         (

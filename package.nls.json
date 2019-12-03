@@ -10,6 +10,8 @@
     "clairvoyant.reload.title": "Reload",
     "clairvoyant.reportStatistics.title": "Report Statistics",
     "clairvoyant.reportProfile.title": "Report Profile",
+    "clairvoyant.nextToken.title": "Go Next Token",
+    "clairvoyant.previousToken.title": "Go Previous Token",
     "clairvoyant.autoScanMode.description": "Auto scan mode",
     "clairvoyant.maxFiles.description": "Max files",
     "clairvoyant.showStatusBarItems.description": "Show status bar items",

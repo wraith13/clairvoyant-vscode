@@ -175,6 +175,40 @@ export const initialize = (aContext: vscode.ExtensionContext): void =>
         vscode.commands.registerCommand(`${applicationKey}.reload`, reload),
         vscode.commands.registerCommand(`${applicationKey}.reportStatistics`, reportStatistics),
         vscode.commands.registerCommand(`${applicationKey}.reportProfile`, reportProfile),
+        vscode.commands.registerCommand
+        (
+            `${applicationKey}.nextToken`,
+            () =>
+            {
+                outputLine("verbose", `"${applicationKey}.nextToken" is called.`);
+                const activeTextEditor = vscode.window.activeTextEditor;
+                if (undefined !== activeTextEditor)
+                {
+                    const selection = Scan.getNextTokenSelection(activeTextEditor);
+                    if (undefined !== selection)
+                    {
+                        Selection.getEntry().showToken({document: activeTextEditor.document, selection});
+                    }
+                }
+            }
+        ),
+        vscode.commands.registerCommand
+        (
+            `${applicationKey}.previousToken`,
+            () =>
+            {
+                outputLine("verbose", `"${applicationKey}.previousToken" is called.`);
+                const activeTextEditor = vscode.window.activeTextEditor;
+                if (undefined !== activeTextEditor)
+                {
+                    const selection = Scan.getPreviousTokenSelection(activeTextEditor);
+                    if (undefined !== selection)
+                    {
+                        Selection.getEntry().showToken({document: activeTextEditor.document, selection});
+                    }
+                }
+            }
+        ),
 
         //  ステータスバーアイコンの登録
         StatusBar.make(),

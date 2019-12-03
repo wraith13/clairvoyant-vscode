@@ -4,7 +4,12 @@ All notable changes to the "clairvoyant" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## 4.5.0 - 2019-12-??
+## 5.0.0 - 2019-12-04
+
+### Added
+
+- `clairvoyant.nextToken` command.
+- `clairvoyant.previousToken` command.
 
 ### Changed
 
