@@ -85,6 +85,8 @@ export const onUpdateDocument = (uri: string) =>
     Menu.removePreviewCache(uri);
 };
 
+export const isScanedDocment = (document: vscode.TextDocument) => documentTokenEntryMap[document.uri.toString()];
+
 export const scanDocument = async (document: vscode.TextDocument, force: boolean = false) => await Clairvoyant.busy.do
 (
     () =>
@@ -95,8 +97,7 @@ export const scanDocument = async (document: vscode.TextDocument, force: boolean
         {
             const uri = document.uri.toString();
             Clairvoyant.outputLine("verbose", `Scan.scanDocument("${uri}", ${force}) is called.`);
-            const old = documentTokenEntryMap[uri];
-            if ((!force && old) || !Clairvoyant.isTargetProtocol(uri))
+            if ((!force && isScanedDocment(document)) || !Clairvoyant.isTargetProtocol(uri))
             {
                 console.log(`scanDocument SKIP: ${uri}`);
             }
@@ -159,6 +160,7 @@ export const scanDocument = async (document: vscode.TextDocument, force: boolean
                         "scanDocument.register",
                         () =>
                         {
+                            const old = documentTokenEntryMap[uri];
                             documentTokenEntryMap[uri] = map;
                             const oldTokens = old ? Object.keys(old): [];
                             const newTokens = Object.keys(map);
@@ -218,28 +220,31 @@ export const detachDocument = async (document: vscode.TextDocument) => await Cla
         "detachDocument",
         () =>
         {
-            const uri = document.uri.toString();
-            Clairvoyant.outputLine("regular", `detach document: ${uri}`);
-            const old = documentTokenEntryMap[uri];
-            const oldTokens = old ? Object.keys(old): [];
-            oldTokens.forEach
-            (
-                i =>
-                {
-                    tokenDocumentEntryMap[i].splice(tokenDocumentEntryMap[i].indexOf(uri), 1);
-                    if (tokenDocumentEntryMap[i].length <= 0)
+            if (isScanedDocment(document))
+            {
+                const uri = document.uri.toString();
+                Clairvoyant.outputLine("regular", `detach document: ${uri}`);
+                const old = documentTokenEntryMap[uri];
+                const oldTokens = old ? Object.keys(old): [];
+                oldTokens.forEach
+                (
+                    i =>
                     {
-                        delete tokenDocumentEntryMap[i];
+                        tokenDocumentEntryMap[i].splice(tokenDocumentEntryMap[i].indexOf(uri), 1);
+                        if (tokenDocumentEntryMap[i].length <= 0)
+                        {
+                            delete tokenDocumentEntryMap[i];
+                        }
                     }
-                }
-            );
-            oldTokens.forEach(i => tokenCountMap[i] -= old[i].length);
-            delete documentTokenEntryMap[uri];
-            delete documentFileMap[uri];
-            delete documentMap[uri];
-            onUpdateFileList();
-            onUpdateTokens();
-            onUpdateDocument(uri);
+                );
+                oldTokens.forEach(i => tokenCountMap[i] -= old[i].length);
+                delete documentTokenEntryMap[uri];
+                delete documentFileMap[uri];
+                delete documentMap[uri];
+                onUpdateFileList();
+                onUpdateTokens();
+                onUpdateDocument(uri);
+            }
         }
     )
 );

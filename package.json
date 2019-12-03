@@ -23,7 +23,8 @@
 	"keywords": [
 		"search",
 		"token",
-		"identifier"
+		"identifier",
+		"highlight"
 	],
 	"activationEvents": [
 		"*"
@@ -233,28 +234,28 @@
 					},
 					"clairvoyant.highlightAlpha": {
 						"type": "number",
-						"default": 45,
+						"default": 150,
 						"minimum": 0,
 						"maximum": 255,
 						"description": "%clairvoyant.highlightAlpha.description%"
 					},
 					"clairvoyant.activeHighlightAlpha": {
 						"type": "number",
-						"default": 75,
+						"default": 210,
 						"minimum": 0,
 						"maximum": 255,
 						"description": "%clairvoyant.activeHighlightAlpha.description%"
 					},
 					"clairvoyant.activeHighlightLineAlpha": {
 						"type": "number",
-						"default": 30,
+						"default": 90,
 						"minimum": 0,
 						"maximum": 255,
 						"description": "%clairvoyant.activeHighlightLineAlpha.description%"
 					},
 					"clairvoyant.latestHighlightAlpha": {
 						"type": "number",
-						"default": 60,
+						"default": 180,
 						"minimum": 0,
 						"maximum": 255,
 						"description": "%clairvoyant.latestHighlightAlpha.description%"

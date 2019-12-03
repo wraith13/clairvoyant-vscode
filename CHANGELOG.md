@@ -4,6 +4,12 @@ All notable changes to the "clairvoyant" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## 4.4.0 - 2019-12-03
+
+### Added
+
+- Highlight tokens
+
 ## 4.3.0 - 2019-11-29
 
 ### Added

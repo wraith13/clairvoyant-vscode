@@ -38,10 +38,14 @@
     "⚖ Overview": "⚖ Overview",
     "🔬 Busy Details": "🔬 Busy Details",
     "🚫 Profile has not been started.": "🚫 Profile has not been started.",
+    "Highlight tokens": "Highlight tokens",
     "Sort by count": "Sort by count",
     "Sort by token": "Sort by token",
     "Show by file": "Show by file",
+    "Clear all highlights": "Clear all highlights",
     "Copy \"${token}\" to clipboard": "Copy \"${token}\" to clipboard",
     "Paste \"${token}\" to text editor": "Paste \"${token}\" to text editor",
+    "Add highlight for \"${token}\"": "Add highlight for \"${token}\"",
+    "Remove highlight for \"${token}\"": "Remove highlight for \"${token}\"",
     "Max Files Error": "Clairvoyant: The maximum number of files has been reached. Edit `clairvoyant.maxFiles` and `clairvoyant.excludeDirectories` and `clairvoyant.excludeExtentions` settings and do `Clairvoyant: Reload`."
 }

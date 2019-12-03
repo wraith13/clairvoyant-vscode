@@ -10,6 +10,7 @@ import * as Menu from "./ui/menu";
 import * as StatusBar from "./ui/statusbar";
 
 import * as Selection from "./textEditor/selection";
+import * as Highlight from "./textEditor/highlight";
 import * as Scan from "./scan";
 
 const roundCenti = (value : number) : number => Math.round(value *100) /100;
@@ -183,17 +184,25 @@ export const initialize = (aContext: vscode.ExtensionContext): void =>
         vscode.workspace.onDidChangeWorkspaceFolders(reload),
         vscode.workspace.onDidChangeTextDocument
         (
-            event =>
+            async (event) =>
             {
                 try
                 {
+                    const uri = event.document.uri.toString();
                     //  OuputChannel に対するイベント処理中に OuputChannel に書き出すと無限ループになってしまうのでミュートする
-                    muteOutput = event.document.uri.toString().startsWith("output:");
+                    muteOutput = uri.startsWith("output:");
 
-                    outputLine("verbose", `onDidChangeTextDocument("${event.document.uri.toString()}") is called.`);
-                    if (autoScanMode.get(event.document.languageId).enabled && (!isExcludeDocument(event.document)))
+                    outputLine("verbose", `onDidChangeTextDocument("${uri}") is called.`);
+                    if (autoScanMode.get(event.document.languageId).enabled && !isExcludeDocument(event.document))
                     {
-                        Scan.scanDocument(event.document, true);
+                        await Scan.scanDocument(event.document, true);
+                        vscode.window.visibleTextEditors
+                            .filter(i => i.document.uri.toString() === uri)
+                            .forEach(i => Highlight.updateEditor(i));
+                    }
+                    else
+                    {
+                        await Scan.detachDocument(event.document);
                     }
                 }
                 finally
@@ -207,7 +216,7 @@ export const initialize = (aContext: vscode.ExtensionContext): void =>
             async (document) =>
             {
                 outputLine("verbose", `onDidCloseTextDocument("${document.uri.toString()}") is called.`);
-                if (Scan.documentTokenEntryMap[document.uri.toString()])
+                if (Scan.isScanedDocment(document))
                 {
                     try
                     {
@@ -223,17 +232,21 @@ export const initialize = (aContext: vscode.ExtensionContext): void =>
         ),
         vscode.window.onDidChangeActiveTextEditor
         (
-            textEditor =>
+            async (textEditor) =>
             {
-                if (textEditor && textEditor.viewColumn)
+                outputLine("verbose", `onDidChangeActiveTextEditor("${textEditor ? textEditor.document.uri.toString(): "undefined"}") is called.`);
+                if (textEditor && isTargetEditor(textEditor))
                 {
                     outputLine("verbose", `lastValidViemColumn: ${textEditor.viewColumn}`);
-                    Selection.setLastValidViemColumn(textEditor.viewColumn);
-                }
-                outputLine("verbose", `onDidChangeActiveTextEditor("${textEditor ? textEditor.document.uri.toString(): "undefined"}") is called.`);
-                if (textEditor && autoScanMode.get(textEditor.document.languageId).enabled && !isExcludeDocument(textEditor.document))
-                {
-                    Scan.scanDocument(textEditor.document);
+                    if (textEditor.viewColumn)
+                    {
+                        Selection.setLastValidViemColumn(textEditor.viewColumn);
+                    }
+                    if (autoScanMode.get(textEditor.document.languageId).enabled && !isExcludeDocument(textEditor.document))
+                    {
+                        await Scan.scanDocument(textEditor.document);
+                        Highlight.updateEditor(textEditor);
+                    }
                 }
             }
         ),
@@ -242,11 +255,13 @@ export const initialize = (aContext: vscode.ExtensionContext): void =>
     reload();
 };
 
+export const isTargetEditor = (textEditor: vscode.TextEditor) => undefined !== textEditor.viewColumn;
+
 export const isTargetProtocol = (uri: string) => targetProtocols.get("").some(i => uri.startsWith(i));
 export const isExcludeFile = (filePath: string) => excludeExtentions.get("").some(i => filePath.toLowerCase().endsWith(i.toLowerCase()));
 export const startsWithDot = (path: string) => isExcludeStartsWidhDot.get("") && path.startsWith(".");
 export const isExcludeDocument = (document: vscode.TextDocument) =>
-    !Scan.documentTokenEntryMap[document.uri.toString()] &&
+    !Scan.isScanedDocment(document) &&
     (
         !isTargetProtocol(document.uri.toString()) ||
         File.extractRelativePath(document.uri.toString()).split("/").some(i => 0 <= excludeDirectories.get("").indexOf(i) || startsWithDot(i)) ||
@@ -296,9 +311,18 @@ const clearConfig = () =>
         excludeDirectories,
         excludeExtentions,
         targetProtocols,
-        parserRegExp,
         enablePreviewIntercept,
         gotoHistoryMode,
+        parserRegExp,
+        highlightMode,
+        highlightBaseColor,
+        highlightAlpha,
+        activeHighlightAlpha,
+        activeHighlightLineAlpha,
+        latestHighlightAlpha,
+        activeHighlightOverviewRulerLane,
+        latestHighlightOverviewRulerLane,
+        highlightOverviewRulerLane,
         outputChannelVolume,
     ]
     .forEach(i => i.clear());
@@ -310,6 +334,7 @@ export const reload = () =>
     Scan.reload();
     Menu.reload();
     Selection.reload();
+    Highlight.reload();
     clearConfig();
     Profiler.start();
     autoScanMode.get("").onInit();
@@ -399,5 +424,9 @@ export const sight = async () => await Menu.Show.root
 ({
     makeItemList: Object.keys(Scan.tokenDocumentEntryMap).length <= 0 ?
         Menu.makeStaticMenu:
-        Menu.makeSightRootMenu
+        Menu.makeSightRootMenu,
+    options:
+    {
+        matchOnDescription: true,
+    }
 });
