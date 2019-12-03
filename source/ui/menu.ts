@@ -163,7 +163,7 @@ export module Show
                     () => makeEmptyList().concat
                     (
                         {
-                            label: `$(reply) ${Locale.map("clairvoyant.backMenu.title")}`,
+                            label: `$(reply) ${Locale.typeableMap("clairvoyant.backMenu.title")}`,
                             command: async () => await pop(),
                         },
                         entry.makeItemList(),
@@ -209,7 +209,7 @@ const makeGoCommandMenuItem =
     () =>
     ({
 
-        label: `$(rocket) ${Locale.map(label)} line:${entry.selection.anchor.line +1} row:${entry.selection.anchor.character +1}` +
+        label: `$(rocket) ${Locale.typeableMap(label)} line:${entry.selection.anchor.line +1} row:${entry.selection.anchor.character +1}` +
         (
             entry.selection.anchor.line === entry.selection.active.line ?
                 `-${entry.selection.active.character +1}`:
@@ -246,20 +246,20 @@ const makeSightShowMenu = (uri: string, token: string, hits: number[]): CommandM
 const makeSightTokenCoreMenu = (token: string): CommandMenuItem[] =>
 ([
     {
-        label: `$(clippy) ${Locale.map("Copy \"${token}\" to clipboard").replace("${token}", token)}`,
+        label: `$(clippy) ${Locale.typeableMap("Copy \"${token}\" to clipboard").replace(/\$\{token\}/g, token)}`,
         command: async () => Clairvoyant.copyToken(token),
     },
     {
-        label: `$(clippy) ${Locale.map("Paste \"${token}\" to text editor").replace("${token}", token)}`,
+        label: `$(clippy) ${Locale.typeableMap("Paste \"${token}\" to text editor").replace(/\$\{token\}/g, token)}`,
         command: async () => Clairvoyant.pasteToken(token),
     },
     Highlight.isHighlighted(token) ?
     {
-        label: `$(trashcan) ${Locale.map("Remove highlight for \"${token}\"").replace("${token}", token)}`,
+        label: `$(trashcan) ${Locale.typeableMap("Remove highlight for \"${token}\"").replace(/\$\{token\}/g, token)}`,
         command: async () => Highlight.remove(token),
     }:
     {
-        label: `$(light-bulb) ${Locale.map("Add highlight for \"${token}\"").replace("${token}", token)}`,
+        label: `$(light-bulb) ${Locale.typeableMap("Add highlight for \"${token}\"").replace(/\$\{token\}/g, token)}`,
         command: async () => Highlight.add(token),
     },
 ]);
@@ -333,7 +333,7 @@ const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }
             [
                 "token" === getRootMenuOrder() ?
                     {
-                        label: `$(list-ordered) ${Locale.map("Sort by count")}`,
+                        label: `$(list-ordered) ${Locale.typeableMap("Sort by count")}`,
                         command: async () =>
                         {
                             setRootMenuOrder("count");
@@ -341,7 +341,7 @@ const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }
                         },
                     }:
                     {
-                        label: `$(list-ordered) ${Locale.map("Sort by token")}`,
+                        label: `$(list-ordered) ${Locale.typeableMap("Sort by token")}`,
                         command: async () =>
                         {
                             setRootMenuOrder("token");
@@ -457,7 +457,7 @@ const makeHistoryMenu = (): CommandMenuItem[] =>
 const makeHighlightTokensMenu = (highlights: string[]): CommandMenuItem[] =>
 ([
     {
-        label: `$(trashcan) ${Locale.map("Clear all highlights")}`,
+        label: `$(trashcan) ${Locale.typeableMap("Clear all highlights")}`,
         //description: highlights.map(token => `$(tag) "${token}"`).join(", "),
         command: async () => Highlight.reload(),
     }
@@ -523,7 +523,7 @@ const makeHighlightRootMenu = (): CommandMenuItem[] =>
     return highlights.length <= 0 ?
         []:
         [{
-            label: `$(light-bulb) ${Locale.map("Highlight tokens")}`,
+            label: `$(light-bulb) ${Locale.typeableMap("Highlight tokens")}`,
             description: highlights.map(token => `$(tag) "${token}"`).join(", "),
             command: async () => await Show.forward
             ({
@@ -537,7 +537,7 @@ const makeHighlightRootMenu = (): CommandMenuItem[] =>
 };
 const makeStaticMenuItem = (octicon: string, label: Locale.KeyType, command: string): CommandMenuItem =>
 ({
-    label: octicon +" " +Locale.map(label),
+    label: octicon +" " +Locale.typeableMap(label),
     command: async () => await vscode.commands.executeCommand(command),
 });
 export const makeStaticMenu = (): CommandMenuItem[] =>
@@ -563,7 +563,7 @@ export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
                 [
                     "token" === getRootMenuOrder() ?
                         {
-                            label: `$(list-ordered) ${Locale.map("Sort by count")}`,
+                            label: `$(list-ordered) ${Locale.typeableMap("Sort by count")}`,
                             command: async () =>
                             {
                                 setRootMenuOrder("count");
@@ -571,7 +571,7 @@ export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
                             },
                         }:
                         {
-                            label: `$(list-ordered) ${Locale.map("Sort by token")}`,
+                            label: `$(list-ordered) ${Locale.typeableMap("Sort by token")}`,
                             command: async () =>
                             {
                                 setRootMenuOrder("token");
@@ -579,7 +579,7 @@ export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
                             },
                         },
                     {
-                        label: `$(list-ordered) ${Locale.map("Show by file")}`,
+                        label: `$(list-ordered) ${Locale.typeableMap("Show by file")}`,
                         command: async () => await Show.forward
                         ({
                             makeItemList: makeSightFileListMenu,
