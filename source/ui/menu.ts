@@ -440,6 +440,11 @@ const makeQuickMenu = (): CommandMenuItem[] =>
                     label: `$(rocket) ${Locale.typeableMap("clairvoyant.previousToken.title")}`,
                     description: `$(tag) ${token}`,
                     command: async () => await vscode.commands.executeCommand("clairvoyant.previousToken"),
+                },
+                {
+                    label: `$(light-bulb) ${Locale.typeableMap("clairvoyant.toggleHighlight.title")}`,
+                    description: `$(tag) ${token}`,
+                    command: async () => await vscode.commands.executeCommand("clairvoyant.toggleHighlight"),
                 }
             );
         }
@@ -550,7 +555,7 @@ const makeHighlightRootMenu = (): CommandMenuItem[] =>
     return highlights.length <= 0 ?
         []:
         [{
-            label: `$(light-bulb) ${Locale.typeableMap("Highlight tokens")}`,
+            label: `$(light-bulb) ${Locale.typeableMap("Highlighted tokens")}`,
             description: highlights.map(token => `$(tag) "${token}"`).join(", "),
             command: async () => await Show.forward
             ({

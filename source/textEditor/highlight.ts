@@ -120,6 +120,12 @@ export const reload = () =>
 
 export const getHighlight = () => undefined !== latestToken ? tokens.filter(i => i !== latestToken).concat([latestToken]): tokens;
 export const isHighlighted = (token: string) => 0 <= getHighlight().indexOf(token);
+export const add = (token: string) =>
+{
+    tokens.push(token);
+    onUpdateToken(token);
+    update();
+};
 export const remove = (token: string) =>
 {
     if (latestToken === token)
@@ -130,12 +136,7 @@ export const remove = (token: string) =>
     onUpdateToken(token);
     update();
 };
-export const add = (token: string) =>
-{
-    tokens.push(token);
-    onUpdateToken(token);
-    update();
-};
+export const toggle = (token: string) => isHighlighted(token) ? remove(token): add(token);
 
 export module Preview
 {

@@ -10,6 +10,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 - `clairvoyant.nextToken` command.
 - `clairvoyant.previousToken` command.
+- `clairvoyant.toggleHighlight` command.
 
 ### Changed
 

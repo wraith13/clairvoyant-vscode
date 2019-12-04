@@ -209,6 +209,23 @@ export const initialize = (aContext: vscode.ExtensionContext): void =>
                 }
             }
         ),
+        vscode.commands.registerCommand
+        (
+            `${applicationKey}.toggleHighlight`,
+            () =>
+            {
+                outputLine("verbose", `"${applicationKey}.toggleHighlight" is called.`);
+                const activeTextEditor = vscode.window.activeTextEditor;
+                if (undefined !== activeTextEditor)
+                {
+                    const token = Scan.getToken(activeTextEditor);
+                    if (undefined !== token)
+                    {
+                        Highlight.toggle(token);
+                    }
+                }
+            }
+        ),
 
         //  ステータスバーアイコンの登録
         StatusBar.make(),
