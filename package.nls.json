@@ -44,6 +44,7 @@
     "Highlighted tokens": "Highlighted tokens",
     "Sort by count": "Sort by count",
     "Sort by token": "Sort by token",
+    "Current file": "Current file",
     "Show by file": "Show by file",
     "Clear all highlights": "Clear all highlights",
     "Copy \"${token}\" to clipboard": "Copy \"${token}\" to clipboard",

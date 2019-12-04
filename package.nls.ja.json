@@ -44,6 +44,7 @@
     "Highlighted tokens": "ハイライトされているトークン",
     "Sort by count": "出現数順で表示",
     "Sort by token": "トークン順で表示",
+    "Current file": "現在のファイル",
     "Show by file": "ファイル単位で表示",
     "Clear all highlights": "全てのハイライトをクリア",
     "Copy \"${token}\" to clipboard": "\"${token}\" をクリップボードにコピー",

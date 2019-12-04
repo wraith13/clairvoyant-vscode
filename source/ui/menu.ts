@@ -387,6 +387,28 @@ const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }
         )
     )
 );
+const makeSightCurrentFileMenuItem = (uri: string, tokenMap: { [token: string]: number[] } = Scan.documentTokenEntryMap[uri]): CommandMenuItem => 
+({
+    label: `$(file-text) ${Locale.typeableMap("Current file")}`,
+    description: uri.startsWith("untitled:") ?
+        File.makeDigest(Scan.documentMap[uri].getText()):
+        File.extractRelativePath(uri),
+    command: async () => await Show.forward
+    ({
+        makeItemList: () => makeSightFileRootMenu(uri, tokenMap),
+    })
+});
+const makeSightFileMenuItem = (uri: string, tokenMap: { [token: string]: number[] } = Scan.documentTokenEntryMap[uri]): CommandMenuItem => 
+({
+    label: `$(file-text) ${File.extractFileName(uri)}`,
+    description: uri.startsWith("untitled:") ?
+        File.makeDigest(Scan.documentMap[uri].getText()):
+        File.extractDirectoryAndWorkspace(uri),
+    command: async () => await Show.forward
+    ({
+        makeItemList: () => makeSightFileRootMenu(uri, tokenMap),
+    })
+});
 const makeSightFileListMenu = (): CommandMenuItem[] => getCacheOrMake
 (
     "filelist",
@@ -397,20 +419,7 @@ const makeSightFileListMenu = (): CommandMenuItem[] => getCacheOrMake
         (
             Object.entries(Scan.documentTokenEntryMap)
                 .sort(mergeComparer([makeComparer(entry => File.extractDirectoryAndWorkspace(entry[0])), makeComparer(entry => entry[0])]))
-                .map
-                (
-                    entry =>
-                    ({
-                        label: `$(file-text) ${File.extractFileName(entry[0])}`,
-                        description: entry[0].startsWith("untitled:") ?
-                            File.makeDigest(Scan.documentMap[entry[0]].getText()):
-                            File.extractDirectoryAndWorkspace(entry[0]),
-                        command: async () => await Show.forward
-                        ({
-                            makeItemList: () => makeSightFileRootMenu(entry[0], entry[1]),
-                        })
-                    })
-                )
+                .map(entry => makeSightFileMenuItem(entry[0], entry[1]))
         )
     )
 );
@@ -588,38 +597,39 @@ export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
         makeHistoryMenu(),
         makeQuickMenu(),
         makeHighlightRootMenu(),
+        vscode.window.activeTextEditor && Scan.isScanedDocment(vscode.window.activeTextEditor.document) ?
+            makeSightCurrentFileMenuItem(vscode.window.activeTextEditor.document.uri.toString()):
+            [],
         getCacheOrMake
         (
             `root.${getRootMenuOrder()}`,
             () => makeEmptyList().concat
             (
-                [
-                    "token" === getRootMenuOrder() ?
-                        {
-                            label: `$(list-ordered) ${Locale.typeableMap("Sort by count")}`,
-                            command: async () =>
-                            {
-                                setRootMenuOrder("count");
-                                await Show.update();
-                            },
-                        }:
-                        {
-                            label: `$(list-ordered) ${Locale.typeableMap("Sort by token")}`,
-                            command: async () =>
-                            {
-                                setRootMenuOrder("token");
-                                await Show.update();
-                            },
-                        },
+                {
+                    label: `$(list-ordered) ${Locale.typeableMap("Show by file")}`,
+                    command: async () => await Show.forward
+                    ({
+                        makeItemList: makeSightFileListMenu,
+                        options: { matchOnDescription: true },
+                    })
+                },
+                "token" === getRootMenuOrder() ?
                     {
-                        label: `$(list-ordered) ${Locale.typeableMap("Show by file")}`,
-                        command: async () => await Show.forward
-                        ({
-                            makeItemList: makeSightFileListMenu,
-                            options: { matchOnDescription: true },
-                        })
+                        label: `$(list-ordered) ${Locale.typeableMap("Sort by count")}`,
+                        command: async () =>
+                        {
+                            setRootMenuOrder("count");
+                            await Show.update();
+                        },
+                    }:
+                    {
+                        label: `$(list-ordered) ${Locale.typeableMap("Sort by token")}`,
+                        command: async () =>
+                        {
+                            setRootMenuOrder("token");
+                            await Show.update();
+                        },
                     },
-                ],
                 makeStaticMenu(),
                 Profiler.profile
                 (

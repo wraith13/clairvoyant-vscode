@@ -11,6 +11,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - `clairvoyant.nextToken` command.
 - `clairvoyant.previousToken` command.
 - `clairvoyant.toggleHighlight` command.
+- `Current files` and new commands in `clairvoyant.sight` menu.
 
 ### Changed
 
