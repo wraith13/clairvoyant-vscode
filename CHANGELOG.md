@@ -6,6 +6,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## 5.0.1 - 2019-12-05
 
+### Added
+
+- Described new commands in README.
+
 ### Fixed
 
 - Fixed an issue where `clairvoyant.toggleHighlight` command was not accessible from Command Palette.

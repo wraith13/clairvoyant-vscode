@@ -40,11 +40,14 @@ Enjoy!
 * `Clairvoyant: Scan Current Document` : Scan current document
 * `Clairvoyant: Scan Open Documents` : Scan open documents
 * `Clairvoyant: Scan Workspace` : Scan workspace
-* `Clairvoyant: Go Back` : Go cursor postion back
-* `Clairvoyant: Go Forward` : Go cursor postion forward
+* `Clairvoyant: Go Back` : Go cursor position back
+* `Clairvoyant: Go Forward` : Go cursor position forward
 * `Clairvoyant: Report Statistics` : Show statistics data
 * `Clairvoyant: Report Profile` : Show profile data
 * `Clairvoyant: Reload` : Reload this extention
+* `Clairvoyant: Go Next Token` : Go cursor position next that token at cursor position
+* `Clairvoyant: Go Previous Token` : Go cursor position previous that token at cursor position
+* `Clairvoyant: Toggle highlight` : Toggles the highlight of the token at the cursor position
 
 ## Extension Settings
 
@@ -91,6 +94,9 @@ Command name on `keybindings.json` is diffarent from on Command Pallete. See bel
 |`Clairvoyant: Report Statistics`|`clairvoyant.reportStatistics`|
 |`Clairvoyant: Report Profile`|`clairvoyant.reportProfile`|
 |`Clairvoyant: Reload`|`clairvoyant.reload`|
+|`Clairvoyant: Go Next Token`|`clairvoyant.nextToken`|
+|`Clairvoyant: Go Previous Token`|`clairvoyant.previousToken`|
+|`Clairvoyant: Toggle highlight`|`clairvoyant.toggleHighlight`|
 
 ## Release Notes
 
