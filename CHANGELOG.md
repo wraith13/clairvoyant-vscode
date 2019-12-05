@@ -4,6 +4,12 @@ All notable changes to the "clairvoyant" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## 5.0.1 - 2019-12-05
+
+### Fixed
+
+- Fixed an issue where `clairvoyant.toggleHighlight` command was not accessible from Command Palette.
+
 ## 5.0.0 - 2019-12-04
 
 ### Added

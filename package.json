@@ -86,6 +86,11 @@
 				"command": "clairvoyant.previousToken",
 				"title": "%clairvoyant.previousToken.title%",
 				"category": "Clairvoyant"
+			},
+			{
+				"command": "clairvoyant.toggleHighlight",
+				"title": "%clairvoyant.toggleHighlight.title%",
+				"category": "Clairvoyant"
 			}
 		],
 		"configuration": [
