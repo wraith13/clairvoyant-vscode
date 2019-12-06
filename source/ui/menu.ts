@@ -686,3 +686,14 @@ export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
         )
     )
 );
+export const makeSightDocumentRootMenu = (uri: string): CommandMenuItem[] => Profiler.profile
+(
+    "makeSightDocumentRootMenu",
+    () => makeEmptyList().concat
+    (
+        makeHistoryMenu(),
+        makeQuickMenu(),
+        makeHighlightRootMenu(),
+        makeSightFileRootMenu(uri,Scan.documentTokenEntryMap[uri]),
+    )
+);

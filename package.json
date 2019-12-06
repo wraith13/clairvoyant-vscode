@@ -53,6 +53,12 @@
 				"category": "Clairvoyant"
 			},
 			{
+				"command": "clairvoyant.sightDocument",
+				"title": "%clairvoyant.sightDocument.title%",
+				"category": "Clairvoyant",
+				"icon": "images/clairvoyanthex.64.png"
+			},
+			{
 				"command": "clairvoyant.back",
 				"title": "%clairvoyant.back.title%",
 				"category": "Clairvoyant"
