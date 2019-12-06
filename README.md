@@ -38,6 +38,7 @@ Enjoy!
 
 * `Clairvoyant: Sight` : Access to tokens in your codes with menu.
 * `Clairvoyant: Sight Document` : Shows `Sight` menu specific to the current document.
+* `Clairvoyant: Sight Token` : Shows `Sight` menu specific to the current token.
 * `Clairvoyant: Scan Current Document` : Scan current document
 * `Clairvoyant: Scan Open Documents` : Scan open documents
 * `Clairvoyant: Scan Workspace` : Scan workspace
@@ -88,6 +89,7 @@ Command name on `keybindings.json` is diffarent from on Command Pallete. See bel
 |-|-|
 |`Clairvoyant: Sight`|`clairvoyant.sight`|
 |`Clairvoyant: Sight Document`|`clairvoyant.sightDocument`|
+|`Clairvoyant: Sight Token`|`clairvoyant.sightToken`|
 |`Clairvoyant: Scan Current Document`|`clairvoyant.scanDocument`|
 |`Clairvoyant: Scan Open Documents`|`clairvoyant.scanOpenDocuments`|
 |`Clairvoyant: Scan Workspace`|`clairvoyant.scanWorkspace`|

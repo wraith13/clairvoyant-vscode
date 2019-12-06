@@ -171,6 +171,7 @@ export const initialize = (aContext: vscode.ExtensionContext): void =>
         vscode.commands.registerCommand(`${applicationKey}.scanWorkspace`, Scan.scanWorkspace),
         vscode.commands.registerCommand(`${applicationKey}.sight`, sight),
         vscode.commands.registerCommand(`${applicationKey}.sightDocument`, sightDocument),
+        vscode.commands.registerCommand(`${applicationKey}.sightToken`, sightToken),
         vscode.commands.registerCommand(`${applicationKey}.back`, Selection.getEntry().showTokenUndo),
         vscode.commands.registerCommand(`${applicationKey}.forward`, Selection.getEntry().showTokenRedo),
         vscode.commands.registerCommand(`${applicationKey}.reload`, reload),
@@ -506,6 +507,37 @@ export const sightDocument = async () =>
             {
                 matchOnDescription: true,
             }
+        });
+    }
+};
+
+export const sightToken = async () =>
+{
+    const activeTextEditor = vscode.window.activeTextEditor;
+    const token = undefined === activeTextEditor ? undefined: Scan.getToken(activeTextEditor);
+    if (undefined === activeTextEditor || undefined === token)
+    {
+        await Menu.Show.root
+        ({
+            makeItemList: Menu.makeStaticMenu,
+            options:
+            {
+                matchOnDescription: true,
+            }
+        });
+    }
+    else
+    {
+        await Menu.Show.root
+        ({
+            makeItemList: () => Menu.makeSightTokenRootMenu(activeTextEditor.document.uri.toString(), token),
+            options:
+            {
+                matchOnDescription: true,
+                matchOnDetail: true,
+                document: activeTextEditor.document,
+                token,
+                }
         });
     }
 };

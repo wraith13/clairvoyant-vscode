@@ -271,7 +271,7 @@ const makeSightTokenMenu = (token: string): CommandMenuItem[] => getCacheOrMake
         "makeSightTokenMenu",
         () => makeEmptyList().concat
         (
-            makeSightTokenCoreMenu(Clairvoyant.decodeToken(token)),
+            //makeSightTokenCoreMenu(Clairvoyant.decodeToken(token)),
             (
                 Scan.tokenDocumentEntryMap[token].map(i => ({ uri:i, hits: Scan.documentTokenEntryMap[i][token] }))
                 .sort(mergeComparer([makeComparer(entry => -entry.hits.length), makeComparer(entry => entry.uri)]))
@@ -547,7 +547,11 @@ const makeHighlightTokensMenu = (highlights: string[]): CommandMenuItem[] =>
                 token: Clairvoyant.decodeToken(entry[0]),
                 command: async () => await Show.forward
                 ({
-                    makeItemList: () => makeSightTokenMenu(entry[0]),
+                    makeItemList: () => makeEmptyList().concat
+                    (
+                        makeSightTokenCoreMenu(Clairvoyant.decodeToken(entry[0])),
+                        makeSightTokenMenu(entry[0])
+                    ),
                     options:
                     {
                         matchOnDescription: true,
@@ -672,7 +676,11 @@ export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
                             token: Clairvoyant.decodeToken(entry[0]),
                             command: async () => await Show.forward
                             ({
-                                makeItemList: () => makeSightTokenMenu(entry[0]),
+                                makeItemList: () => makeEmptyList().concat
+                                (
+                                    makeSightTokenCoreMenu(Clairvoyant.decodeToken(entry[0])),
+                                    makeSightTokenMenu(entry[0])
+                                ),
                                 options:
                                 {
                                     matchOnDescription: true,
@@ -696,4 +704,48 @@ export const makeSightDocumentRootMenu = (uri: string): CommandMenuItem[] => Pro
         makeHighlightRootMenu(),
         makeSightFileRootMenu(uri,Scan.documentTokenEntryMap[uri]),
     )
+);
+
+export const makeSightTokenRootMenu = (uri: string, token: string): CommandMenuItem[] => Profiler.profile
+(
+    "makeSightDocumentRootMenu",
+    () => makeEmptyList().concat
+    (
+        makeHistoryMenu(),
+        makeQuickMenu(),
+        makeHighlightRootMenu(),
+        makeSightTokenCoreMenu(token),
+        {
+            label: `$(list-ordered) ${Locale.typeableMap("Show by file")}`,
+            description: undefined,
+            detail: Scan.tokenDocumentEntryMap[Clairvoyant.encodeToken(token)].map
+                (
+                    i =>
+                    ({
+                        uri: i,
+                        file: Scan.documentFileMap[i],
+                        hits: Scan.documentTokenEntryMap[i][Clairvoyant.encodeToken(token)].length
+                    })
+                )
+                .sort(mergeComparer([makeComparer(d => -d.hits), makeComparer(d => d.uri)]))
+                .map(d => `$(file-text) ${d.file}(${d.hits})`)
+                .join(", "),
+            token: token,
+            command: async () => await Show.forward
+            ({
+                makeItemList: () => makeSightTokenMenu(Clairvoyant.encodeToken(token)),
+                options:
+                {
+                    matchOnDescription: true,
+                    token: token,
+                },
+            })
+        },
+        makeSightShowMenu
+        (
+            uri,
+            token,
+            Scan.documentTokenEntryMap[uri][Clairvoyant.encodeToken(token)]
+        )
+)
 );

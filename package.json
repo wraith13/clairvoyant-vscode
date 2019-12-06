@@ -59,6 +59,11 @@
 				"icon": "images/clairvoyanthex.64.png"
 			},
 			{
+				"command": "clairvoyant.sightToken",
+				"title": "%clairvoyant.sightToken.title%",
+				"category": "Clairvoyant"
+			},
+			{
 				"command": "clairvoyant.back",
 				"title": "%clairvoyant.back.title%",
 				"category": "Clairvoyant"

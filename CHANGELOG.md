@@ -9,6 +9,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ### Added
 
 - `clairvoyant.sightDocument` command.
+- `clairvoyant.sightToken` command.
 ## 5.0.1 - 2019-12-05
 
 ### Added
