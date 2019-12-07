@@ -111,6 +111,28 @@
 					"group": "navigation",
 					"when": "isDocumentScanedWithClairvoyant"
 				}
+			],
+			"editor/context": [
+				{
+					"command": "clairvoyant.nextToken",
+					"group": "Clairvoyant",
+					"when": "isDocumentScanedWithClairvoyant"
+				},
+				{
+					"command": "clairvoyant.previousToken",
+					"group": "Clairvoyant",
+					"when": "isDocumentScanedWithClairvoyant"
+				},
+				{
+					"command": "clairvoyant.toggleHighlight",
+					"group": "Clairvoyant",
+					"when": "isDocumentScanedWithClairvoyant"
+				},
+				{
+					"command": "clairvoyant.sightToken",
+					"group": "Clairvoyant",
+					"when": "isDocumentScanedWithClairvoyant"
+				}
 			]
 		},
 		"configuration": [

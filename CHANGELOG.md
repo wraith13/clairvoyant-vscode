@@ -10,6 +10,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 - `clairvoyant.sightDocument` command.
 - `clairvoyant.sightToken` command.
+- Added support for text editor context menu.
 - Added support for editor title menu.
 ## 5.0.1 - 2019-12-05
 
