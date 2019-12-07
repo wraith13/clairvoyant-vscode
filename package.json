@@ -104,6 +104,15 @@
 				"category": "Clairvoyant"
 			}
 		],
+		"menus": {
+			"editor/title": [
+				{
+					"command": "clairvoyant.sightDocument",
+					"group": "navigation",
+					"when": "isDocumentScanedWithClairvoyant"
+				}
+			]
+		},
 		"configuration": [
 			{
 				"title": "Clairvoyant",

@@ -301,12 +301,20 @@ export const initialize = (aContext: vscode.ExtensionContext): void =>
                         Highlight.updateEditor(textEditor);
                     }
                 }
-            }
+                setIsDocumentScanedWithClairvoyant(undefined !== textEditor && Scan.isScanedDocment(textEditor.document));
+        }
         ),
     );
 
     reload();
 };
+
+export const setIsDocumentScanedWithClairvoyant = (isDocumentScanedWithClairvoyant: boolean) => vscode.commands.executeCommand
+(
+    'setContext',
+    'isDocumentScanedWithClairvoyant',
+    isDocumentScanedWithClairvoyant
+);
 
 export const isTargetEditor = (textEditor: vscode.TextEditor) => undefined !== textEditor.viewColumn;
 

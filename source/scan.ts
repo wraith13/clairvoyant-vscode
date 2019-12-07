@@ -86,7 +86,7 @@ export const onUpdateDocument = (uri: string) =>
     Menu.removePreviewCache(uri);
 };
 
-export const isScanedDocment = (document: vscode.TextDocument) => documentTokenEntryMap[document.uri.toString()];
+export const isScanedDocment = (document: vscode.TextDocument) => undefined !== documentTokenEntryMap[document.uri.toString()];
 
 export const scanDocument = async (document: vscode.TextDocument, force: boolean = false) => await Clairvoyant.busy.do
 (
@@ -203,6 +203,10 @@ export const scanDocument = async (document: vscode.TextDocument, force: boolean
                             if (!old)
                             {
                                 onUpdateFileList();
+                                if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri.toString() === uri)
+                                {
+                                    Clairvoyant.setIsDocumentScanedWithClairvoyant(true);
+                                }
                             }
                             onUpdateTokens();
                             onUpdateDocument(uri);
