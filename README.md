@@ -8,6 +8,8 @@ Smart search your codes.
 
 Clairvoyant scans your code and enumerates all tokens and provides access to them.
 
+![screenshot](images/screenshot4.png)
+
 ![screenshot](images/screenshot.png)
 
 ![screenshot](images/screenshot2.png)
