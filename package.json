@@ -105,6 +105,28 @@
 			}
 		],
 		"menus": {
+			"commandPalette": [
+				{
+					"command": "clairvoyant.sightDocument",
+					"when": "isDocumentScanedWithClairvoyant"
+				},
+				{
+					"command": "clairvoyant.nextToken",
+					"when": "isDocumentScanedWithClairvoyant"
+				},
+				{
+					"command": "clairvoyant.previousToken",
+					"when": "isDocumentScanedWithClairvoyant"
+				},
+				{
+					"command": "clairvoyant.toggleHighlight",
+					"when": "isDocumentScanedWithClairvoyant"
+				},
+				{
+					"command": "clairvoyant.sightToken",
+					"when": "isDocumentScanedWithClairvoyant"
+				}
+			],
 			"editor/title": [
 				{
 					"command": "clairvoyant.sightDocument",
