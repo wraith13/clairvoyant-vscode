@@ -202,7 +202,8 @@ const makeGoCommandMenuItem =
 (
     label: Locale.KeyType,
     entry: Selection.ShowTokenCoreEntry,
-    command?: () => Promise<void>
+    command?: () => Promise<void>,
+    hits?: string
 ) => Profiler.profile
 (
     "makeGoCommandMenuItem",
@@ -214,7 +215,8 @@ const makeGoCommandMenuItem =
             entry.selection.anchor.line === entry.selection.active.line ?
                 `-${entry.selection.active.character +1}`:
                 ` - line:${entry.selection.active.line +1} row:${entry.selection.active.character +1}`
-        ),
+        )
+        +(undefined !== hits ? ` ${hits}`: ""),
         description: File.extractRelativePath(entry.document.uri.toString()),
         detail: makePreview(entry.document, entry.selection.anchor),
         command: command ? command: (async () => Selection.getEntry().showToken(entry)),
@@ -231,13 +233,15 @@ const makeSightShowMenu = (uri: string, token: string, hits: number[]): CommandM
         (
             hits.map
             (
-                index => makeGoCommandMenuItem
+                (index, i) => makeGoCommandMenuItem
                 (
                     "clairvoyant.goto.title",
                     {
                         document: Scan.documentMap[uri],
                         selection: Selection.make(Scan.documentMap[uri], index, token)
-                    }
+                    },
+                    undefined,
+                    `hits:${i +1}/${hits.length}`
                 )
             )
         )
@@ -435,24 +439,26 @@ const makeQuickMenu = (): CommandMenuItem[] =>
     const activeTextEditor = vscode.window.activeTextEditor;
     if (undefined !== activeTextEditor)
     {
-        const token = Scan.getToken(activeTextEditor);
-        if (undefined !== token)
+        const seek = Scan.getSeekResult(activeTextEditor);
+        if (undefined !== seek)
         {
             result.push
             (
                 {
                     label: `$(rocket) ${Locale.typeableMap("clairvoyant.nextToken.title")}`,
-                    description: `$(tag) ${token}`,
+                    description: `$(tag) ${seek.token}`,
+                    detail: `hits:${((seek.i +1) % seek.hits.length) +1}/${seek.hits.length}`,
                     command: async () => await vscode.commands.executeCommand("clairvoyant.nextToken"),
                 },
                 {
                     label: `$(rocket) ${Locale.typeableMap("clairvoyant.previousToken.title")}`,
-                    description: `$(tag) ${token}`,
+                    description: `$(tag) ${seek.token}`,
+                    detail: `hits:${((seek.i -1 +seek.hits.length) % seek.hits.length) +1}/${seek.hits.length}`,
                     command: async () => await vscode.commands.executeCommand("clairvoyant.previousToken"),
                 },
                 {
                     label: `$(light-bulb) ${Locale.typeableMap("clairvoyant.toggleHighlight.title")}`,
-                    description: `$(tag) ${token}`,
+                    description: `$(tag) ${seek.token}`,
                     command: async () => await vscode.commands.executeCommand("clairvoyant.toggleHighlight"),
                 }
             );

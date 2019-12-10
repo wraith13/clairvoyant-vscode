@@ -4,6 +4,12 @@ All notable changes to the "clairvoyant" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## 5.2.0 - 2019-??-??
+
+### Added
+
+- Added `hits:i/n` to the token move menu.
+
 ## 5.1.0 - 2019-12-06
 
 ### Added

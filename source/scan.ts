@@ -341,6 +341,7 @@ export const seek = <ResultT>(textEditor: vscode.TextEditor, receiver: (token: s
         return undefined;
     }
 );
+export const getSeekResult = (textEditor: vscode.TextEditor) => seek(textEditor, (token, hits, i) => ({token, hits, i}));
 export const getToken = (textEditor: vscode.TextEditor) => seek(textEditor, token => token);
 export const getNextTokenSelection = (textEditor: vscode.TextEditor) => seek
 (
