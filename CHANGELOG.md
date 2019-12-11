@@ -9,6 +9,9 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ### Added
 
 - Added `hits:i/n` to the token move menu.
+### Fixed
+
+- Fixed an wrong default value where `clairvoyant.excludeExtentions` setting.
 
 ## 5.1.0 - 2019-12-06
 
