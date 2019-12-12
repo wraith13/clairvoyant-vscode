@@ -9,6 +9,11 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ### Added
 
 - Added `hits:i/n` to the token move menu.
+
+### Changed
+
+- `clairvoyant.textEditorRevealType` setting's default: `InCenterIfOutsideViewport` -> `InCenter`
+
 ### Fixed
 
 - Fixed an wrong default value where `clairvoyant.excludeExtentions` setting.

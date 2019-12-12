@@ -184,7 +184,7 @@
 					},
 					"clairvoyant.textEditorRevealType": {
 						"type": "string",
-						"default": "InCenterIfOutsideViewport",
+						"default": "InCenter",
 						"enum": [
 							"AtTop",
 							"Default",
