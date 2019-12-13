@@ -4,6 +4,12 @@ All notable changes to the "clairvoyant" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## ?.?.? - 2019-12-??
+
+### Fixed
+
+- Fixed an wrong description that `Clairvoyant: Go To File With Preiview`. ( The correct command name is `Clairvoyant: Lunatic Go To File...`. )
+
 ## 5.2.0 - 2019-12-13
 
 ### Added
