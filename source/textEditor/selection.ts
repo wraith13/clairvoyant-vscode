@@ -10,6 +10,11 @@ export const make = (document: vscode.TextDocument, index: number, token: string
     "Selection.make",
     () => new vscode.Selection(document.positionAt(index), document.positionAt(index +token.length))
 );
+export const makeWhole = (document: vscode.TextDocument) => Profiler.profile
+(
+    "Selection.makeWhole",
+    () => new vscode.Selection(document.positionAt(0), document.positionAt(document.getText().length))
+);
 
 let lastValidViemColumn: number = 1;
 export const setLastValidViemColumn = (viewColumn: number) => lastValidViemColumn = viewColumn;
@@ -214,3 +219,209 @@ export const reload = () =>
 {
     Object.keys(entryMap).forEach(i => delete entryMap[i]);
 };
+
+export module Log
+{
+    const latests: {[viemColumn: number]:{ [uri: string]: vscode.Selection }} = { };
+    const recentDocuments: {[viemColumn: number]: string[] } = { };
+
+    export const getLatest = (viemColumn: number, uri: string) =>
+    {
+        const documentSelectionMap = latests[viemColumn];
+        if (undefined !== documentSelectionMap)
+        {
+            const selection = documentSelectionMap[uri];
+            if (undefined !== selection)
+            {
+                return selection;
+            }
+        }
+        return undefined;
+    };
+    export const update = (current: vscode.TextEditor) =>
+    {
+        if (undefined !== current.viewColumn)
+        {
+            const uri = current.document.uri.toString();
+            if (undefined === latests[current.viewColumn])
+            {
+                latests[current.viewColumn] = { };
+            }
+            latests[current.viewColumn][uri] = current.selection;
+
+            if (undefined === recentDocuments[current.viewColumn])
+            {
+                recentDocuments[current.viewColumn] = [ ];
+            }
+            recentDocuments[current.viewColumn] = [uri].concat(recentDocuments[current.viewColumn].filter(i => i !== uri));
+        }
+    };
+}
+
+export module PreviewTextEditor
+{
+    let IsLunatic: boolean;
+    export const isCommitable =
+    (
+        lastPreviewDocument: vscode.TextDocument | undefined,
+        viewColumn: vscode.ViewColumn,
+        selected: Menu.CommandMenuItem | undefined
+    ) =>
+        undefined !== lastPreviewDocument &&
+        (
+            (
+                undefined !== selected &&
+                undefined !== selected.document &&
+                lastPreviewDocument.uri.toString() === selected.document.uri.toString() &&
+                selected.isTerm
+            ) ||
+            (
+                undefined === selected &&
+                undefined !== vscode.window.activeTextEditor &&
+                viewColumn === vscode.window.activeTextEditor.viewColumn &&
+                Clairvoyant.enablePreviewIntercept.get("")
+            )
+        );
+
+    export const make = async () =>
+    {
+        IsLunatic =
+            !vscode.workspace.getConfiguration("workbench.editor")["enablePreview"] &&
+            Clairvoyant.enableLunaticPreview.get("");
+        IsLunatic ?
+            LunaticPreviewTextEditor.make():
+            RegularPreviewTextEditor.make();
+    };
+    export const show = async (previewDocument: vscode.TextDocument | undefined) => IsLunatic ?
+        LunaticPreviewTextEditor.show(previewDocument):
+        RegularPreviewTextEditor.show(previewDocument);
+    export const dispose = async (selected: Menu.CommandMenuItem | undefined) => IsLunatic ?
+        LunaticPreviewTextEditor.dispose(selected):
+        RegularPreviewTextEditor.dispose(selected);
+}
+
+export module LunaticPreviewTextEditor
+{
+    let backupDocument: vscode.TextDocument | undefined;
+    let lastPreviewDocument: vscode.TextDocument | undefined;
+    let document: vscode.TextDocument;
+    let textEditor: vscode.TextEditor;
+    let viewColumn: vscode.ViewColumn;
+
+    export const make = async () =>
+    {
+        viewColumn = lastValidViemColumn;
+        const oldTextEditor = vscode.window.visibleTextEditors.filter(i => i.viewColumn === lastValidViemColumn)[0];
+        backupDocument = oldTextEditor ? oldTextEditor.document: undefined;
+        document = await vscode.workspace.openTextDocument();
+        textEditor = await vscode.window.showTextDocument(document, { viewColumn, preserveFocus:true, preview:true });
+        if (backupDocument)
+        {
+            await show(backupDocument);
+        }
+    };
+    export const show = async (previewDocument: vscode.TextDocument | undefined) =>
+    {
+        lastPreviewDocument = previewDocument;
+        const targetDocument = previewDocument || backupDocument;
+        if (undefined !== targetDocument)
+        {
+            await textEditor.edit(editBuilder => editBuilder.replace(makeWhole(document), targetDocument.getText()));
+            await vscode.languages.setTextDocumentLanguage(document, targetDocument.languageId);
+            revealSelection
+            (
+                textEditor,
+                Log.getLatest(viewColumn, targetDocument.uri.toString()) ||
+                new vscode.Selection(document.positionAt(0), document.positionAt(0))
+            );
+        }
+    };
+    export const dispose = async (selected: Menu.CommandMenuItem | undefined) =>
+    {
+        if
+        (
+            !Clairvoyant.enablePreviewIntercept.get("") ||
+            textEditor !== vscode.window.activeTextEditor
+        )
+        {
+            lastPreviewDocument = undefined;
+        }
+
+        const commitable = PreviewTextEditor.isCommitable(lastPreviewDocument, viewColumn, selected);
+
+        textEditor = await vscode.window.showTextDocument(document, viewColumn);
+        await textEditor.edit(editBuilder => editBuilder.delete(makeWhole(document)));
+        await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
+
+        if (undefined !== lastPreviewDocument && commitable)
+        {
+            await vscode.window.showTextDocument(lastPreviewDocument, viewColumn);
+            revealSelection
+            (
+                textEditor,
+                Log.getLatest(viewColumn, lastPreviewDocument.uri.toString()) ||
+                new vscode.Selection(lastPreviewDocument.positionAt(0), lastPreviewDocument.positionAt(0))
+            );
+        }
+    };
+}
+export module RegularPreviewTextEditor
+{
+    let backupDocument: vscode.TextDocument | undefined;
+    let lastPreviewDocument: vscode.TextDocument | undefined;
+    let viewColumn: vscode.ViewColumn;
+
+    export const make = async () =>
+    {
+        viewColumn = lastValidViemColumn;
+        const oldTextEditor = vscode.window.visibleTextEditors.filter(i => i.viewColumn === lastValidViemColumn)[0];
+        backupDocument = oldTextEditor ? oldTextEditor.document: undefined;
+    };
+    export const show = async (previewDocument: vscode.TextDocument | undefined) =>
+    {
+        lastPreviewDocument = previewDocument;
+        const targetDocument = previewDocument || backupDocument;
+        if (undefined !== targetDocument)
+        {
+            const textEditor = await vscode.window.showTextDocument(targetDocument, { viewColumn, preserveFocus:true, preview:true });
+            revealSelection
+            (
+                textEditor,
+                Log.getLatest(viewColumn, targetDocument.uri.toString()) ||
+                new vscode.Selection(targetDocument.positionAt(0), targetDocument.positionAt(0))
+            );
+        }
+    };
+    export const dispose = async (selected: Menu.CommandMenuItem | undefined) =>
+    {
+        if
+        (
+            !Clairvoyant.enablePreviewIntercept.get("") ||
+            undefined === vscode.window.activeTextEditor ||
+            lastPreviewDocument !== vscode.window.activeTextEditor.document
+        )
+        {
+            lastPreviewDocument = undefined;
+        }
+
+        const commitable = PreviewTextEditor.isCommitable(lastPreviewDocument, viewColumn, selected);
+
+        if (backupDocument !== lastPreviewDocument)
+        {
+            if (commitable)
+            {
+                if (undefined !== lastPreviewDocument)
+                {
+                    await vscode.window.showTextDocument(lastPreviewDocument, { viewColumn, preview:false });
+                }
+            }
+            else
+            {
+                if (undefined !== backupDocument)
+                {
+                    await vscode.window.showTextDocument(backupDocument, viewColumn);
+                }
+            }
+        }
+    };
+}

@@ -115,6 +115,7 @@ export const latestHighlightAlpha = new Config.Entry<number>("clairvoyant.latest
 export const activeHighlightOverviewRulerLane = new Config.MapEntry("clairvoyant.activeHighlightOverviewRulerLane", overviewRulerLaneObject);
 export const latestHighlightOverviewRulerLane = new Config.MapEntry("clairvoyant.latestHighlightOverviewRulerLane", overviewRulerLaneObject);
 export const highlightOverviewRulerLane = new Config.MapEntry("clairvoyant.highlightOverviewRulerLane", overviewRulerLaneObject);
+export const enableLunaticPreview = new Config.Entry<boolean>("clairvoyant.enableLunaticPreview");
 const outputChannelVolume = new Config.MapEntry("clairvoyant.outputChannelVolume", outputChannelVolumeObject);
 const outputChannel = vscode.window.createOutputChannel(Config.applicationName);
 let muteOutput = false;
@@ -172,6 +173,7 @@ export const initialize = (aContext: vscode.ExtensionContext): void =>
         vscode.commands.registerCommand(`${applicationKey}.sight`, sight),
         vscode.commands.registerCommand(`${applicationKey}.sightDocument`, sightDocument),
         vscode.commands.registerCommand(`${applicationKey}.sightToken`, sightToken),
+        vscode.commands.registerCommand(`${applicationKey}.lunaticGoToFile`, lunaticGoToFile),
         vscode.commands.registerCommand(`${applicationKey}.back`, Selection.getEntry().showTokenUndo),
         vscode.commands.registerCommand(`${applicationKey}.forward`, Selection.getEntry().showTokenRedo),
         vscode.commands.registerCommand(`${applicationKey}.reload`, reload),
@@ -302,8 +304,9 @@ export const initialize = (aContext: vscode.ExtensionContext): void =>
                     }
                 }
                 setIsDocumentScanedWithClairvoyant(undefined !== textEditor && Scan.isScanedDocment(textEditor.document));
-        }
+            }
         ),
+        vscode.window.onDidChangeTextEditorSelection(event => Selection.Log.update(event.textEditor)),
     );
 
     reload();
@@ -384,9 +387,17 @@ const clearConfig = () =>
         activeHighlightOverviewRulerLane,
         latestHighlightOverviewRulerLane,
         highlightOverviewRulerLane,
+        enableLunaticPreview,
         outputChannelVolume,
     ]
     .forEach(i => i.clear());
+
+    vscode.commands.executeCommand
+    (
+        'setContext',
+        'enableLunaticPreviewWithClairvoyant',
+        enableLunaticPreview.get("")
+    );
 };
 
 export const reload = () =>
@@ -412,6 +423,7 @@ const onDidChangeConfiguration = () =>
         excludeExtentions: excludeExtentions.getCache(""),
         targetProtocols: targetProtocols.getCache(""),
         gotoHistoryMode: gotoHistoryMode.getCache(""),
+        enableLunaticPreview: enableLunaticPreview.getCache(""),
     };
     clearConfig();
     StatusBar.update();
@@ -426,7 +438,8 @@ const onDidChangeConfiguration = () =>
         old.isExcludeStartsWidhDot !== isExcludeStartsWidhDot.get("") ||
         JSON.stringify(old.excludeDirectories) !== JSON.stringify(excludeDirectories.get("")) ||
         JSON.stringify(old.excludeExtentions) !== JSON.stringify(excludeExtentions.get("")) ||
-        JSON.stringify(old.targetProtocols) !== JSON.stringify(targetProtocols.get(""))
+        JSON.stringify(old.targetProtocols) !== JSON.stringify(targetProtocols.get("")) ||
+        old.enableLunaticPreview !== enableLunaticPreview.get("")
     )
     {
         Scan.reload();
@@ -546,6 +559,33 @@ export const sightToken = async () =>
                 document: activeTextEditor.document,
                 token,
                 }
+        });
+    }
+};
+
+export const lunaticGoToFile = async () =>
+{
+    if (Object.keys(Scan.documentMap).length <= 0)
+    {
+        await Menu.Show.root
+        ({
+            makeItemList: Menu.makeStaticMenu,
+            options:
+            {
+                matchOnDescription: true,
+            }
+        });
+    }
+    else
+    {
+        await Menu.Show.root
+        ({
+            makeItemList: () => Menu.makeLunaticGoToFileMenu(),
+            options:
+            {
+                matchOnDescription: true,
+                filePreview: true,
+            }
         });
     }
 };

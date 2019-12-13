@@ -102,6 +102,11 @@
 				"command": "clairvoyant.toggleHighlight",
 				"title": "%clairvoyant.toggleHighlight.title%",
 				"category": "Clairvoyant"
+			},
+			{
+				"command": "clairvoyant.lunaticGoToFile",
+				"title": "%clairvoyant.lunaticGoToFile.title%",
+				"category": "Clairvoyant"
 			}
 		],
 		"menus": {
@@ -125,6 +130,10 @@
 				{
 					"command": "clairvoyant.sightToken",
 					"when": "isDocumentScanedWithClairvoyant"
+				},
+				{
+					"command": "clairvoyant.lunaticGoToFile",
+					"when": "enableLunaticPreviewWithClairvoyant"
 				}
 			],
 			"editor/title": [
@@ -374,6 +383,11 @@
 							"full"
 						],
 						"description": "%clairvoyant.highlightOverviewRulerLane.description%"
+					},
+					"clairvoyant.enableLunaticPreview": {
+						"type": "boolean",
+						"default": true,
+						"description": "%clairvoyant.enableLunaticPreview.description%"
 					}
 				}
 			}

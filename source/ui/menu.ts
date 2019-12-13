@@ -28,15 +28,17 @@ const mergeComparer = <valueT>(comparerList: ((a: valueT, b: valueT) => number)[
     }
     return result;
 };
-
-interface CommandMenuItem extends vscode.QuickPickItem
+export interface CommandMenuItem extends vscode.QuickPickItem
 {
     command: () => Promise<void>;
     preview?: Selection.ShowTokenCoreEntry;
+    document?: vscode.TextDocument;
     token?: string;
+    isTerm?: boolean;
 }
 interface CommandMenuOptions extends vscode.QuickPickOptions
 {
+    filePreview?: boolean;
     document?: vscode.TextDocument;
     token?: string;
 }
@@ -87,6 +89,10 @@ export module Show
         const options = entry.options || { };
         const selectionEntry = Selection.getEntry();
         Highlight.Preview.backup();
+        if (true === options.filePreview)
+        {
+            await Selection.PreviewTextEditor.make();
+        }
         if (undefined !== options.document)
         {
             await selectionEntry.showTextDocumentWithBackupSelection(options.document);
@@ -95,8 +101,12 @@ export module Show
         {
             Highlight.Preview.showToken(options.token);
         }
-        options.onDidSelectItem = (select: CommandMenuItem) =>
+        options.onDidSelectItem = async (select: CommandMenuItem) =>
         {
+            if (true === options.filePreview)
+            {
+                await Selection.PreviewTextEditor.show(select.document);
+            }
             if (select.preview)
             {
                 selectionEntry.previewSelection(select.preview);
@@ -108,6 +118,10 @@ export module Show
             Highlight.Preview.showSelection(select.preview);
         };
         const select = await vscode.window.showQuickPick(items, options);
+        if (true === options.filePreview)
+        {
+            await Selection.PreviewTextEditor.dispose(select);
+        }
         if (select)
         {
             if (select.preview)
@@ -221,6 +235,7 @@ const makeGoCommandMenuItem =
         detail: makePreview(entry.document, entry.selection.anchor),
         command: command ? command: (async () => Selection.getEntry().showToken(entry)),
         preview: command ? undefined: entry,
+        isTerm: true,
     })
 );
 const makeSightShowMenu = (uri: string, token: string, hits: number[]): CommandMenuItem[] => getCacheOrMake
@@ -288,6 +303,7 @@ const makeSightTokenMenu = (token: string): CommandMenuItem[] => getCacheOrMake
                             File.makeDigest(Scan.documentMap[entry.uri].getText()):
                             File.extractDirectoryAndWorkspace(entry.uri),
                             detail: `count: ${entry.hits.length}`,
+                        document: Scan.documentMap[entry.uri],
                         command: async () => await Show.forward
                         ({
                             makeItemList: () => makeEmptyList().concat
@@ -391,7 +407,7 @@ const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }
         )
     )
 );
-const makeSightCurrentFileMenuItem = (uri: string, tokenMap: { [token: string]: number[] } = Scan.documentTokenEntryMap[uri]): CommandMenuItem => 
+const makeSightCurrentFileMenuItem = (uri: string, tokenMap: { [token: string]: number[] } = Scan.documentTokenEntryMap[uri]): CommandMenuItem =>
 ({
     label: `$(file-text) ${Locale.typeableMap("Current file")}`,
     description: uri.startsWith("untitled:") ?
@@ -402,15 +418,20 @@ const makeSightCurrentFileMenuItem = (uri: string, tokenMap: { [token: string]: 
         makeItemList: () => makeSightFileRootMenu(uri, tokenMap),
     })
 });
-const makeSightFileMenuItem = (uri: string, tokenMap: { [token: string]: number[] } = Scan.documentTokenEntryMap[uri]): CommandMenuItem => 
+const makeSightFileMenuItem = (uri: string, tokenMap: { [token: string]: number[] } = Scan.documentTokenEntryMap[uri]): CommandMenuItem =>
 ({
     label: `$(file-text) ${File.extractFileName(uri)}`,
     description: uri.startsWith("untitled:") ?
         File.makeDigest(Scan.documentMap[uri].getText()):
         File.extractDirectoryAndWorkspace(uri),
+    document: Scan.documentMap[uri],
     command: async () => await Show.forward
     ({
         makeItemList: () => makeSightFileRootMenu(uri, tokenMap),
+        options:
+        {
+            document: Scan.documentMap[uri],
+        }
     })
 });
 const makeSightFileListMenu = (): CommandMenuItem[] => getCacheOrMake
@@ -620,7 +641,11 @@ export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
                     command: async () => await Show.forward
                     ({
                         makeItemList: makeSightFileListMenu,
-                        options: { matchOnDescription: true },
+                        options:
+                        {
+                            matchOnDescription: true,
+                            filePreview: Clairvoyant.enableLunaticPreview.get(""),
+                        },
                     })
                 },
                 "token" === getRootMenuOrder() ?
@@ -689,6 +714,7 @@ export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
                                 ),
                                 options:
                                 {
+                                    filePreview: Clairvoyant.enableLunaticPreview.get(""),
                                     matchOnDescription: true,
                                     token: Clairvoyant.decodeToken(entry[0]),
                                 },
@@ -753,5 +779,33 @@ export const makeSightTokenRootMenu = (uri: string, token: string): CommandMenuI
             token,
             Scan.documentTokenEntryMap[uri][Clairvoyant.encodeToken(token)]
         )
-)
+    )
+);
+
+const makeGoToFileMenuItem = (uri: string, document: vscode.TextDocument): CommandMenuItem =>
+({
+    label: `$(file-text) ${File.extractFileName(uri)}`,
+    description: uri.startsWith("untitled:") ?
+        File.makeDigest(document.getText()):
+        File.extractDirectoryAndWorkspace(uri),
+    document: document,
+    command: async () =>
+    {
+        await vscode.window.showTextDocument(document);
+    },
+    isTerm: true,
+});
+export const makeLunaticGoToFileMenu = (): CommandMenuItem[] => getCacheOrMake
+(
+    "filelist.lunatic",
+    () => Profiler.profile
+    (
+        "makeLunaticGoToFileMenu",
+        () => makeEmptyList().concat
+        (
+            Object.entries(Scan.documentMap)
+                .sort(mergeComparer([makeComparer(entry => File.extractDirectoryAndWorkspace(entry[0])), makeComparer(entry => entry[0])]))
+                .map(entry => makeGoToFileMenuItem(entry[0], entry[1]))
+        )
+    )
 );
