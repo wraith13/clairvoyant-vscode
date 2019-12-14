@@ -4,7 +4,11 @@ All notable changes to the "clairvoyant" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## ?.?.? - 2019-12-??
+## 5.3.0 - 2019-12-14
+
+### Added
+
+- Added `workbench.action.quickOpen` to the `clairvoyant.lunaticGoToFile` menu.
 
 ### Fixed
 

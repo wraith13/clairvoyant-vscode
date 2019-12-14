@@ -805,7 +805,15 @@ export const makeLunaticGoToFileMenu = (): CommandMenuItem[] => getCacheOrMake
         (
             Object.entries(Scan.documentMap)
                 .sort(mergeComparer([makeComparer(entry => File.extractDirectoryAndWorkspace(entry[0])), makeComparer(entry => entry[0])]))
-                .map(entry => makeGoToFileMenuItem(entry[0], entry[1]))
+                .map(entry => makeGoToFileMenuItem(entry[0], entry[1])),
+            {
+                label: `$(list-unordered) ${Locale.typeableMap("Regular: Go To File...")}`,
+                command: async () =>
+                {
+                    await vscode.commands.executeCommand("workbench.action.quickOpen");
+                },
+                isTerm: true,
+            }
         )
     )
 );

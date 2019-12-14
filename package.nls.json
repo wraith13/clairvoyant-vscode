@@ -55,5 +55,6 @@
     "Paste \"${token}\" to text editor": "Paste \"${token}\" to text editor",
     "Add highlight for \"${token}\"": "Add highlight for \"${token}\"",
     "Remove highlight for \"${token}\"": "Remove highlight for \"${token}\"",
-    "Max Files Error": "Clairvoyant: The maximum number of files has been reached. Edit `clairvoyant.maxFiles` and `clairvoyant.excludeDirectories` and `clairvoyant.excludeExtentions` settings and do `Clairvoyant: Reload`."
+    "Max Files Error": "Clairvoyant: The maximum number of files has been reached. Edit `clairvoyant.maxFiles` and `clairvoyant.excludeDirectories` and `clairvoyant.excludeExtentions` settings and do `Clairvoyant: Reload`.",
+    "Regular: Go To File...": "Regular: Go To File..."
 }

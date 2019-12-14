@@ -55,5 +55,6 @@
     "Paste \"${token}\" to text editor": "\"${token}\" をテキストエディタに貼り付け",
     "Add highlight for \"${token}\"": "\"${token}\" をハイライト",
     "Remove highlight for \"${token}\"": "\"${token}\" のハイライトを除去",
-    "Max Files Error": "Clairvoyant: ファイルの最大数に到達しました。`clairvoyant.maxFiles`, `clairvoyant.excludeDirectories`, `clairvoyant.excludeExtentions` の設定を編集してから `Clairvoyant: Reload` を実行してください。"
+    "Max Files Error": "Clairvoyant: ファイルの最大数に到達しました。`clairvoyant.maxFiles`, `clairvoyant.excludeDirectories`, `clairvoyant.excludeExtentions` の設定を編集してから `Clairvoyant: Reload` を実行してください。",
+    "Regular: Go To File...": "標準: ファイルに移動..."
 }
