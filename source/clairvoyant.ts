@@ -502,6 +502,7 @@ export const sight = async () => await Menu.Show.root
     options:
     {
         matchOnDescription: true,
+        filePreview: enableLunaticPreview.get(""),
     }
 });
 

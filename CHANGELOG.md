@@ -4,6 +4,12 @@ All notable changes to the "clairvoyant" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## 6.0.0 - 2019-12-??
+
+### Changed
+
+- Changed the menu tree structure( Display token list and file list at the same time ).
+
 ## 5.3.0 - 2019-12-14
 
 ### Added
