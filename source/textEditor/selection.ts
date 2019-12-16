@@ -18,6 +18,7 @@ export const makeWhole = (document: vscode.TextDocument) => Profiler.profile
 
 let lastValidViemColumn: number = 1;
 export const setLastValidViemColumn = (viewColumn: number) => lastValidViemColumn = viewColumn;
+export const getLastValidViemColumn = () => lastValidViemColumn;
 
 export interface ShowTokenCoreEntry
 {
@@ -121,6 +122,13 @@ class Entry
             this.groundBackupSelectionEntry = null;
         }
         this.backupTargetTextEditor = undefined;
+    }
+    public dispose = async (commitable: boolean) =>
+    {
+        if (commitable)
+        {
+            this.rollbackSelection();
+        }
     }
     public showToken = async (entry: { document: vscode.TextDocument, selection: vscode.Selection }) =>
     {
@@ -261,27 +269,6 @@ export module Log
 export module PreviewTextEditor
 {
     let IsLunatic: boolean;
-    export const isCommitable =
-    (
-        lastPreviewDocument: vscode.TextDocument | undefined,
-        viewColumn: vscode.ViewColumn,
-        selected: Menu.CommandMenuItem | undefined
-    ) =>
-        undefined !== lastPreviewDocument &&
-        (
-            (
-                undefined !== selected &&
-                undefined !== selected.document &&
-                lastPreviewDocument.uri.toString() === selected.document.uri.toString() &&
-                selected.isTerm
-            ) ||
-            (
-                undefined === selected &&
-                undefined !== vscode.window.activeTextEditor &&
-                viewColumn === vscode.window.activeTextEditor.viewColumn &&
-                Clairvoyant.enablePreviewIntercept.get("")
-            )
-        );
 
     export const make = async () =>
     {
@@ -295,9 +282,9 @@ export module PreviewTextEditor
     export const show = async (previewDocument: vscode.TextDocument | undefined) => IsLunatic ?
         LunaticPreviewTextEditor.show(previewDocument):
         RegularPreviewTextEditor.show(previewDocument);
-    export const dispose = async (selected: Menu.CommandMenuItem | undefined) => IsLunatic ?
-        LunaticPreviewTextEditor.dispose(selected):
-        RegularPreviewTextEditor.dispose(selected);
+    export const dispose = async (commitable: boolean) => IsLunatic ?
+        LunaticPreviewTextEditor.dispose(commitable):
+        RegularPreviewTextEditor.dispose(commitable);
 }
 
 export module LunaticPreviewTextEditor
@@ -336,19 +323,8 @@ export module LunaticPreviewTextEditor
             );
         }
     };
-    export const dispose = async (selected: Menu.CommandMenuItem | undefined) =>
+    export const dispose = async (commitable: boolean) =>
     {
-        if
-        (
-            !Clairvoyant.enablePreviewIntercept.get("") ||
-            textEditor !== vscode.window.activeTextEditor
-        )
-        {
-            lastPreviewDocument = undefined;
-        }
-
-        const commitable = PreviewTextEditor.isCommitable(lastPreviewDocument, viewColumn, selected);
-
         textEditor = await vscode.window.showTextDocument(document, viewColumn);
         await textEditor.edit(editBuilder => editBuilder.delete(makeWhole(document)));
         await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
@@ -392,20 +368,8 @@ export module RegularPreviewTextEditor
             );
         }
     };
-    export const dispose = async (selected: Menu.CommandMenuItem | undefined) =>
+    export const dispose = async (commitable: boolean) =>
     {
-        if
-        (
-            !Clairvoyant.enablePreviewIntercept.get("") ||
-            undefined === vscode.window.activeTextEditor ||
-            lastPreviewDocument !== vscode.window.activeTextEditor.document
-        )
-        {
-            lastPreviewDocument = undefined;
-        }
-
-        const commitable = PreviewTextEditor.isCommitable(lastPreviewDocument, viewColumn, selected);
-
         if (backupDocument !== lastPreviewDocument)
         {
             if (commitable)

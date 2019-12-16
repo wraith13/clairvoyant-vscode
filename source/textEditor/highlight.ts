@@ -180,6 +180,8 @@ export module Preview
         backupLatestToken = undefined;
         update();
     };
+
+    export const dispose = (commitable: boolean) => commitable ? commit(): rollback();
 }
 
 const onUpdateToken = (token: string) =>

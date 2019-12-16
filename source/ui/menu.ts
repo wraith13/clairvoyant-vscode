@@ -85,6 +85,8 @@ export module Show
                 entry.makeItemList
             )
         );
+        const lastValidViemColumn = Selection.getLastValidViemColumn();
+        let lastPreviewItem: CommandMenuItem | undefined;
 
         const options = entry.options || { };
         const selectionEntry = Selection.getEntry();
@@ -103,6 +105,7 @@ export module Show
         }
         options.onDidSelectItem = async (select: CommandMenuItem) =>
         {
+            lastPreviewItem = select;
             if (true === options.filePreview)
             {
                 await Selection.PreviewTextEditor.show(select.document);
@@ -118,33 +121,35 @@ export module Show
             Highlight.Preview.showSelection(select.preview);
         };
         const select = await vscode.window.showQuickPick(items, options);
+        const isCommitable =
+        (
+            (
+                undefined !== select &&
+                lastPreviewItem === select &&
+                select.isTerm
+            ) ||
+            (
+                undefined === select &&
+                undefined !== vscode.window.activeTextEditor &&
+                lastValidViemColumn === vscode.window.activeTextEditor.viewColumn &&
+                Clairvoyant.enablePreviewIntercept.get("")
+            )
+        );
         if (true === options.filePreview)
         {
-            await Selection.PreviewTextEditor.dispose(select);
+            await Selection.PreviewTextEditor.dispose(isCommitable);
+        }
+        if (undefined !== options.document)
+        {
+            await selectionEntry.dispose(isCommitable);
+        }
+        if (undefined !== options.token)
+        {
+            Highlight.Preview.dispose(isCommitable);
         }
         if (select)
         {
-            if (select.preview)
-            {
-                Highlight.Preview.commit();
-            }
-            else
-            {
-                if (undefined !== options.document)
-                {
-                    await selectionEntry.rollbackSelection();
-                }
-                Highlight.Preview.rollback();
-            }
             await select.command();
-        }
-        else
-        {
-            if (undefined !== options.document)
-            {
-                await selectionEntry.rollbackSelection();
-            }
-            Highlight.Preview.rollback();
         }
     };
 
