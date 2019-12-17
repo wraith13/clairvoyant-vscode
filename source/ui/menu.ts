@@ -91,17 +91,17 @@ export module Show
         const options = entry.options || { };
         const selectionEntry = Selection.getEntry();
         Highlight.Preview.backup();
-        if (true === options.filePreview)
+        if (undefined !== options.token)
         {
-            await Selection.PreviewTextEditor.make();
+            Highlight.Preview.showToken(options.token);
         }
         if (undefined !== options.document)
         {
             await selectionEntry.showTextDocumentWithBackupSelection(options.document);
         }
-        if (undefined !== options.token)
+        if (true === options.filePreview)
         {
-            Highlight.Preview.showToken(options.token);
+            await Selection.PreviewTextEditor.make();
         }
         options.onDidSelectItem = async (select: CommandMenuItem) =>
         {

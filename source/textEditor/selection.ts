@@ -39,21 +39,14 @@ class Entry
     groundBackupSelectionEntry: ShowTokenCoreEntry | null = null;
     targetBackupSelectionEntry: ShowTokenCoreEntry | null = null;
     lastPreviewSelectionEntry: ShowTokenCoreEntry | null = null;
+    previewViewColumn: vscode.ViewColumn = 1;
 
     public constructor(public viewColumn: string) { }
-
-    public previewSelection = (entry: { document: vscode.TextDocument, selection: vscode.Selection }, textEditor = getPreviewTextEditor(entry.document)) =>
-    {
-        if (textEditor)
-        {
-            revealSelection(textEditor, entry.selection);
-            this.lastPreviewSelectionEntry = entry;
-        }
-    }
 
     public showTextDocumentWithBackupSelection = async (document: vscode.TextDocument) =>
     {
         Clairvoyant.outputLine("verbose", `Selection.Entry(${this.viewColumn}).showTextDocumentWithBackupSelection() is called.`);
+        this.previewViewColumn = getLastValidViemColumn();
         this.groundBackupSelectionEntry = makeShowTokenCoreEntry();
         if (this.groundBackupSelectionEntry && this.groundBackupSelectionEntry.document.uri.toString() === document.uri.toString())
         {
@@ -61,12 +54,22 @@ class Entry
         }
         else
         {
-            await vscode.window.showTextDocument(document);
+            await vscode.window.showTextDocument(document, this.previewViewColumn);
             this.targetBackupSelectionEntry = makeShowTokenCoreEntry();
         }
         this.lastPreviewSelectionEntry = null;
         this.backupTargetTextEditor = vscode.window.activeTextEditor;
     }
+    public previewSelection = (entry: { document: vscode.TextDocument, selection: vscode.Selection }) =>
+    {
+        const textEditor = vscode.window.visibleTextEditors.filter(i => i.viewColumn === this.previewViewColumn)[0];
+        if (textEditor)
+        {
+            revealSelection(textEditor, entry.selection);
+            this.lastPreviewSelectionEntry = entry;
+        }
+    }
+
     public rollbackSelection = async () =>
     {
         Clairvoyant.outputLine("verbose", `Selection.Entry(${this.viewColumn}).rollbackSelection() is called.`);
@@ -89,11 +92,10 @@ class Entry
                     const data =
                     {
                         entry: this.lastPreviewSelectionEntry,
-                        textEditor: this.backupTargetTextEditor,
                     };
                     setTimeout
                     (
-                        () => this.previewSelection(data.entry, data.textEditor),
+                        () => this.previewSelection(data.entry),
                         0
                     );
                 }
@@ -103,7 +105,7 @@ class Entry
         
         if (this.targetBackupSelectionEntry)
         {
-            this.previewSelection(this.targetBackupSelectionEntry, this.backupTargetTextEditor);
+            this.previewSelection(this.targetBackupSelectionEntry);
             this.targetBackupSelectionEntry = null;
         }
         if (this.groundBackupSelectionEntry)
@@ -189,19 +191,6 @@ const revealSelection = (textEditor: vscode.TextEditor, selection: vscode.Select
 const showSelection = async (entry: { document: vscode.TextDocument, selection: vscode.Selection }, textEditor?: vscode.TextEditor ) =>
 {
     revealSelection(textEditor || await vscode.window.showTextDocument(entry.document), entry.selection);
-};
-const getPreviewTextEditor = (document: vscode.TextDocument) =>
-{
-    const uri = document.uri.toString();
-    const activeTextEditor = vscode.window.activeTextEditor;
-    if (activeTextEditor && activeTextEditor.document.uri.toString() === uri)
-    {
-        return activeTextEditor;
-    }
-    else
-    {
-        return vscode.window.visibleTextEditors.filter(i => i.document.uri.toString() === uri)[0];
-    }
 };
 const makeShowTokenCoreEntry = () =>
 {
