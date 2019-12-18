@@ -46,6 +46,7 @@
     "🔬 Busy Details": "🔬 Busy Details",
     "🚫 Profile has not been started.": "🚫 Profile has not been started.",
     "Highlighted tokens": "Highlighted tokens",
+    "Changes": "Changes",
     "Sort by count": "Sort by count",
     "Sort by token": "Sort by token",
     "Current file": "Current file",
@@ -56,5 +57,6 @@
     "Add highlight for \"${token}\"": "Add highlight for \"${token}\"",
     "Remove highlight for \"${token}\"": "Remove highlight for \"${token}\"",
     "Max Files Error": "Clairvoyant: The maximum number of files has been reached. Edit `clairvoyant.maxFiles` and `clairvoyant.excludeDirectories` and `clairvoyant.excludeExtentions` settings and do `Clairvoyant: Reload`.",
-    "Regular: Go To File...": "Regular: Go To File..."
+    "Regular: Go To File...": "Regular: Go To File...",
+    "No changes or this is the only change.": "No changes or this is the only change."
 }

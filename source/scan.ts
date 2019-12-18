@@ -5,6 +5,7 @@ import * as File from "./lib/file";
 import * as Clairvoyant from "./clairvoyant";
 import * as Menu from './ui/menu';
 import * as Selection from "./textEditor/selection";
+import * as Changes from "./textEditor/changes";
 
 const regExpExecToArray = (regexp: RegExp, text: string) => Profiler.profile
 (
@@ -84,6 +85,7 @@ export const onUpdateDocument = (uri: string) =>
     Clairvoyant.outputLine("verbose", `Scan.onUpdateDocument("${uri}") is called.`);
     Menu.removeCache(uri);
     Menu.removePreviewCache(uri);
+    Changes.removeCache(uri);
 };
 
 export const isScanedDocment = (document: vscode.TextDocument) => undefined !== documentTokenEntryMap[document.uri.toString()];

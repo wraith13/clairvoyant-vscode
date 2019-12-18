@@ -3,31 +3,14 @@ import * as vscode from 'vscode';
 import * as Profiler from "../lib/profiler";
 import * as Locale from "../lib/locale";
 import * as File from "../lib/file";
+import * as Comparer from "../lib/comparer";
 
 import * as Clairvoyant from "../clairvoyant";
+import * as Changes from "../textEditor/changes";
 import * as Selection from "../textEditor/selection";
 import * as Highlight from "../textEditor/highlight";
 import * as Scan from "../scan";
 
-const simpleComparer = <valueT>(a: valueT, b: valueT) =>
-    a < b ? -1:
-    b < a ? 1:
-    0;
-
-const makeComparer = <objectT, valueT>(getValue: (object: objectT) => valueT) => (a: objectT, b: objectT) => simpleComparer(getValue(a), getValue(b));
-const stringComparer = (a: string, b: string) =>
-    a.toLowerCase() < b.toLowerCase() ? -1:
-    b.toLowerCase() < a.toLowerCase() ? 1:
-    simpleComparer(a, b);
-const mergeComparer = <valueT>(comparerList: ((a: valueT, b: valueT) => number)[]) => (a: valueT, b: valueT) =>
-{
-    let result = 0;
-    for(let i = 0; i < comparerList.length && 0 === result; ++i)
-    {
-        result = comparerList[i](a, b);
-    }
-    return result;
-};
 export interface CommandMenuItem extends vscode.QuickPickItem
 {
     command: () => Promise<void>;
@@ -300,7 +283,7 @@ const makeSightTokenFileMenu = (token: string): CommandMenuItem[] => getCacheOrM
             //makeSightTokenCoreMenu(Clairvoyant.decodeToken(token)),
             (
                 Scan.tokenDocumentEntryMap[token].map(i => ({ uri:i, hits: Scan.documentTokenEntryMap[i][token] }))
-                .sort(mergeComparer([makeComparer(entry => -entry.hits.length), makeComparer(entry => entry.uri)]))
+                .sort(Comparer.merge([Comparer.make(entry => -entry.hits.length), Comparer.make(entry => entry.uri)]))
                 .map
                 (
                     entry =>
@@ -385,6 +368,36 @@ const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }
         "makeSightFileRootMenu",
         () => makeEmptyList().concat
         (
+            {
+                label: `$(git-branch) ${Locale.typeableMap("Changes")}`,
+                command: async () =>
+                {
+                    const chages = await Changes.get();
+                    if (chages.length <= 0)
+                    {
+                        vscode.window.showInformationMessage(Locale.map("No changes or this is the only change."));
+                    }
+                    else
+                    {
+                        await Show.forward
+                        ({
+                            makeItemList: () => chages.map
+                            (
+                                (change, i) => makeGoCommandMenuItem
+                                (
+                                    "clairvoyant.goto.title",
+                                    {
+                                        document: Scan.documentMap[uri],
+                                        selection: change
+                                    },
+                                    undefined,
+                                    `changes:${i +1}/${chages.length}`
+                                )
+                            ),
+                        });
+                    }
+                },
+            },
             [
                 "token" === getRootMenuOrder() ?
                     {
@@ -407,11 +420,11 @@ const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }
             Object.entries(entries).sort
             (
                 "token" === getRootMenuOrder() ?
-                    (a, b) => stringComparer(a[0], b[0]):
-                    mergeComparer
+                    (a, b) => Comparer.string(a[0], b[0]):
+                    Comparer.merge
                     ([
-                        makeComparer(entry => -entry[1].length),
-                        (a, b) => stringComparer(a[0], b[0])
+                        Comparer.make(entry => -entry[1].length),
+                        (a, b) => Comparer.string(a[0], b[0])
                     ])
             )
             .map
@@ -478,7 +491,7 @@ const makeSightFileListMenu = (): CommandMenuItem[] => getCacheOrMake
         () => makeEmptyList().concat
         (
             Object.entries(Scan.documentTokenEntryMap)
-                .sort(mergeComparer([makeComparer(entry => File.extractDirectoryAndWorkspace(entry[0])), makeComparer(entry => entry[0])]))
+                .sort(Comparer.merge([Comparer.make(entry => File.extractDirectoryAndWorkspace(entry[0])), Comparer.make(entry => entry[0])]))
                 .map(entry => makeSightFileMenuItem(entry[0], entry[1]))
         )
     )
@@ -580,11 +593,11 @@ const makeHighlightTokensMenu = (highlights: string[]): CommandMenuItem[] =>
             .sort
             (
                 "token" === getRootMenuOrder() ?
-                    (a, b) => stringComparer(a[0], b[0]):
-                    mergeComparer
+                    (a, b) => Comparer.string(a[0], b[0]):
+                    Comparer.merge
                     ([
-                        makeComparer((entry: [string, string[]]) => -Scan.tokenCountMap[entry[0]]),
-                        (a, b) => stringComparer(a[0], b[0])
+                        Comparer.make((entry: [string, string[]]) => -Scan.tokenCountMap[entry[0]]),
+                        (a, b) => Comparer.string(a[0], b[0])
                     ])
             )
         )
@@ -603,7 +616,7 @@ const makeHighlightTokensMenu = (highlights: string[]): CommandMenuItem[] =>
                             hits: Scan.documentTokenEntryMap[i][entry[0]].length
                         })
                     )
-                    .sort(mergeComparer([makeComparer(d => -d.hits), makeComparer(d => d.uri)]))
+                    .sort(Comparer.merge([Comparer.make(d => -d.hits), Comparer.make(d => d.uri)]))
                     .map(d => `$(file-text) ${d.file}(${d.hits})`)
                     .join(", "),
                 token: Clairvoyant.decodeToken(entry[0]),
@@ -718,11 +731,11 @@ export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
                         .sort
                         (
                             "token" === getRootMenuOrder() ?
-                                (a, b) => stringComparer(a[0], b[0]):
-                                mergeComparer
+                                (a, b) => Comparer.string(a[0], b[0]):
+                                Comparer.merge
                                 ([
-                                    makeComparer((entry: [string, string[]]) => -Scan.tokenCountMap[entry[0]]),
-                                    (a, b) => stringComparer(a[0], b[0])
+                                    Comparer.make((entry: [string, string[]]) => -Scan.tokenCountMap[entry[0]]),
+                                    (a, b) => Comparer.string(a[0], b[0])
                                 ])
                         )
                     )
@@ -741,7 +754,7 @@ export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
                                         hits: Scan.documentTokenEntryMap[i][entry[0]].length
                                     })
                                 )
-                                .sort(mergeComparer([makeComparer(d => -d.hits), makeComparer(d => d.uri)]))
+                                .sort(Comparer.merge([Comparer.make(d => -d.hits), Comparer.make(d => d.uri)]))
                                 .map(d => `$(file-text) ${d.file}(${d.hits})`)
                                 .join(", "),
                             token: Clairvoyant.decodeToken(entry[0]),
@@ -801,7 +814,7 @@ export const makeSightTokenRootMenu = (uri: string, token: string): CommandMenuI
                         hits: Scan.documentTokenEntryMap[i][Clairvoyant.encodeToken(token)].length
                     })
                 )
-                .sort(mergeComparer([makeComparer(d => -d.hits), makeComparer(d => d.uri)]))
+                .sort(Comparer.merge([Comparer.make(d => -d.hits), Comparer.make(d => d.uri)]))
                 .map(d => `$(file-text) ${d.file}(${d.hits})`)
                 .join(", "),
             token: token,
@@ -851,7 +864,7 @@ export const makeLunaticGoToFileMenu = (): CommandMenuItem[] => getCacheOrMake
         () => makeEmptyList().concat
         (
             Object.entries(Scan.documentMap)
-                .sort(mergeComparer([makeComparer(entry => File.extractDirectoryAndWorkspace(entry[0])), makeComparer(entry => entry[0])]))
+                .sort(Comparer.merge([Comparer.make(entry => File.extractDirectoryAndWorkspace(entry[0])), Comparer.make(entry => entry[0])]))
                 .map(entry => makeGoToFileMenuItem(entry[0], entry[1])),
             {
                 label: `$(list-unordered) ${Locale.typeableMap("Regular: Go To File...")}`,
