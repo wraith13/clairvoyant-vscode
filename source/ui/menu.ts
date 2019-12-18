@@ -379,7 +379,7 @@ const makeSightFileTokenMenu = (uri: string, token: string, indices: number[]): 
 );
 const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }): CommandMenuItem[] => getCacheOrMake
 (
-    `file.${uri}.makeSightFileRootMenu:${getRootMenuOrder()}`,
+    `${uri}.makeSightFileRootMenu:${getRootMenuOrder()}`,
     () => Profiler.profile
     (
         "makeSightFileRootMenu",

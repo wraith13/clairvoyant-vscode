@@ -6,6 +6,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## 6.0.0 - 2019-12-??
 
+### Fixed
+
+- Fixed an issue where menus could remain cached.
+
 ### Changed
 
 - Changed the menu tree structure( Display token list and file list at the same time ).
