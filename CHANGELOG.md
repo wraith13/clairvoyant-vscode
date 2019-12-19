@@ -9,6 +9,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ### Added
 
 - Added support for go to changes.
+- Added support for go to problems.
 
 ### Fixed
 

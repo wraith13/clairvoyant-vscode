@@ -228,6 +228,63 @@ const makeGoCommandMenuItem =
         isTerm: true,
     })
 );
+const getDiagnosticIcon = (diagnostic: vscode.Diagnostic) =>
+{
+    switch(diagnostic.severity)
+    {
+    case vscode.DiagnosticSeverity.Error:
+        return "flame";
+    case vscode.DiagnosticSeverity.Warning:
+        return "alert";
+    case vscode.DiagnosticSeverity.Information:
+        return "info";
+    case vscode.DiagnosticSeverity.Hint:
+        return "light-bulb";
+    default:
+        return "rocket";
+    }
+};
+const getDiagnosticLabel = (diagnostic: vscode.Diagnostic) =>
+{
+    switch(diagnostic.severity)
+    {
+    case vscode.DiagnosticSeverity.Error:
+        return "Error";
+    case vscode.DiagnosticSeverity.Warning:
+        return "Warning";
+    case vscode.DiagnosticSeverity.Information:
+        return "Information";
+    case vscode.DiagnosticSeverity.Hint:
+        return "Hint";
+    default:
+        return "unknown";
+    }
+};
+const makeGoDiagnosticCommandMenuItem =
+(
+    diagnostic: vscode.Diagnostic,
+    entry: Selection.ShowTokenCoreEntry,
+    diagnostics: vscode.Diagnostic[]
+) => Profiler.profile
+(
+    "makeGoCommandMenuItem",
+    () =>
+    ({
+
+        label: `$(${getDiagnosticIcon(diagnostic)}) ${getDiagnosticLabel(diagnostic)}:${diagnostics.indexOf(diagnostic) +1}/${diagnostics.length} ${diagnostic.message} `,
+        description: `line:${entry.selection.anchor.line +1} row:${entry.selection.anchor.character +1}` +
+        (
+            entry.selection.anchor.line === entry.selection.active.line ?
+                `-${entry.selection.active.character +1}`:
+                ` - line:${entry.selection.active.line +1} row:${entry.selection.active.character +1}`
+        ),
+        detail: makePreview(entry.document, entry.selection.anchor),
+        command: async () => Selection.getEntry().showToken(entry),
+        preview: entry,
+        //document: entry.document,
+        isTerm: true,
+    })
+);
 const makeSightShowMenu = (uri: string, token: string, hits: number[]): CommandMenuItem[] => getCacheOrMake
 (
     `${uri}.makeSightShowMenu:${token}`,
@@ -394,6 +451,58 @@ const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }
                                     `changes:${i +1}/${chages.length}`
                                 )
                             ),
+                            options:
+                            {
+                                matchOnDescription: true,
+                                matchOnDetail: true,
+                                document: Scan.documentMap[uri],
+                            },
+                        });
+                    }
+                },
+            },
+            {
+                label: `$(flame) ${Locale.typeableMap("Problems")}`,
+                command: async () =>
+                {
+                    const diagnostics = vscode.languages.getDiagnostics(Scan.documentMap[uri].uri)
+                        .sort
+                        (
+                            Comparer.merge
+                            ([
+                                Comparer.make(i => i.severity),
+                                Comparer.make(i => i.range.start.line),
+                                Comparer.make(i => i.range.start.character),
+                                Comparer.make(i => i.range.end.line),
+                                Comparer.make(i => i.range.end.character),
+                            ])
+                        );
+                    if (diagnostics.length <= 0)
+                    {
+                        vscode.window.showInformationMessage(Locale.map("No problems."));
+                    }
+                    else
+                    {
+                        await Show.forward
+                        ({
+                            makeItemList: () => diagnostics.map
+                            (
+                                current => makeGoDiagnosticCommandMenuItem
+                                (
+                                    current,
+                                    {
+                                        document: Scan.documentMap[uri],
+                                        selection: new vscode.Selection(current.range.start, current.range.end)
+                                    },
+                                    diagnostics.filter(i => i.severity === current.severity)
+                                )
+                            ),
+                            options:
+                            {
+                                matchOnDescription: true,
+                                matchOnDetail: true,
+                                document: Scan.documentMap[uri],
+                            }
                         });
                     }
                 },
