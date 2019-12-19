@@ -127,7 +127,7 @@ class Entry
     }
     public dispose = async (commitable: boolean) =>
     {
-        if (commitable)
+        if (!commitable)
         {
             this.rollbackSelection();
         }
