@@ -50,10 +50,10 @@ export const get = async (): Promise<vscode.Selection[]>  => vscode.window.activ
             (
                 Comparer.merge
                 ([
-                    Comparer.make((i: vscode.Selection) => i.start.line),
-                    Comparer.make((i: vscode.Selection) => i.start.character),
-                    Comparer.make((i: vscode.Selection) => i.end.line),
-                    Comparer.make((i: vscode.Selection) => i.end.character),
+                    Comparer.make(i => i.start.line),
+                    Comparer.make(i => i.start.character),
+                    Comparer.make(i => i.end.line),
+                    Comparer.make(i => i.end.character),
                 ])
             );
             textEditor.selections = backup;
