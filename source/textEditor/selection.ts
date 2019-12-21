@@ -10,6 +10,34 @@ export const make = (document: vscode.TextDocument, index: number, token: string
     "Selection.make",
     () => new vscode.Selection(document.positionAt(index), document.positionAt(index +token.length))
 );
+export const toString = (selection: vscode.Range | vscode.Position | number): string =>
+{
+    if (selection instanceof vscode.Range)
+    {
+        if (selection.start.line !== selection.end.line)
+        {
+            return `${toString(selection.start)} - ${toString(selection.end)}`;
+        }
+        else
+        if (selection.start.character !== selection.end.character)
+        {
+            return `${toString(selection.start)}-${toString(selection.end.character)}`;
+        }
+        else
+        {
+            return toString(selection.start);
+        }
+    }
+    else
+    if (selection instanceof vscode.Position)
+    {
+        return `line:${toString(selection.line)} row:${toString(selection.character)}`;
+    }
+    else
+    {
+        return `${selection +1}`;
+    }
+};
 export const makeWhole = (document: vscode.TextDocument) => Profiler.profile
 (
     "Selection.makeWhole",

@@ -213,13 +213,7 @@ const makeGoCommandMenuItem =
     () =>
     ({
 
-        label: `$(rocket) ${Locale.typeableMap(label)} line:${entry.selection.anchor.line +1} row:${entry.selection.anchor.character +1}` +
-        (
-            entry.selection.anchor.line === entry.selection.active.line ?
-                `-${entry.selection.active.character +1}`:
-                ` - line:${entry.selection.active.line +1} row:${entry.selection.active.character +1}`
-        )
-        +(undefined !== hits ? ` ${hits}`: ""),
+        label: `$(rocket) ${Locale.typeableMap(label)} ${Selection.toString(entry.selection)}` +(undefined !== hits ? ` ${hits}`: ""),
         description: File.extractRelativePath(entry.document.uri.toString()),
         detail: makePreview(entry.document, entry.selection.anchor),
         command: command ? command: (async () => Selection.getEntry().showToken(entry)),
@@ -272,12 +266,7 @@ const makeGoDiagnosticCommandMenuItem =
     ({
 
         label: `$(${getDiagnosticIcon(diagnostic)}) ${getDiagnosticLabel(diagnostic)}:${diagnostics.indexOf(diagnostic) +1}/${diagnostics.length} ${diagnostic.message} `,
-        description: `line:${entry.selection.anchor.line +1} row:${entry.selection.anchor.character +1}` +
-        (
-            entry.selection.anchor.line === entry.selection.active.line ?
-                `-${entry.selection.active.character +1}`:
-                ` - line:${entry.selection.active.line +1} row:${entry.selection.active.character +1}`
-        ),
+        description: Selection.toString(entry.selection),
         detail: makePreview(entry.document, entry.selection.anchor),
         command: async () => Selection.getEntry().showToken(entry),
         preview: entry,
