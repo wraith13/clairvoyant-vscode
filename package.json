@@ -24,7 +24,9 @@
 		"search",
 		"token",
 		"identifier",
-		"highlight"
+		"highlight",
+		"updates",
+		"problems"
 	],
 	"activationEvents": [
 		"*"
