@@ -609,19 +609,37 @@ const makeQuickMenu = (): CommandMenuItem[] =>
         const seek = Scan.getSeekResult(activeTextEditor);
         if (undefined !== seek)
         {
+            const next_i = (seek.i +1) % seek.hits.length;
+            const previous_i = (seek.i -1 +seek.hits.length) % seek.hits.length;
             result.push
             (
                 {
                     label: `$(rocket) ${Locale.typeableMap("clairvoyant.nextToken.title")}`,
                     description: `$(tag) ${seek.token}`,
-                    detail: `hits:${((seek.i +1) % seek.hits.length) +1}/${seek.hits.length}`,
+                    detail: `hits:${next_i +1}/${seek.hits.length}`,
                     command: async () => await vscode.commands.executeCommand("clairvoyant.nextToken"),
+                    preview:
+                    {
+                        document: activeTextEditor.document,
+                        selection: Selection.make(activeTextEditor.document, seek.hits[next_i], seek.token)
+                    },
+                    //token: seek.token,
+                    document: activeTextEditor.document,
+                    isTerm: true,
                 },
                 {
                     label: `$(rocket) ${Locale.typeableMap("clairvoyant.previousToken.title")}`,
                     description: `$(tag) ${seek.token}`,
-                    detail: `hits:${((seek.i -1 +seek.hits.length) % seek.hits.length) +1}/${seek.hits.length}`,
+                    detail: `hits:${previous_i +1}/${seek.hits.length}`,
                     command: async () => await vscode.commands.executeCommand("clairvoyant.previousToken"),
+                    preview:
+                    {
+                        document: activeTextEditor.document,
+                        selection: Selection.make(activeTextEditor.document, seek.hits[previous_i], seek.token)
+                    },
+                    //token: seek.token,
+                    document: activeTextEditor.document,
+                    isTerm: true,
                 },
                 {
                     label: `$(light-bulb) ${Locale.typeableMap("clairvoyant.toggleHighlight.title")}`,
