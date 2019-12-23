@@ -93,7 +93,15 @@ export module Show
             {
                 await Selection.PreviewTextEditor.show(select.document);
             }
-            if (select.preview)
+            if
+            (
+                select.preview &&
+                (
+                    options.document === select.preview.document ||
+                    (true === options.filePreview && select.document === select.preview.document) ||
+                    vscode.window.visibleTextEditors.filter(i => i.viewColumn === Selection.getLastValidViemColumn())[0].document === select.preview.document
+                )
+            )
             {
                 selectionEntry.previewSelection(select.preview);
             }
@@ -217,7 +225,7 @@ const makeGoCommandMenuItem =
         description: File.extractRelativePath(entry.document.uri.toString()),
         detail: makePreview(entry.document, entry.selection.anchor),
         command: command ? command: (async () => Selection.getEntry().showToken(entry)),
-        preview: command ? undefined: entry,
+        preview: entry,
         document,
         isTerm: true,
     })
