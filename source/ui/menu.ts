@@ -70,6 +70,7 @@ export module Show
         );
         const lastValidViemColumn = Selection.getLastValidViemColumn();
         let lastPreviewItem: CommandMenuItem | undefined;
+        let lastSelection = Selection.getLastTextEditor().selection;
 
         const options = entry.options || { };
         const selectionEntry = Selection.getEntry();
@@ -110,6 +111,7 @@ export module Show
                 Highlight.Preview.showToken(select.token);
             }
             Highlight.Preview.showSelection(select.preview);
+            lastSelection = Selection.getLastTextEditor().selection;
         };
         const select = await vscode.window.showQuickPick(items, options);
         const isCommitable =
@@ -123,7 +125,8 @@ export module Show
                 undefined === select &&
                 undefined !== vscode.window.activeTextEditor &&
                 lastValidViemColumn === vscode.window.activeTextEditor.viewColumn &&
-                Clairvoyant.enablePreviewIntercept.get("")
+                Clairvoyant.enablePreviewIntercept.get("") &&
+                Selection.toString(lastSelection) !== Selection.toString(Selection.getLastTextEditor().selection)
             )
         );
         if (true === options.filePreview)

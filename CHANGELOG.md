@@ -4,6 +4,12 @@ All notable changes to the "clairvoyant" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## 6.1.1 - 2019-12-24
+
+### Fixed
+
+- Fixed an issue that exiting the menu with the ESC key would result in a preview interrupt.
+
 ## 6.1.0 - 2019-12-23
 
 ### Added
