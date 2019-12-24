@@ -99,7 +99,7 @@ export module Show
                 (
                     options.document === select.preview.document ||
                     (true === options.filePreview && select.document === select.preview.document) ||
-                    vscode.window.visibleTextEditors.filter(i => i.viewColumn === Selection.getLastValidViemColumn())[0].document === select.preview.document
+                    Selection.getLastTextEditor().document.uri.toString() === select.preview.document.uri.toString()
                 )
             )
             {

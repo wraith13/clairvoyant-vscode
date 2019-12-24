@@ -47,6 +47,7 @@ export const makeWhole = (document: vscode.TextDocument) => Profiler.profile
 let lastValidViemColumn: number = 1;
 export const setLastValidViemColumn = (viewColumn: number) => lastValidViemColumn = viewColumn;
 export const getLastValidViemColumn = () => lastValidViemColumn;
+export const getLastTextEditor = () => vscode.window.visibleTextEditors.filter(i => i.viewColumn === getLastValidViemColumn())[0];
 
 export interface ShowTokenCoreEntry
 {
@@ -315,7 +316,7 @@ export module LunaticPreviewTextEditor
     export const make = async () =>
     {
         viewColumn = lastValidViemColumn;
-        const oldTextEditor = vscode.window.visibleTextEditors.filter(i => i.viewColumn === lastValidViemColumn)[0];
+        const oldTextEditor = getLastTextEditor();
         backupDocument = oldTextEditor ? oldTextEditor.document: undefined;
         document = await vscode.workspace.openTextDocument();
         textEditor = await vscode.window.showTextDocument(document, { viewColumn, preserveFocus:true, preview:true });
@@ -367,7 +368,7 @@ export module RegularPreviewTextEditor
     export const make = async () =>
     {
         viewColumn = lastValidViemColumn;
-        const oldTextEditor = vscode.window.visibleTextEditors.filter(i => i.viewColumn === lastValidViemColumn)[0];
+        const oldTextEditor = getLastTextEditor();
         backupDocument = oldTextEditor ? oldTextEditor.document: undefined;
     };
     export const show = async (previewDocument: vscode.TextDocument | undefined) =>
