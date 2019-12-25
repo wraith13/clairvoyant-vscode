@@ -4,6 +4,12 @@ All notable changes to the "clairvoyant" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## 6.2.0 - 2019-12-25
+
+### Fixed
+
+- Fixed an issue where an error occurred when a menu was displayed without opening a text editor.
+
 ## 6.1.1 - 2019-12-24
 
 ### Fixed

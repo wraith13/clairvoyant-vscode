@@ -70,7 +70,7 @@ export module Show
         );
         const lastValidViemColumn = Selection.getLastValidViemColumn();
         let lastPreviewItem: CommandMenuItem | undefined;
-        let lastSelection = Selection.getLastTextEditor().selection;
+        let lastSelection = Selection.getLastTextEditor(i => i.selection);
 
         const options = entry.options || { };
         const selectionEntry = Selection.getEntry();
@@ -100,7 +100,7 @@ export module Show
                 (
                     options.document === select.preview.document ||
                     (true === options.filePreview && select.document === select.preview.document) ||
-                    Selection.getLastTextEditor().document.uri.toString() === select.preview.document.uri.toString()
+                    Selection.getLastTextEditor(i => i.document.uri.toString()) === select.preview.document.uri.toString()
                 )
             )
             {
@@ -111,7 +111,7 @@ export module Show
                 Highlight.Preview.showToken(select.token);
             }
             Highlight.Preview.showSelection(select.preview);
-            lastSelection = Selection.getLastTextEditor().selection;
+            lastSelection = Selection.getLastTextEditor(i => i.selection);
         };
         const select = await vscode.window.showQuickPick(items, options);
         const isCommitable =
@@ -126,7 +126,7 @@ export module Show
                 undefined !== vscode.window.activeTextEditor &&
                 lastValidViemColumn === vscode.window.activeTextEditor.viewColumn &&
                 Clairvoyant.enablePreviewIntercept.get("") &&
-                Selection.toString(lastSelection) !== Selection.toString(Selection.getLastTextEditor().selection)
+                Selection.toString(lastSelection) !== Selection.toString(Selection.getLastTextEditor(i => i.selection))
             )
         );
         if (true === options.filePreview)

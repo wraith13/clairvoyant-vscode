@@ -47,7 +47,8 @@ export const makeWhole = (document: vscode.TextDocument) => Profiler.profile
 let lastValidViemColumn: number = 1;
 export const setLastValidViemColumn = (viewColumn: number) => lastValidViemColumn = viewColumn;
 export const getLastValidViemColumn = () => lastValidViemColumn;
-export const getLastTextEditor = () => vscode.window.visibleTextEditors.filter(i => i.viewColumn === getLastValidViemColumn())[0];
+export const getLastTextEditor = <resultT = vscode.TextEditor>(getter: (textEditor: vscode.TextEditor) => resultT = (i => <any>i)) =>
+    vscode.window.visibleTextEditors.filter(i => i.viewColumn === getLastValidViemColumn()).map(getter)[0];
 
 export interface ShowTokenCoreEntry
 {
