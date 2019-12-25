@@ -6,6 +6,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## 6.2.0 - 2019-12-25
 
+### Added
+
+- Added regular `Go To File...` menu item to sight menu.
+
 ### Fixed
 
 - Fixed an issue where an error occurred when a menu was displayed without opening a text editor.

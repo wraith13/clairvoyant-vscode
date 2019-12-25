@@ -797,6 +797,15 @@ export const makeStaticMenu = (): CommandMenuItem[] =>
     makeStaticMenuItem("$(info)", "clairvoyant.reportStatistics.title", "clairvoyant.reportStatistics"),
     makeStaticMenuItem("$(dashboard)", "clairvoyant.reportProfile.title", "clairvoyant.reportProfile"),
 ];
+const regularGotoFileMenuItem =
+{
+    label: `$(list-unordered) ${Locale.typeableMap("Regular: Go To File...")}`,
+    command: async () =>
+    {
+        await vscode.commands.executeCommand("workbench.action.quickOpen");
+    },
+    isTerm: true,
+};
 export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
 (
     "makeSightRootMenu",
@@ -905,7 +914,8 @@ export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
                     )
                 )
             )
-        )
+        ),
+        regularGotoFileMenuItem
     )
 );
 export const makeSightDocumentRootMenu = (uri: string): CommandMenuItem[] => Profiler.profile
@@ -993,14 +1003,7 @@ export const makeLunaticGoToFileMenu = (): CommandMenuItem[] => getCacheOrMake
             Object.entries(Scan.documentMap)
                 .sort(Comparer.merge([Comparer.make(entry => File.extractDirectoryAndWorkspace(entry[0])), Comparer.make(entry => entry[0])]))
                 .map(entry => makeGoToFileMenuItem(entry[0], entry[1])),
-            {
-                label: `$(list-unordered) ${Locale.typeableMap("Regular: Go To File...")}`,
-                command: async () =>
-                {
-                    await vscode.commands.executeCommand("workbench.action.quickOpen");
-                },
-                isTerm: true,
-            }
+            regularGotoFileMenuItem
         )
     )
 );
