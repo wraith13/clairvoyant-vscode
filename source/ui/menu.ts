@@ -1001,7 +1001,7 @@ const makeGoToFileMenuItem = (uri: string, document: vscode.TextDocument): Comma
     document: document,
     command: async () =>
     {
-        await vscode.window.showTextDocument(document);
+        await vscode.window.showTextDocument(document, { preview: false });
     },
     isTerm: true,
 });

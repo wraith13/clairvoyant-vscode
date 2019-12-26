@@ -15,6 +15,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 - Fixed an issue where an error occurred when a menu was displayed without opening a text editor.
 
+### Changed
+
+- Fixed so that the destination file by `Lunatic Go To File ...` does not remain in preview.
+
 ## 6.1.1 - 2019-12-24
 
 ### Fixed
