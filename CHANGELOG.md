@@ -9,6 +9,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ### Added
 
 - Added regular `Go To File...` menu item to sight menu.
+- Added `Go to this file...` menu item to file menu.
 
 ### Fixed
 

@@ -426,6 +426,19 @@ const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }
         () => makeEmptyList().concat
         (
             {
+                label: `$(file-text) ${Locale.typeableMap("Go to this file")}`,
+                description: `${File.extractFileName(uri)}`,
+                detail: uri.startsWith("untitled:") ?
+                    File.makeDigest(Scan.documentMap[uri].getText()):
+                    File.extractDirectoryAndWorkspace(uri),
+                document: Scan.documentMap[uri],
+                command: async () =>
+                {
+                    await vscode.window.showTextDocument(Scan.documentMap[uri], { preview: false });
+                },
+                isTerm: true,
+            },
+            {
                 label: `$(git-branch) ${Locale.typeableMap("Changes")}`,
                 command: async () =>
                 {
