@@ -442,8 +442,8 @@ const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }
                 label: `$(git-branch) ${Locale.typeableMap("Changes")}`,
                 command: async () =>
                 {
-                    const chages = await Changes.get();
-                    if (chages.length <= 0)
+                    const changes = await Changes.get();
+                    if (changes.length <= 0)
                     {
                         vscode.window.showInformationMessage(Locale.map("No changes or this is the only change."));
                     }
@@ -451,7 +451,7 @@ const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }
                     {
                         await Show.forward
                         ({
-                            makeItemList: () => chages.map
+                            makeItemList: () => changes.map
                             (
                                 (change, i) => makeGoCommandMenuItem
                                 (
@@ -461,7 +461,7 @@ const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }
                                         selection: change
                                     },
                                     undefined,
-                                    `changes:${i +1}/${chages.length}`
+                                    `changes:${i +1}/${changes.length}`
                                 )
                             ),
                             options:
