@@ -4,6 +4,12 @@ All notable changes to the "clairvoyant" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## 6.3.0 - 20??-??-??
+
+### Added
+
+- Added summary as detail to problems menu.
+
 ## 6.2.0 - 2019-12-25
 
 ### Added

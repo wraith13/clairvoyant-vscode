@@ -233,9 +233,9 @@ const makeGoCommandMenuItem =
         isTerm: true,
     })
 );
-const getDiagnosticIcon = (diagnostic: vscode.Diagnostic) =>
+const getDiagnosticIcon = (severity: vscode.DiagnosticSeverity) =>
 {
-    switch(diagnostic.severity)
+    switch(severity)
     {
     case vscode.DiagnosticSeverity.Error:
         return "flame";
@@ -249,9 +249,9 @@ const getDiagnosticIcon = (diagnostic: vscode.Diagnostic) =>
         return "rocket";
     }
 };
-const getDiagnosticLabel = (diagnostic: vscode.Diagnostic) =>
+const getDiagnosticLabel = (severity: vscode.DiagnosticSeverity) =>
 {
-    switch(diagnostic.severity)
+    switch(severity)
     {
     case vscode.DiagnosticSeverity.Error:
         return "Error";
@@ -276,7 +276,7 @@ const makeGoDiagnosticCommandMenuItem =
     () =>
     ({
 
-        label: `$(${getDiagnosticIcon(diagnostic)}) ${getDiagnosticLabel(diagnostic)}:${diagnostics.indexOf(diagnostic) +1}/${diagnostics.length} ${diagnostic.message} `,
+        label: `$(${getDiagnosticIcon(diagnostic.severity)}) ${getDiagnosticLabel(diagnostic.severity)}:${diagnostics.indexOf(diagnostic) +1}/${diagnostics.length} ${diagnostic.message} `,
         description: Selection.toString(entry.selection),
         detail: makePreview(entry.document, entry.selection.anchor),
         command: async () => Selection.getEntry().showToken(entry),
@@ -476,20 +476,10 @@ const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }
             },
             {
                 label: `$(flame) ${Locale.typeableMap("Problems")}`,
+                detail: Clairvoyant.getDocumentDiagnosticsSummary(Scan.documentMap[uri].uri).map(i => `$(${getDiagnosticIcon(i.severity)}) ${getDiagnosticLabel(i.severity)}:${i.count}`).join(", "),
                 command: async () =>
                 {
-                    const diagnostics = vscode.languages.getDiagnostics(Scan.documentMap[uri].uri)
-                        .sort
-                        (
-                            Comparer.merge
-                            ([
-                                Comparer.make(i => i.severity),
-                                Comparer.make(i => i.range.start.line),
-                                Comparer.make(i => i.range.start.character),
-                                Comparer.make(i => i.range.end.line),
-                                Comparer.make(i => i.range.end.character),
-                            ])
-                        );
+                    const diagnostics = Clairvoyant.getDocumentDiagnostics(Scan.documentMap[uri].uri);
                     if (diagnostics.length <= 0)
                     {
                         vscode.window.showInformationMessage(Locale.map("No problems."));

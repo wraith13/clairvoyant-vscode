@@ -4,7 +4,8 @@ import * as Profiler from "./lib/profiler";
 import * as Config from "./lib/config";
 import * as Locale from "./lib/locale";
 import * as Busy from "./lib/busy";
-import * as File from "./lib/file"
+import * as File from "./lib/file";
+import * as Comparer from "./lib/comparer";
 ;
 import * as Menu from "./ui/menu";
 import * as StatusBar from "./ui/statusbar";
@@ -307,6 +308,7 @@ export const initialize = (aContext: vscode.ExtensionContext): void =>
             }
         ),
         vscode.window.onDidChangeTextEditorSelection(event => Selection.Log.update(event.textEditor)),
+        vscode.languages.onDidChangeDiagnostics(onDidChangeDiagnostics),
     );
 
     reload();
@@ -446,6 +448,46 @@ const onDidChangeConfiguration = () =>
         Menu.reload();
         autoScanMode.get("").onInit();
     }
+};
+
+export const onDidChangeDiagnostics = (event: vscode.DiagnosticChangeEvent) =>
+{
+    event.uris.forEach
+    (
+        uri =>Menu.removeCache(`${uri.toString()}.makeSightFileRootMenu:`)
+    );
+};
+export const getDocumentDiagnostics = (uri: vscode.Uri) => vscode.languages.getDiagnostics(uri)
+.sort
+(
+    Comparer.merge
+    ([
+        Comparer.make(i => i.severity),
+        Comparer.make(i => i.range.start.line),
+        Comparer.make(i => i.range.start.character),
+        Comparer.make(i => i.range.end.line),
+        Comparer.make(i => i.range.end.character),
+    ])
+);
+export const getDocumentDiagnosticsSummary = (uri: vscode.Uri):{ severity: vscode.DiagnosticSeverity, count: number }[] =>
+{
+    const result: { severity: vscode.DiagnosticSeverity, count: number }[] = [];
+    const diagnostics = getDocumentDiagnostics(uri);
+    const severities = diagnostics
+        .map(i => i.severity)
+        .filter((i, index, list) => index === list.indexOf(i));
+    severities.forEach
+    (
+        severity =>
+        {
+            result.push
+            ({
+                severity,
+                count: diagnostics.filter(i => i.severity === severity).length
+            });
+        }
+    );
+    return result;
 };
 
 export const reportStatistics = async () => await busy.do
