@@ -349,7 +349,7 @@ const makeSightTokenFileMenu = (token: string): CommandMenuItem[] => getCacheOrM
                         description: entry.uri.startsWith("untitled:") ?
                             File.makeDigest(Scan.documentMap[entry.uri].getText()):
                             File.extractDirectoryAndWorkspace(entry.uri),
-                            detail: `count: ${entry.hits.length}`,
+                        detail: `count: ${entry.hits.length}`,
                         document: Scan.documentMap[entry.uri],
                         command: async () => await Show.forward
                         ({
@@ -417,6 +417,59 @@ const makeSightFileTokenMenu = (uri: string, token: string, indices: number[]): 
         )
     )
 );
+
+const makeProblemFileMenuItem =
+(
+    data:
+    {
+        document: vscode.TextDocument,
+        showFileName: boolean
+    }
+    
+) =>
+({
+    label: data.showFileName ? `$(file-text) ${File.extractFileName(data.document.uri.toString())}`: `$(flame) ${Locale.typeableMap("Problems")}`,
+    description: data.showFileName ? data.document.uri.toString().startsWith("untitled:") ?
+        File.makeDigest(Scan.documentMap[data.document.uri.toString()].getText()):
+        File.extractDirectoryAndWorkspace(data.document.uri.toString()): undefined,
+    detail: Clairvoyant.getDocumentDiagnosticsSummary(data.document.uri)
+        .map(i => `$(${getDiagnosticIcon(i.severity)}) ${getDiagnosticLabel(i.severity)}:${i.count}`).join(", "),
+    command: async () =>
+    {
+        const diagnostics = Clairvoyant.getDocumentDiagnostics(data.document.uri);
+        if (diagnostics.length <= 0)
+        {
+            vscode.window.showInformationMessage(Locale.map("No problems."));
+        }
+        else
+        {
+            await Show.forward
+            ({
+                makeItemList: () => diagnostics.map
+                (
+                    current => makeGoDiagnosticCommandMenuItem
+                    (
+                        current,
+                        {
+                            document: data.document,
+                            selection: new vscode.Selection(current.range.start, current.range.end)
+                        },
+                        diagnostics.filter(i => i.severity === current.severity)
+                    )
+                ),
+                options:
+                {
+                    matchOnDescription: true,
+                    matchOnDetail: true,
+                    document: data.document,
+                }
+            });
+        }
+    },
+    document: data.document,
+});
+
+
 const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }): CommandMenuItem[] => getCacheOrMake
 (
     `${uri}.makeSightFileRootMenu:${getRootMenuOrder()}`,
@@ -474,42 +527,7 @@ const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }
                     }
                 },
             },
-            {
-                label: `$(flame) ${Locale.typeableMap("Problems")}`,
-                detail: Clairvoyant.getDocumentDiagnosticsSummary(Scan.documentMap[uri].uri).map(i => `$(${getDiagnosticIcon(i.severity)}) ${getDiagnosticLabel(i.severity)}:${i.count}`).join(", "),
-                command: async () =>
-                {
-                    const diagnostics = Clairvoyant.getDocumentDiagnostics(Scan.documentMap[uri].uri);
-                    if (diagnostics.length <= 0)
-                    {
-                        vscode.window.showInformationMessage(Locale.map("No problems."));
-                    }
-                    else
-                    {
-                        await Show.forward
-                        ({
-                            makeItemList: () => diagnostics.map
-                            (
-                                current => makeGoDiagnosticCommandMenuItem
-                                (
-                                    current,
-                                    {
-                                        document: Scan.documentMap[uri],
-                                        selection: new vscode.Selection(current.range.start, current.range.end)
-                                    },
-                                    diagnostics.filter(i => i.severity === current.severity)
-                                )
-                            ),
-                            options:
-                            {
-                                matchOnDescription: true,
-                                matchOnDetail: true,
-                                document: Scan.documentMap[uri],
-                            }
-                        });
-                    }
-                },
-            },
+            makeProblemFileMenuItem({document:Scan.documentMap[uri], showFileName: false }),
             [
                 "token" === getRootMenuOrder() ?
                     {
@@ -809,6 +827,34 @@ const regularGotoFileMenuItem =
     },
     isTerm: true,
 };
+const makeProblemRootMenuItem = (uris: string[]): CommandMenuItem | CommandMenuItem[] => 0 < uris.length ?
+{
+    label: `$(flame) ${Locale.typeableMap("Problems")}`,
+    detail: uris
+        .map(uri => `$(file-text) ${File.extractFileName(uri)}`)
+        .join(", "),
+    command: async () => await Show.forward
+    ({
+        makeItemList: () => uris
+            .map(uri => vscode.workspace.textDocuments.filter(i => i.uri.toString() === uri)[0])
+            .filter(document => document)
+            .map
+            (
+                document => makeProblemFileMenuItem
+                ({
+                    document,
+                    showFileName: true
+                })
+            ),
+        options:
+        {
+            matchOnDescription: true,
+            matchOnDetail: true,
+            filePreview: Clairvoyant.enableLunaticPreview.get(""),
+        }
+    })
+}:
+[];
 export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
 (
     "makeSightRootMenu",
@@ -820,6 +866,7 @@ export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
         vscode.window.activeTextEditor && Scan.isScanedDocment(vscode.window.activeTextEditor.document) ?
             makeSightCurrentFileMenuItem(vscode.window.activeTextEditor.document.uri.toString()):
             [],
+        makeProblemRootMenuItem(Clairvoyant.getDiagnosticDocuments().map(uri => uri.toString())),
         getCacheOrMake
         (
             `root.${getRootMenuOrder()}`,

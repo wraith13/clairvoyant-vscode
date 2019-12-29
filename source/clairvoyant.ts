@@ -6,7 +6,7 @@ import * as Locale from "./lib/locale";
 import * as Busy from "./lib/busy";
 import * as File from "./lib/file";
 import * as Comparer from "./lib/comparer";
-;
+
 import * as Menu from "./ui/menu";
 import * as StatusBar from "./ui/statusbar";
 
@@ -457,6 +457,7 @@ export const onDidChangeDiagnostics = (event: vscode.DiagnosticChangeEvent) =>
         uri =>Menu.removeCache(`${uri.toString()}.makeSightFileRootMenu:`)
     );
 };
+export const getDiagnosticDocuments = () => vscode.languages.getDiagnostics().filter(i => 0 < i[1].length).map(i => i[0]);
 export const getDocumentDiagnostics = (uri: vscode.Uri) => vscode.languages.getDiagnostics(uri)
 .sort
 (
