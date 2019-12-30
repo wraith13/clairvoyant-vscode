@@ -346,9 +346,7 @@ const makeSightTokenFileMenu = (token: string): CommandMenuItem[] => getCacheOrM
                     entry =>
                     ({
                         label: `$(file-text) ${File.extractFileName(entry.uri)}`,
-                        description: entry.uri.startsWith("untitled:") ?
-                            File.makeDigest(Scan.documentMap[entry.uri].getText()):
-                            File.extractDirectoryAndWorkspace(entry.uri),
+                        description: File.makeDescription(Scan.documentMap[entry.uri]),
                         detail: `count: ${entry.hits.length}`,
                         document: Scan.documentMap[entry.uri],
                         command: async () => await Show.forward
@@ -429,9 +427,7 @@ const makeProblemFileMenuItem =
 ) =>
 ({
     label: data.showFileName ? `$(file-text) ${File.extractFileName(data.document.uri.toString())}`: `$(flame) ${Locale.typeableMap("Problems")}`,
-    description: data.showFileName ? data.document.uri.toString().startsWith("untitled:") ?
-        File.makeDigest(Scan.documentMap[data.document.uri.toString()].getText()):
-        File.extractDirectoryAndWorkspace(data.document.uri.toString()): undefined,
+    description: data.showFileName ? File.makeDescription(data.document):undefined,
     detail: Clairvoyant.getDocumentDiagnosticsSummary(data.document.uri)
         .map(i => `$(${getDiagnosticIcon(i.severity)}) ${getDiagnosticLabel(i.severity)}:${i.count}`).join(", "),
     command: async () =>
@@ -469,7 +465,6 @@ const makeProblemFileMenuItem =
     document: data.document,
 });
 
-
 const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }): CommandMenuItem[] => getCacheOrMake
 (
     `${uri}.makeSightFileRootMenu:${getRootMenuOrder()}`,
@@ -481,9 +476,7 @@ const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }
             {
                 label: `$(file-text) ${Locale.typeableMap("Go to this file")}`,
                 description: `${File.extractFileName(uri)}`,
-                detail: uri.startsWith("untitled:") ?
-                    File.makeDigest(Scan.documentMap[uri].getText()):
-                    File.extractDirectoryAndWorkspace(uri),
+                detail: File.makeDescription(Scan.documentMap[uri]),
                 document: Scan.documentMap[uri],
                 command: async () =>
                 {
@@ -588,9 +581,7 @@ const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }
 const makeSightCurrentFileMenuItem = (uri: string, tokenMap: { [token: string]: number[] } = Scan.documentTokenEntryMap[uri]): CommandMenuItem =>
 ({
     label: `$(file-text) ${Locale.typeableMap("Current file")}`,
-    description: uri.startsWith("untitled:") ?
-        File.makeDigest(Scan.documentMap[uri].getText()):
-        File.extractRelativePath(uri),
+    description: File.makeDescription(Scan.documentMap[uri]),
     command: async () => await Show.forward
     ({
         makeItemList: () => makeSightFileRootMenu(uri, tokenMap),
@@ -599,9 +590,7 @@ const makeSightCurrentFileMenuItem = (uri: string, tokenMap: { [token: string]: 
 const makeSightFileMenuItem = (uri: string, tokenMap: { [token: string]: number[] } = Scan.documentTokenEntryMap[uri]): CommandMenuItem =>
 ({
     label: `$(file-text) ${File.extractFileName(uri)}`,
-    description: uri.startsWith("untitled:") ?
-        File.makeDigest(Scan.documentMap[uri].getText()):
-        File.extractDirectoryAndWorkspace(uri),
+    description: File.makeDescription(Scan.documentMap[uri]),
     document: Scan.documentMap[uri],
     command: async () => await Show.forward
     ({
@@ -1032,9 +1021,7 @@ export const makeSightTokenRootMenu = (uri: string, token: string): CommandMenuI
 const makeGoToFileMenuItem = (uri: string, document: vscode.TextDocument): CommandMenuItem =>
 ({
     label: `$(file-text) ${File.extractFileName(uri)}`,
-    description: uri.startsWith("untitled:") ?
-        File.makeDigest(document.getText()):
-        File.extractDirectoryAndWorkspace(uri),
+    description: File.makeDescription(document),
     document: document,
     command: async () =>
     {
