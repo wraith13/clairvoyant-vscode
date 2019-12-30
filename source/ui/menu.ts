@@ -474,17 +474,6 @@ const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }
         () => makeEmptyList().concat
         (
             {
-                label: `$(file-text) ${Locale.typeableMap("Go to this file")}`,
-                description: `${File.extractFileName(uri)}`,
-                detail: File.makeDescription(Scan.documentMap[uri]),
-                document: Scan.documentMap[uri],
-                command: async () =>
-                {
-                    await vscode.window.showTextDocument(Scan.documentMap[uri], { preview: false });
-                },
-                isTerm: true,
-            },
-            {
                 label: `$(git-branch) ${Locale.typeableMap("Changes")}`,
                 command: async () =>
                 {
@@ -594,7 +583,21 @@ const makeSightFileMenuItem = (uri: string, tokenMap: { [token: string]: number[
     document: Scan.documentMap[uri],
     command: async () => await Show.forward
     ({
-        makeItemList: () => makeSightFileRootMenu(uri, tokenMap),
+        makeItemList: () => makeEmptyList().concat
+        (
+            {
+                label: `$(file-text) ${Locale.typeableMap("Go to this file")}`,
+                description: `${File.extractFileName(uri)}`,
+                detail: File.makeDescription(Scan.documentMap[uri]),
+                document: Scan.documentMap[uri],
+                command: async () =>
+                {
+                    await vscode.window.showTextDocument(Scan.documentMap[uri], { preview: false });
+                },
+                isTerm: true,
+            },
+            makeSightFileRootMenu(uri, tokenMap),
+        ),
         options:
         {
             document: Scan.documentMap[uri],
