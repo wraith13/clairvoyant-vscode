@@ -79,6 +79,7 @@ This extension contributes the following settings by [`settings.json`](https://c
 * `clairvoyant.activeHighlightOverviewRulerLane`: Overview ruler lane of active highlights
 * `clairvoyant.latestHighlightOverviewRulerLane`: Overview ruler lane of latest highlights
 * `clairvoyant.highlightOverviewRulerLane`: Overview ruler lane of highlights
+* `clairvoyant.developFileListOnSightRootMenu`: Develop file list on sight root menu
 
 ## Keyboard shortcut Settings
 

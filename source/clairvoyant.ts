@@ -117,6 +117,7 @@ export const activeHighlightOverviewRulerLane = new Config.MapEntry("clairvoyant
 export const latestHighlightOverviewRulerLane = new Config.MapEntry("clairvoyant.latestHighlightOverviewRulerLane", overviewRulerLaneObject);
 export const highlightOverviewRulerLane = new Config.MapEntry("clairvoyant.highlightOverviewRulerLane", overviewRulerLaneObject);
 export const enableLunaticPreview = new Config.Entry<boolean>("clairvoyant.enableLunaticPreview");
+export const developFileListOnSightRootMenu = new Config.Entry<boolean>("clairvoyant.developFileListOnSightRootMenu");
 const outputChannelVolume = new Config.MapEntry("clairvoyant.outputChannelVolume", outputChannelVolumeObject);
 const outputChannel = vscode.window.createOutputChannel(Config.applicationName);
 let muteOutput = false;
@@ -391,6 +392,7 @@ const clearConfig = () =>
         highlightOverviewRulerLane,
         enableLunaticPreview,
         outputChannelVolume,
+        developFileListOnSightRootMenu,
     ]
     .forEach(i => i.clear());
 
@@ -426,6 +428,7 @@ const onDidChangeConfiguration = () =>
         targetProtocols: targetProtocols.getCache(""),
         gotoHistoryMode: gotoHistoryMode.getCache(""),
         enableLunaticPreview: enableLunaticPreview.getCache(""),
+        developFileListOnSightRootMenu: developFileListOnSightRootMenu.getCache(""),
     };
     clearConfig();
     StatusBar.update();
@@ -441,7 +444,8 @@ const onDidChangeConfiguration = () =>
         JSON.stringify(old.excludeDirectories) !== JSON.stringify(excludeDirectories.get("")) ||
         JSON.stringify(old.excludeExtentions) !== JSON.stringify(excludeExtentions.get("")) ||
         JSON.stringify(old.targetProtocols) !== JSON.stringify(targetProtocols.get("")) ||
-        old.enableLunaticPreview !== enableLunaticPreview.get("")
+        old.enableLunaticPreview !== enableLunaticPreview.get("") ||
+        old.developFileListOnSightRootMenu !== developFileListOnSightRootMenu.get("")
     )
     {
         Scan.reload();

@@ -10,6 +10,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 - Added problems menu item to sight menu.
 - Added summary as detail to problems menu.
+- `clairvoyant.developFileListOnSightRootMenu` setting.
 
 ### Removed
 

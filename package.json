@@ -390,6 +390,11 @@
 						"type": "boolean",
 						"default": true,
 						"description": "%clairvoyant.enableLunaticPreview.description%"
+					},
+					"clairvoyant.developFileListOnSightRootMenu": {
+						"type": "boolean",
+						"default": true,
+						"description": "%clairvoyant.developFileListOnSightRootMenu.description%"
 					}
 				}
 			}

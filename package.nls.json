@@ -38,6 +38,7 @@
     "clairvoyant.latestHighlightOverviewRulerLane.description": "Overview ruler lane of latest highlights",
     "clairvoyant.highlightOverviewRulerLane.description": "Overview ruler lane of highlights",
     "clairvoyant.enableLunaticPreview.description": "Enable lunatic preview ( Since it uses a dirty approach, there may be problems. Disable if you have problems. )",
+    "clairvoyant.developFileListOnSightRootMenu.description": "Develop file list on sight root menu",
     "clairvoyant.backMenu.title": "back to the previous menu",
     "♻️ Reload Clairvoyant!": "♻️ Reload Clairvoyant!",
     "📊 Statistics Report": "📊 Statistics Report",

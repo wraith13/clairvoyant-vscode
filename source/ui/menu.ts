@@ -864,20 +864,6 @@ export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
             `root.${getRootMenuOrder()}`,
             () => makeEmptyList().concat
             (
-                /*
-                {
-                    label: `$(list-ordered) ${Locale.typeableMap("Show by file")}`,
-                    command: async () => await Show.forward
-                    ({
-                        makeItemList: makeSightFileListMenu,
-                        options:
-                        {
-                            matchOnDescription: true,
-                            filePreview: Clairvoyant.enableLunaticPreview.get(""),
-                        },
-                    })
-                },
-                */
                 "token" === getRootMenuOrder() ?
                     {
                         label: `$(list-ordered) ${Locale.typeableMap("Sort by count")}`,
@@ -896,7 +882,20 @@ export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
                         },
                     },
                 makeStaticMenu(),
-                makeSightFileListMenu(),
+                Clairvoyant.developFileListOnSightRootMenu.get("") ?
+                    makeSightFileListMenu():
+                    {
+                        label: `$(list-ordered) ${Locale.typeableMap("Show by file")}`,
+                        command: async () => await Show.forward
+                        ({
+                            makeItemList: makeSightFileListMenu,
+                            options:
+                            {
+                                matchOnDescription: true,
+                                filePreview: Clairvoyant.enableLunaticPreview.get(""),
+                            },
+                        })
+                    },
                 Profiler.profile
                 (
                     "makeSightRootMenu.core",
