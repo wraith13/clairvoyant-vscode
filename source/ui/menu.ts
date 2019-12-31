@@ -43,7 +43,12 @@ export const getCacheOrMake = (key: string, itemMaker: () => CommandMenuItem[]) 
 {
     if (!cache[key])
     {
+        Clairvoyant.outputLine("verbose", `Menu.getCacheOrMake("${key}") has no cache.`);
         cache[key] = itemMaker();
+    }
+    else
+    {
+        Clairvoyant.outputLine("verbose", `Menu.getCacheOrMake("${key}") has cache.`);
     }
     return cache[key];
 };
