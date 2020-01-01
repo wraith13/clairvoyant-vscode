@@ -12,6 +12,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - Added summary as detail to problems menu.
 - `clairvoyant.developFileListOnSightRootMenu` setting.
 
+### Fixed
+
+- Fixed an issue where the menu cache may not be cleared.
+
 ### Removed
 
 - Removed unnecessary `Go to this file` menu item.
