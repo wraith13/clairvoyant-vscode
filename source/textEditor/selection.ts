@@ -159,7 +159,7 @@ class Entry
     {
         if (!commitable)
         {
-            this.rollbackSelection();
+            await this.rollbackSelection();
         }
     }
     public showToken = async (entry: { document: vscode.TextDocument, selection: vscode.Selection }) =>
@@ -295,15 +295,15 @@ export module PreviewTextEditor
             !vscode.workspace.getConfiguration("workbench.editor")["enablePreview"] &&
             Clairvoyant.enableLunaticPreview.get("");
         IsLunatic ?
-            LunaticPreviewTextEditor.make():
-            RegularPreviewTextEditor.make();
+            await LunaticPreviewTextEditor.make():
+            await RegularPreviewTextEditor.make();
     };
     export const show = async (previewDocument: vscode.TextDocument | undefined) => IsLunatic ?
-        LunaticPreviewTextEditor.show(previewDocument):
-        RegularPreviewTextEditor.show(previewDocument);
+        await LunaticPreviewTextEditor.show(previewDocument):
+        await RegularPreviewTextEditor.show(previewDocument);
     export const dispose = async (commitable: boolean) => IsLunatic ?
-        LunaticPreviewTextEditor.dispose(commitable):
-        RegularPreviewTextEditor.dispose(commitable);
+        await LunaticPreviewTextEditor.dispose(commitable):
+        await RegularPreviewTextEditor.dispose(commitable);
 }
 
 export module LunaticPreviewTextEditor

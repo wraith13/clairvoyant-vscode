@@ -15,6 +15,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ### Fixed
 
 - Fixed an issue where the menu cache may not be cleared.
+- Fixed an issue that could be pasted in the wrong location.
 
 ### Removed
 
