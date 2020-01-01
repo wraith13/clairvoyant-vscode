@@ -1,10 +1,7 @@
 import * as vscode from 'vscode';
-
 import * as Profiler from "../lib/profiler";
-
 import * as Clairvoyant from "../clairvoyant";
 import * as Menu from '../ui/menu';
-
 export const make = (document: vscode.TextDocument, index: number, token: string) => Profiler.profile
 (
     "Selection.make",
@@ -43,13 +40,11 @@ export const makeWhole = (document: vscode.TextDocument) => Profiler.profile
     "Selection.makeWhole",
     () => new vscode.Selection(document.positionAt(0), document.positionAt(document.getText().length))
 );
-
 let lastValidViemColumn: number = 1;
 export const setLastValidViemColumn = (viewColumn: number) => lastValidViemColumn = viewColumn;
 export const getLastValidViemColumn = () => lastValidViemColumn;
 export const getLastTextEditor = <resultT = vscode.TextEditor>(getter: (textEditor: vscode.TextEditor) => resultT = (i => <any>i)) =>
     vscode.window.visibleTextEditors.filter(i => i.viewColumn === getLastValidViemColumn()).map(getter)[0];
-
 export interface ShowTokenCoreEntry
 {
     document: vscode.TextDocument;
@@ -60,7 +55,6 @@ export interface ShowTokenDoEntry
     redo: ShowTokenCoreEntry;
     undo: ShowTokenCoreEntry | null;
 }
-
 class Entry
 {
     showTokenUndoBuffer: ShowTokenDoEntry[] = [];
@@ -70,9 +64,7 @@ class Entry
     targetBackupSelectionEntry: ShowTokenCoreEntry | null = null;
     lastPreviewSelectionEntry: ShowTokenCoreEntry | null = null;
     previewViewColumn: vscode.ViewColumn = 1;
-
     public constructor(public viewColumn: string) { }
-
     public showTextDocumentWithBackupSelection = async (document: vscode.TextDocument) =>
     {
         Clairvoyant.outputLine("verbose", `Selection.Entry(${this.viewColumn}).showTextDocumentWithBackupSelection() is called.`);
@@ -99,7 +91,6 @@ class Entry
             this.lastPreviewSelectionEntry = entry;
         }
     }
-
     public rollbackSelection = async () =>
     {
         Clairvoyant.outputLine("verbose", `Selection.Entry(${this.viewColumn}).rollbackSelection() is called.`);
@@ -118,7 +109,6 @@ class Entry
                 {
                     this.targetBackupSelectionEntry = null;
                     this.groundBackupSelectionEntry = null;
-    
                     const data =
                     {
                         entry: this.lastPreviewSelectionEntry,
@@ -132,7 +122,6 @@ class Entry
             }
             this.lastPreviewSelectionEntry = null;
         }
-        
         if (this.targetBackupSelectionEntry)
         {
             this.previewSelection(this.targetBackupSelectionEntry);
@@ -201,7 +190,6 @@ class Entry
         }
     }
 }
-
 const entryMap: { [viewColumn: string]: Entry } = { };
 export const getEntry = () =>
 {
@@ -212,7 +200,6 @@ export const getEntry = () =>
     }
     return entryMap[key];
 };
-
 const revealSelection = (textEditor: vscode.TextEditor, selection: vscode.Selection) =>
 {
     textEditor.selection = selection;
@@ -241,17 +228,14 @@ const onUpdateHistory = () =>
     Clairvoyant.outputLine("verbose", `onUpdateHistory() is called.`);
     Menu.removeCache(`root.full`);
 };
-
 export const reload = () =>
 {
     Object.keys(entryMap).forEach(i => delete entryMap[i]);
 };
-
 export module Log
 {
     const latests: {[viemColumn: number]:{ [uri: string]: vscode.Selection }} = { };
     const recentDocuments: {[viemColumn: number]: string[] } = { };
-
     export const getLatest = (viemColumn: number, uri: string) =>
     {
         const documentSelectionMap = latests[viemColumn];
@@ -275,7 +259,6 @@ export module Log
                 latests[current.viewColumn] = { };
             }
             latests[current.viewColumn][uri] = current.selection;
-
             if (undefined === recentDocuments[current.viewColumn])
             {
                 recentDocuments[current.viewColumn] = [ ];
@@ -284,11 +267,9 @@ export module Log
         }
     };
 }
-
 export module PreviewTextEditor
 {
     let IsLunatic: boolean;
-
     export const make = async () =>
     {
         IsLunatic =
@@ -305,7 +286,6 @@ export module PreviewTextEditor
         await LunaticPreviewTextEditor.dispose(commitable):
         await RegularPreviewTextEditor.dispose(commitable);
 }
-
 export module LunaticPreviewTextEditor
 {
     let backupDocument: vscode.TextDocument | undefined;
@@ -313,7 +293,6 @@ export module LunaticPreviewTextEditor
     let document: vscode.TextDocument;
     let textEditor: vscode.TextEditor;
     let viewColumn: vscode.ViewColumn;
-
     export const make = async () =>
     {
         viewColumn = lastValidViemColumn;
@@ -347,7 +326,6 @@ export module LunaticPreviewTextEditor
         textEditor = await vscode.window.showTextDocument(document, viewColumn);
         await textEditor.edit(editBuilder => editBuilder.delete(makeWhole(document)));
         await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
-
         if (undefined !== lastPreviewDocument && commitable)
         {
             await vscode.window.showTextDocument(lastPreviewDocument, viewColumn);
@@ -365,7 +343,6 @@ export module RegularPreviewTextEditor
     let backupDocument: vscode.TextDocument | undefined;
     let lastPreviewDocument: vscode.TextDocument | undefined;
     let viewColumn: vscode.ViewColumn;
-
     export const make = async () =>
     {
         viewColumn = lastValidViemColumn;

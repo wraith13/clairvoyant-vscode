@@ -1,18 +1,14 @@
 import * as vscode from 'vscode';
 import packageJson from "../../package.json";
-
 import { Cache } from "./cache";
-
 export const properties = Object.freeze(packageJson.contributes.configuration[0].properties);
 export const applicationName = packageJson.displayName;
 export const applicationKey = packageJson.name;
-
 export class Entry<valueT>
 {
     public defaultValue: valueT;
     public minValue: valueT | undefined;
     public maxValue: valueT | undefined;
-
     public constructor
     (
         public key: keyof typeof properties,
@@ -23,7 +19,6 @@ export class Entry<valueT>
         this.minValue = (<any>properties)[key].minimum;
         this.maxValue = (<any>properties)[key].maximum;
     }
-
     regulate = (rawKey: string, value: valueT): valueT =>
     {
         let result = value;
@@ -48,7 +43,6 @@ export class Entry<valueT>
         }
         return result;
     }
-
     cache = new Cache
     (
         (languageId: string): valueT =>
@@ -83,7 +77,6 @@ export class Entry<valueT>
             return result;
         }
     );
-
     public get = this.cache.get;
     public getCache = this.cache.getCache;
     public clear = this.cache.clear;
@@ -97,13 +90,10 @@ export class MapEntry<ObjectT>
     )
     {
     }
-
     config = new Entry<keyof ObjectT>(this.key, makeEnumValidator(this.mapObject));
     public get = (languageId: string) => this.mapObject[this.config.cache.get(languageId)];
     public getCache = (languageId: string) => this.mapObject[this.config.cache.getCache(languageId)];
     public clear = this.config.cache.clear;
 }
-
 export const makeEnumValidator = <ObjectT>(mapObject: ObjectT): (value: keyof ObjectT) => boolean => (value: keyof ObjectT): boolean => 0 <= Object.keys(mapObject).indexOf(value.toString());
 export const stringArrayValidator = (value: string[]) => "[object Array]" === Object.prototype.toString.call(value) && value.map(i => "string" === typeof i).reduce((a, b) => a && b, true);
-

@@ -1,16 +1,13 @@
 import * as vscode from 'vscode';
-
 import * as Profiler from "../lib/profiler";
 import * as Locale from "../lib/locale";
 import * as File from "../lib/file";
 import * as Comparer from "../lib/comparer";
-
 import * as Clairvoyant from "../clairvoyant";
 import * as Changes from "../textEditor/changes";
 import * as Selection from "../textEditor/selection";
 import * as Highlight from "../textEditor/highlight";
 import * as Scan from "../scan";
-
 export interface CommandMenuItem extends vscode.QuickPickItem
 {
     command: () => Promise<void>;
@@ -52,7 +49,6 @@ export const getCacheOrMake = (key: string, itemMaker: () => CommandMenuItem[]) 
     }
     return cache[key];
 };
-
 export module Show
 {
     interface Entry
@@ -61,7 +57,6 @@ export module Show
         options?: CommandMenuOptions;
     }
     const menuStack: Entry[] = [];
-
     const show = async (entry: Entry) =>
     {
         // Highlight.Preview.* 周りの処理の影響を受けないように事前にメニューアイテムを取得
@@ -76,7 +71,6 @@ export module Show
         const lastValidViemColumn = Selection.getLastValidViemColumn();
         let lastPreviewItem: CommandMenuItem | undefined;
         let lastSelection = Selection.getLastTextEditor(i => i.selection);
-
         const options = entry.options || { };
         const selectionEntry = Selection.getEntry();
         Highlight.Preview.backup();
@@ -151,7 +145,6 @@ export module Show
             await select.command();
         }
     };
-
     export const update = async () => await show(menuStack[menuStack.length -1]);
     const push = async (entry: Entry) =>
     {
@@ -228,7 +221,6 @@ const makeGoCommandMenuItem =
     "makeGoCommandMenuItem",
     () =>
     ({
-
         label: `$(rocket) ${Locale.typeableMap(label)} ${Selection.toString(entry.selection)}` +(undefined !== hits ? ` ${hits}`: ""),
         description: File.extractRelativePath(entry.document.uri.toString()),
         detail: makePreview(entry.document, entry.selection.anchor),
@@ -280,7 +272,6 @@ const makeGoDiagnosticCommandMenuItem =
     "makeGoCommandMenuItem",
     () =>
     ({
-
         label: `$(${getDiagnosticIcon(diagnostic.severity)}) ${getDiagnosticLabel(diagnostic.severity)}:${diagnostics.indexOf(diagnostic) +1}/${diagnostics.length} ${diagnostic.message} `,
         description: Selection.toString(entry.selection),
         detail: makePreview(entry.document, entry.selection.anchor),
@@ -420,7 +411,6 @@ const makeSightFileTokenMenu = (uri: string, token: string, indices: number[]): 
         )
     )
 );
-
 const makeProblemFileMenuItem =
 (
     data:
@@ -428,7 +418,6 @@ const makeProblemFileMenuItem =
         document: vscode.TextDocument,
         showFileName: boolean
     }
-    
 ) =>
 ({
     label: data.showFileName ? `$(file-text) ${File.extractFileName(data.document.uri.toString())}`: `$(flame) ${Locale.typeableMap("Problems")}`,
@@ -469,7 +458,6 @@ const makeProblemFileMenuItem =
     },
     document: data.document,
 });
-
 const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }): CommandMenuItem[] => getCacheOrMake
 (
     `${uri}.makeSightFileRootMenu:${getRootMenuOrder()}`,
@@ -680,7 +668,6 @@ const makeQuickMenu = (): CommandMenuItem[] =>
     }
     return result;
 };
-
 const makeHistoryMenu = (): CommandMenuItem[] =>
 {
     const result: CommandMenuItem[] = [];
@@ -975,7 +962,6 @@ export const makeSightDocumentRootMenu = (uri: string): CommandMenuItem[] => Pro
         makeSightFileRootMenu(uri,Scan.documentTokenEntryMap[uri]),
     )
 );
-
 export const makeSightTokenRootMenu = (uri: string, token: string): CommandMenuItem[] => Profiler.profile
 (
     "makeSightDocumentRootMenu",
@@ -1024,7 +1010,6 @@ export const makeSightTokenRootMenu = (uri: string, token: string): CommandMenuI
         )
     )
 );
-
 const makeGoToFileMenuItem = (uri: string, document: vscode.TextDocument): CommandMenuItem =>
 ({
     label: `$(file-text) ${File.extractFileName(uri)}`,

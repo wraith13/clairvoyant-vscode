@@ -1,27 +1,20 @@
 import * as vscode from 'vscode';
-
 import * as Profiler from "./lib/profiler";
 import * as Config from "./lib/config";
 import * as Locale from "./lib/locale";
 import * as Busy from "./lib/busy";
 import * as File from "./lib/file";
 import * as Comparer from "./lib/comparer";
-
 import * as Menu from "./ui/menu";
 import * as StatusBar from "./ui/statusbar";
-
 import * as Selection from "./textEditor/selection";
 import * as Highlight from "./textEditor/highlight";
 import * as Scan from "./scan";
-
 const roundCenti = (value : number) : number => Math.round(value *100) /100;
 const percentToDisplayString = (value : number, locales?: string | string[]) : string =>`${roundCenti(value).toLocaleString(locales, { style: "percent" })}`;
-
 const applicationKey = Config.applicationKey;
 export let context: vscode.ExtensionContext;
-
 export const busy = new Busy.Entry(() => StatusBar.update());
-
 const autoScanModeObject = Object.freeze
 ({
     "none":
@@ -93,9 +86,7 @@ const overviewRulerLaneObject = Object.freeze
     "right": vscode.OverviewRulerLane.Right,
     "full": vscode.OverviewRulerLane.Full,
 });
-
 const colorValidator = (value: string): boolean => /^#[0-9A-Fa-f]{6}$/.test(value);
-
 export const autoScanMode = new Config.MapEntry("clairvoyant.autoScanMode", autoScanModeObject);
 export const maxFiles = new Config.Entry<number>("clairvoyant.maxFiles");
 export const showStatusBarItems = new Config.Entry<boolean>("clairvoyant.showStatusBarItems");
@@ -150,7 +141,6 @@ export const outputLine = (level: keyof typeof outputChannelVolumeObject, text: 
         }
     }
 };
-
 export const initialize = (aContext: vscode.ExtensionContext): void =>
 {
     outputLine("verbose", "Clairvoyant.initialize() is called.");
@@ -232,10 +222,8 @@ export const initialize = (aContext: vscode.ExtensionContext): void =>
                 }
             }
         ),
-
         //  ステータスバーアイコンの登録
         StatusBar.make(),
-
         //  イベントリスナーの登録
         vscode.workspace.onDidChangeConfiguration(onDidChangeConfiguration),
         vscode.workspace.onDidChangeWorkspaceFolders(reload),
@@ -248,7 +236,6 @@ export const initialize = (aContext: vscode.ExtensionContext): void =>
                     const uri = event.document.uri.toString();
                     //  OuputChannel に対するイベント処理中に OuputChannel に書き出すと無限ループになってしまうのでミュートする
                     muteOutput = uri.startsWith("output:");
-
                     outputLine("verbose", `onDidChangeTextDocument("${uri}") is called.`);
                     if (autoScanMode.get(event.document.languageId).enabled && !isExcludeDocument(event.document))
                     {
@@ -311,19 +298,15 @@ export const initialize = (aContext: vscode.ExtensionContext): void =>
         vscode.window.onDidChangeTextEditorSelection(event => Selection.Log.update(event.textEditor)),
         vscode.languages.onDidChangeDiagnostics(onDidChangeDiagnostics),
     );
-
     reload();
 };
-
 export const setIsDocumentScanedWithClairvoyant = (isDocumentScanedWithClairvoyant: boolean) => vscode.commands.executeCommand
 (
     'setContext',
     'isDocumentScanedWithClairvoyant',
     isDocumentScanedWithClairvoyant
 );
-
 export const isTargetEditor = (textEditor: vscode.TextEditor) => undefined !== textEditor.viewColumn;
-
 export const isTargetProtocol = (uri: string) => targetProtocols.get("").some(i => uri.startsWith(i));
 export const isExcludeFile = (filePath: string) => excludeExtentions.get("").some(i => filePath.toLowerCase().endsWith(i.toLowerCase()));
 export const startsWithDot = (path: string) => isExcludeStartsWidhDot.get("") && path.startsWith(".");
@@ -334,11 +317,8 @@ export const isExcludeDocument = (document: vscode.TextDocument) =>
         File.extractRelativePath(document.uri.toString()).split("/").some(i => 0 <= excludeDirectories.get("").indexOf(i) || startsWithDot(i)) ||
         isExcludeFile(document.uri.toString())
     );
-
 export const encodeToken = (token: string) => `@${token}`;
 export const decodeToken = (token: string) => token.substring(1);
-
-
 export const copyToken = async (text: string) =>
 {
     outputLine("verbose", `copyToken("${text}") is called.`);
@@ -366,7 +346,6 @@ export const pasteToken = async (text: string) =>
         );
     }
 };
-
 const clearConfig = () =>
 {
     [
@@ -395,7 +374,6 @@ const clearConfig = () =>
         developFileListOnSightRootMenu,
     ]
     .forEach(i => i.clear());
-
     vscode.commands.executeCommand
     (
         'setContext',
@@ -403,7 +381,6 @@ const clearConfig = () =>
         enableLunaticPreview.get("")
     );
 };
-
 export const reload = () =>
 {
     outputLine("silent", Locale.map("♻️ Reload Clairvoyant!"));
@@ -453,7 +430,6 @@ const onDidChangeConfiguration = () =>
         autoScanMode.get("").onInit();
     }
 };
-
 export const onDidChangeDiagnostics = (event: vscode.DiagnosticChangeEvent) =>
 {
     event.uris.forEach
@@ -494,7 +470,6 @@ export const getDocumentDiagnosticsSummary = (uri: vscode.Uri):{ severity: vscod
     );
     return result;
 };
-
 export const reportStatistics = async () => await busy.do
 (
     () => Profiler.profile
@@ -511,7 +486,6 @@ export const reportStatistics = async () => await busy.do
         }
     )
 );
-
 export const reportProfile = async () => await busy.do
 (
     () => Profiler.profile
@@ -540,7 +514,6 @@ export const reportProfile = async () => await busy.do
         }
     )
 );
-
 export const sight = async () => await Menu.Show.root
 ({
     makeItemList: Object.keys(Scan.tokenDocumentEntryMap).length <= 0 ?
@@ -552,7 +525,6 @@ export const sight = async () => await Menu.Show.root
         filePreview: enableLunaticPreview.get(""),
     }
 });
-
 export const sightDocument = async () =>
 {
     const activeTextEditor = vscode.window.activeTextEditor;
@@ -579,7 +551,6 @@ export const sightDocument = async () =>
         });
     }
 };
-
 export const sightToken = async () =>
 {
     const activeTextEditor = vscode.window.activeTextEditor;
@@ -610,7 +581,6 @@ export const sightToken = async () =>
         });
     }
 };
-
 export const lunaticGoToFile = async () =>
 {
     if (Object.keys(Scan.documentMap).length <= 0)

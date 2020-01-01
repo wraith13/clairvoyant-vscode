@@ -1,9 +1,7 @@
 import * as vscode from 'vscode';
 import * as Comparer from "../lib/comparer";
 import * as Clairvoyant from "../clairvoyant";
-
 export const cache: { [uri: string]: vscode.Selection[]} = { };
-
 export const removeCache = (key: string) =>
 {
     Clairvoyant.outputLine("verbose", `Change.removeCache("${key}") is called.`);
@@ -19,7 +17,6 @@ export const getCacheOrMake = async (textEditor: vscode.TextEditor, itemMaker: (
     }
     return cache[uri];
 };
-
 export const get = async (): Promise<vscode.Selection[]>  => vscode.window.activeTextEditor ?
     await getCacheOrMake
     (
@@ -61,4 +58,3 @@ export const get = async (): Promise<vscode.Selection[]>  => vscode.window.activ
         }
     ):
     [];
-

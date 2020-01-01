@@ -1,10 +1,7 @@
 import * as vscode from 'vscode';
-
 import * as Profiler from "../lib/profiler";
 import * as Locale from "../lib/locale";
-
 import * as Clairvoyant from "../clairvoyant";
-
 const create =
 (
     properties :
@@ -32,9 +29,7 @@ const create =
     }
     return result;
 };
-
 let eyeLabel: vscode.StatusBarItem;
-
 export const make = () => eyeLabel = create
 ({
     alignment: vscode.StatusBarAlignment.Right,
@@ -42,7 +37,6 @@ export const make = () => eyeLabel = create
     command: `clairvoyant.sight`,
     tooltip: Locale.map("clairvoyant.sight.title")
 });
-
 export const update = () : void => Profiler.profile
 (
     "StatusBar.update",

@@ -1,17 +1,14 @@
 const getTicks = () => new Date().getTime();
-
 let profileScore: { [scope: string]: number } = { };
 let entryStack: ProfileEntry[] = [ ];
 let isProfiling = false;
 let startAt = 0;
 let endAt = 0;
 let debugCount = 0;
-
 export class ProfileEntry
 {
     startTicks: number;
     childrenTicks: number;
-
     public constructor(public name: string)
     {
         this.childrenTicks = 0;
@@ -71,9 +68,7 @@ export const profile = <ResultT>(name: string, target: ()=>ResultT): ResultT =>
         entry.end();
     }
 };
-
 export const getIsProfiling = () => isProfiling;
-
 export const start = () =>
 {
     isProfiling = true;
@@ -98,7 +93,6 @@ export const getReport = () =>
             })
         )
         .sort((a, b) => b.ticks -a.ticks);
-
 export const debug = (text: string, object?: any) =>
 {
     if (0 < debugCount)

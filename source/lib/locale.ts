@@ -1,8 +1,6 @@
 import localeEn from "../../package.nls.json";
 import localeJa from "../../package.nls.ja.json";
-
 export type KeyType = keyof typeof localeEn;
-
 interface LocaleEntry
 {
     [key : string] : string;

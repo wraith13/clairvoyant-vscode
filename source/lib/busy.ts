@@ -1,14 +1,10 @@
 const timeout = (wait: number) => new Promise((resolve) => setTimeout(resolve, wait));
-
 export class Entry
 {
     busyStackCount = 0;
-
     public constructor(public stateReceiver: (entry: Entry) => void)
     {
-
     }
-    
     public do = async <valueT>(busyFunction: () => valueT) =>
     {
         try

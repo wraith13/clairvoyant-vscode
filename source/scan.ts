@@ -6,7 +6,6 @@ import * as Clairvoyant from "./clairvoyant";
 import * as Menu from './ui/menu';
 import * as Selection from "./textEditor/selection";
 import * as Changes from "./textEditor/changes";
-
 const regExpExecToArray = (regexp: RegExp, text: string) => Profiler.profile
 (
     `regExpExecToArray(/${regexp.source}/${regexp.flags})`,
@@ -25,11 +24,9 @@ const regExpExecToArray = (regexp: RegExp, text: string) => Profiler.profile
         return result;
     }
 );
-
 const toUri = (uri: vscode.Uri | string) => "string" === typeof(uri) ? vscode.Uri.parse(uri): uri;
 const getDocument = (uri: vscode.Uri | string) => vscode.workspace.textDocuments.filter(document => document.uri.toString() === uri.toString())[0];
 const getOrOpenDocument = async (uri: vscode.Uri | string) => documentMap[uri.toString()] || getDocument(uri) || await vscode.workspace.openTextDocument(toUri(uri));
-
 const getFiles = async (folder: vscode.Uri): Promise<vscode.Uri[]> =>
 {
     try
@@ -51,14 +48,12 @@ const getFiles = async (folder: vscode.Uri): Promise<vscode.Uri[]> =>
         return [];
     }
 };
-
 export const documentTokenEntryMap: { [uri: string]: { [token: string]: number[] } } = { };
 export const tokenDocumentEntryMap: { [token: string]: string[] } = { };
 export const documentFileMap: { [uri: string]: string } = { };
 export const tokenCountMap: { [token: string]: number } = { };
 export const documentMap: { [uri: string]: vscode.TextDocument } = { };
 export let isMaxFilesNoticed = false;
-
 export const reload = () =>
 {
     Clairvoyant.outputLine("verbose", `Scan.reload() is called.`);
@@ -87,9 +82,7 @@ export const onUpdateDocument = (uri: string) =>
     Menu.removePreviewCache(uri);
     Changes.removeCache(uri);
 };
-
 export const isScanedDocment = (document: vscode.TextDocument) => undefined !== documentTokenEntryMap[document.uri.toString()];
-
 export const scanDocument = async (document: vscode.TextDocument, force: boolean = false) => await Clairvoyant.busy.do
 (
     () =>
@@ -201,7 +194,6 @@ export const scanDocument = async (document: vscode.TextDocument, force: boolean
                                     tokenCountMap[i] += map[i].length;
                                 }
                             );
-
                             if (!old)
                             {
                                 onUpdateFileList();
@@ -313,7 +305,6 @@ export const scanWorkspace = async () => await Clairvoyant.busy.doAsync
         }
     }
 );
-
 export const seek = <ResultT>(textEditor: vscode.TextEditor, receiver: (token: string, hits: number[], i: number) => ResultT) => Profiler.profile
 (
     "Scan.seek",
