@@ -86,6 +86,24 @@ const overviewRulerLaneObject = Object.freeze
     "right": vscode.OverviewRulerLane.Right,
     "full": vscode.OverviewRulerLane.Full,
 });
+const developFileListObject = Object.freeze
+({
+    "none": () => Menu.makeEmptyList().concat
+    (
+        Menu.sightFileListRootMenuItem,
+        Menu.lunaticGoToFileRootMenuItem
+    ),
+    "sight": () => Menu.makeEmptyList().concat
+    (
+        Menu.lunaticGoToFileRootMenuItem,
+        Menu.makeSightFileListMenu()
+    ),
+    "goto": () => Menu.makeEmptyList().concat
+    (
+        Menu.sightFileListRootMenuItem,
+        Menu.makeLunaticGoToFileMenu()
+    ),
+});
 const colorValidator = (value: string): boolean => /^#[0-9A-Fa-f]{6}$/.test(value);
 export const autoScanMode = new Config.MapEntry("clairvoyant.autoScanMode", autoScanModeObject);
 export const maxFiles = new Config.Entry<number>("clairvoyant.maxFiles");
@@ -108,7 +126,7 @@ export const activeHighlightOverviewRulerLane = new Config.MapEntry("clairvoyant
 export const latestHighlightOverviewRulerLane = new Config.MapEntry("clairvoyant.latestHighlightOverviewRulerLane", overviewRulerLaneObject);
 export const highlightOverviewRulerLane = new Config.MapEntry("clairvoyant.highlightOverviewRulerLane", overviewRulerLaneObject);
 export const enableLunaticPreview = new Config.Entry<boolean>("clairvoyant.enableLunaticPreview");
-export const developFileListOnSightRootMenu = new Config.Entry<boolean>("clairvoyant.developFileListOnSightRootMenu");
+export const developFileListOnSightRootMenu = new Config.MapEntry("clairvoyant.developFileListOnSightRootMenu", developFileListObject);
 const outputChannelVolume = new Config.MapEntry("clairvoyant.outputChannelVolume", outputChannelVolumeObject);
 const outputChannel = vscode.window.createOutputChannel(Config.applicationName);
 let muteOutput = false;

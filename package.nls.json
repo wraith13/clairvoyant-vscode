@@ -60,6 +60,7 @@
     "Add highlight for \"${token}\"": "Add highlight for \"${token}\"",
     "Remove highlight for \"${token}\"": "Remove highlight for \"${token}\"",
     "Max Files Error": "Clairvoyant: The maximum number of files has been reached. Edit `clairvoyant.maxFiles` and `clairvoyant.excludeDirectories` and `clairvoyant.excludeExtentions` settings and do `Clairvoyant: Reload`.",
+    "Go To File...": "Go To File...",
     "Regular: Go To File...": "Regular: Go To File...",
     "No changes or this is the only change.": "No changes or this is the only change.",
     "No problems.": "No problems."

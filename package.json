@@ -392,8 +392,13 @@
 						"description": "%clairvoyant.enableLunaticPreview.description%"
 					},
 					"clairvoyant.developFileListOnSightRootMenu": {
-						"type": "boolean",
-						"default": true,
+						"type": "string",
+						"default": "goto",
+						"enum": [
+							"none",
+							"sight",
+							"goto"
+						],
 						"description": "%clairvoyant.developFileListOnSightRootMenu.description%"
 					}
 				}

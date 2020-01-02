@@ -22,7 +22,7 @@ interface CommandMenuOptions extends vscode.QuickPickOptions
     document?: vscode.TextDocument;
     token?: string;
 }
-const makeEmptyList = (): CommandMenuItem[] => [];
+export const makeEmptyList = (): CommandMenuItem[] => [];
 export const cache: { [key: string]: CommandMenuItem[]} = { };
 export const reload = () =>
 {
@@ -597,7 +597,7 @@ const makeSightFileMenuItem = (uri: string, tokenMap: { [token: string]: number[
         }
     })
 });
-const makeSightFileListMenu = (): CommandMenuItem[] => getCacheOrMake
+export const makeSightFileListMenu = (): CommandMenuItem[] => getCacheOrMake
 (
     "filelist",
     () => Profiler.profile
@@ -839,6 +839,33 @@ const makeProblemRootMenuItem = (uris: string[]): CommandMenuItem | CommandMenuI
     })
 }:
 [];
+
+export const sightFileListRootMenuItem =
+{
+    label: `$(list-ordered) ${Locale.typeableMap("Show by file")}`,
+    command: async () => await Show.forward
+    ({
+        makeItemList: makeSightFileListMenu,
+        options:
+        {
+            matchOnDescription: true,
+            filePreview: Clairvoyant.enableLunaticPreview.get(""),
+        },
+    })
+};
+export const lunaticGoToFileRootMenuItem =
+{
+    label: `$(rocket) ${Locale.typeableMap("Go To File...")}`,
+    command: async () => await Show.forward
+    ({
+        makeItemList: makeLunaticGoToFileMenu,
+        options:
+        {
+            matchOnDescription: true,
+            filePreview: Clairvoyant.enableLunaticPreview.get(""),
+        },
+    })
+};
 export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
 (
     "makeSightRootMenu",
@@ -874,20 +901,7 @@ export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
                         },
                     },
                 makeStaticMenu(),
-                Clairvoyant.developFileListOnSightRootMenu.get("") ?
-                    makeSightFileListMenu():
-                    {
-                        label: `$(list-ordered) ${Locale.typeableMap("Show by file")}`,
-                        command: async () => await Show.forward
-                        ({
-                            makeItemList: makeSightFileListMenu,
-                            options:
-                            {
-                                matchOnDescription: true,
-                                filePreview: Clairvoyant.enableLunaticPreview.get(""),
-                            },
-                        })
-                    },
+                Clairvoyant.developFileListOnSightRootMenu.get("")(),
                 Profiler.profile
                 (
                     "makeSightRootMenu.core",

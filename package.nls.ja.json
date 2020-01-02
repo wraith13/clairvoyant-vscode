@@ -60,6 +60,7 @@
     "Add highlight for \"${token}\"": "\"${token}\" をハイライト",
     "Remove highlight for \"${token}\"": "\"${token}\" のハイライトを除去",
     "Max Files Error": "Clairvoyant: ファイルの最大数に到達しました。`clairvoyant.maxFiles`, `clairvoyant.excludeDirectories`, `clairvoyant.excludeExtentions` の設定を編集してから `Clairvoyant: Reload` を実行してください。",
+    "Go To File...": "ファイルに移動...",
     "Regular: Go To File...": "標準: ファイルに移動...",
     "No changes or this is the only change.": "変更がないか、あるいはここが唯一の変更箇所です。",
     "No problems.": "問題はありません。"
