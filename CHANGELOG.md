@@ -4,13 +4,17 @@ All notable changes to the "clairvoyant" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## 6.3.0 - 20??-??-??
+## 7.0.0 - 2020-01-??
 
 ### Added
 
 - Added problems menu item to sight menu.
 - Added summary as detail to problems menu.
 - `clairvoyant.developFileListOnSightRootMenu` setting.
+
+### Changed
+
+- Changed the menu tree structure( check `clairvoyant.developFileListOnSightRootMenu` setting ).
 
 ### Fixed
 

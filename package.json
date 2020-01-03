@@ -393,7 +393,7 @@
 					},
 					"clairvoyant.developFileListOnSightRootMenu": {
 						"type": "string",
-						"default": "goto",
+						"default": "none",
 						"enum": [
 							"none",
 							"sight",
