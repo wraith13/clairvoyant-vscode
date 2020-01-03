@@ -341,7 +341,7 @@ const makeSightTokenFileMenu = (token: string): CommandMenuItem[] => getCacheOrM
                 (
                     entry =>
                     ({
-                        label: `$(file-text) ${File.extractFileName(entry.uri)}`,
+                        label: `$(file-text) ${File.extractFileName(entry.uri)} ...`,
                         description: File.makeDescription(Scan.documentMap[entry.uri]),
                         detail: `count: ${entry.hits.length}`,
                         document: Scan.documentMap[entry.uri],
@@ -420,7 +420,7 @@ const makeProblemFileMenuItem =
     }
 ) =>
 ({
-    label: data.showFileName ? `$(file-text) ${File.extractFileName(data.document.uri.toString())}`: `$(flame) ${Locale.typeableMap("Problems")}`,
+    label: data.showFileName ? `$(file-text) ${File.extractFileName(data.document.uri.toString())} ...`: `$(flame) ${Locale.typeableMap("Problems")} ...`,
     description: data.showFileName ? File.makeDescription(data.document):undefined,
     detail: Clairvoyant.getDocumentDiagnosticsSummary(data.document.uri)
         .map(i => `$(${getDiagnosticIcon(i.severity)}) ${getDiagnosticLabel(i.severity)}:${i.count}`).join(", "),
@@ -467,7 +467,7 @@ const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }
         () => makeEmptyList().concat
         (
             {
-                label: `$(git-branch) ${Locale.typeableMap("Changes")}`,
+                label: `$(git-branch) ${Locale.typeableMap("Changes")} ...`,
                 command: async () =>
                 {
                     const changes = await Changes.get();
@@ -536,7 +536,7 @@ const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }
             (
                 entry =>
                 ({
-                    label: `$(tag) "${Clairvoyant.decodeToken(entry[0])}"`,
+                    label: `$(tag) "${Clairvoyant.decodeToken(entry[0])}" ...`,
                     description: undefined,
                     detail: `count: ${entry[1].length}`,
                     token: Clairvoyant.decodeToken(entry[0]),
@@ -562,7 +562,7 @@ const makeSightFileRootMenu = (uri: string, entries: { [key: string]: number[] }
 );
 const makeSightCurrentFileMenuItem = (uri: string, tokenMap: { [token: string]: number[] } = Scan.documentTokenEntryMap[uri]): CommandMenuItem =>
 ({
-    label: `$(file-text) ${Locale.typeableMap("Current file")}`,
+    label: `$(file-text) ${Locale.typeableMap("Current file")} ...`,
     description: File.makeDescription(Scan.documentMap[uri]),
     command: async () => await Show.forward
     ({
@@ -571,7 +571,7 @@ const makeSightCurrentFileMenuItem = (uri: string, tokenMap: { [token: string]: 
 });
 const makeSightFileMenuItem = (uri: string, tokenMap: { [token: string]: number[] } = Scan.documentTokenEntryMap[uri]): CommandMenuItem =>
 ({
-    label: `$(file-text) ${File.extractFileName(uri)}`,
+    label: `$(file-text) ${File.extractFileName(uri)} ...`,
     description: File.makeDescription(Scan.documentMap[uri]),
     document: Scan.documentMap[uri],
     command: async () => await Show.forward
@@ -737,7 +737,7 @@ const makeHighlightTokensMenu = (highlights: string[]): CommandMenuItem[] =>
         (
             entry =>
             ({
-                label: `$(tag) "${Clairvoyant.decodeToken(entry[0])}"`,
+                label: `$(tag) "${Clairvoyant.decodeToken(entry[0])}" ...`,
                 description: undefined,
                 detail: entry[1].map
                     (
@@ -777,7 +777,7 @@ const makeHighlightRootMenu = (): CommandMenuItem[] =>
     return highlights.length <= 0 ?
         []:
         [{
-            label: `$(light-bulb) ${Locale.typeableMap("Highlighted tokens")}`,
+            label: `$(light-bulb) ${Locale.typeableMap("Highlighted tokens")} ...`,
             description: highlights.map(token => `$(tag) "${token}"`).join(", "),
             command: async () => await Show.forward
             ({
@@ -804,7 +804,7 @@ export const makeStaticMenu = (): CommandMenuItem[] =>
 ];
 const regularGotoFileMenuItem =
 {
-    label: `$(list-unordered) ${Locale.typeableMap("Regular: Go To File...")}`,
+    label: `$(list-unordered) ${Locale.typeableMap("Regular: Go To File")} ...`,
     command: async () =>
     {
         await vscode.commands.executeCommand("workbench.action.quickOpen");
@@ -813,7 +813,7 @@ const regularGotoFileMenuItem =
 };
 const makeProblemRootMenuItem = (uris: string[]): CommandMenuItem | CommandMenuItem[] => 0 < uris.length ?
 {
-    label: `$(flame) ${Locale.typeableMap("Problems")}`,
+    label: `$(flame) ${Locale.typeableMap("Problems")} ...`,
     detail: uris
         .map(uri => `$(file-text) ${File.extractFileName(uri)}`)
         .join(", "),
@@ -842,7 +842,7 @@ const makeProblemRootMenuItem = (uris: string[]): CommandMenuItem | CommandMenuI
 
 export const sightFileListRootMenuItem =
 {
-    label: `$(list-ordered) ${Locale.typeableMap("Show by file")}`,
+    label: `$(list-ordered) ${Locale.typeableMap("Show by file")} ...`,
     command: async () => await Show.forward
     ({
         makeItemList: makeSightFileListMenu,
@@ -855,7 +855,7 @@ export const sightFileListRootMenuItem =
 };
 export const lunaticGoToFileRootMenuItem =
 {
-    label: `$(rocket) ${Locale.typeableMap("Go To File...")}`,
+    label: `$(rocket) ${Locale.typeableMap("Go To File")} ...`,
     command: async () => await Show.forward
     ({
         makeItemList: makeLunaticGoToFileMenu,
@@ -926,7 +926,7 @@ export const makeSightRootMenu = (): CommandMenuItem[] => Profiler.profile
                     (
                         entry =>
                         ({
-                            label: `$(tag) "${Clairvoyant.decodeToken(entry[0])}"`,
+                            label: `$(tag) "${Clairvoyant.decodeToken(entry[0])}" ...`,
                             description: undefined,
                             detail: entry[1].map
                                 (
@@ -986,7 +986,7 @@ export const makeSightTokenRootMenu = (uri: string, token: string): CommandMenuI
         makeHighlightRootMenu(),
         makeSightTokenCoreMenu(token),
         {
-            label: `$(list-ordered) ${Locale.typeableMap("Show by file")}`,
+            label: `$(list-ordered) ${Locale.typeableMap("Show by file")} ...`,
             description: undefined,
             detail: Scan.tokenDocumentEntryMap[Clairvoyant.encodeToken(token)].map
                 (
