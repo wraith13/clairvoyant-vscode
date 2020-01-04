@@ -802,7 +802,7 @@ export const makeStaticMenu = (): CommandMenuItem[] =>
     makeStaticMenuItem("$(info)", "clairvoyant.reportStatistics.title", "clairvoyant.reportStatistics"),
     makeStaticMenuItem("$(dashboard)", "clairvoyant.reportProfile.title", "clairvoyant.reportProfile"),
 ];
-const regularGotoFileMenuItem =
+export const regularGotoFileMenuItem =
 {
     label: `$(list-unordered) ${Locale.typeableMap("Regular: Go To File")} ...`,
     command: async () =>
@@ -858,7 +858,11 @@ export const lunaticGoToFileRootMenuItem =
     label: `$(rocket) ${Locale.typeableMap("Go To File")} ...`,
     command: async () => await Show.forward
     ({
-        makeItemList: makeLunaticGoToFileMenu,
+        makeItemList: () => makeEmptyList().concat
+        (
+            makeLunaticGoToFileMenu(),
+            regularGotoFileMenuItem
+        ),
         options:
         {
             matchOnDescription: true,
@@ -1045,8 +1049,7 @@ export const makeLunaticGoToFileMenu = (): CommandMenuItem[] => getCacheOrMake
         (
             Object.entries(Scan.documentMap)
                 .sort(Comparer.merge([Comparer.make(entry => File.extractDirectoryAndWorkspace(entry[0])), Comparer.make(entry => entry[0])]))
-                .map(entry => makeGoToFileMenuItem(entry[0], entry[1])),
-            regularGotoFileMenuItem
+                .map(entry => makeGoToFileMenuItem(entry[0], entry[1]))
         )
     )
 );

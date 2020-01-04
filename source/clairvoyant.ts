@@ -616,7 +616,11 @@ export const lunaticGoToFile = async () =>
     {
         await Menu.Show.root
         ({
-            makeItemList: () => Menu.makeLunaticGoToFileMenu(),
+            makeItemList: () => Menu.makeEmptyList().concat
+            (
+                Menu.makeLunaticGoToFileMenu(),
+                Menu.regularGotoFileMenuItem
+            ),
             options:
             {
                 matchOnDescription: true,
