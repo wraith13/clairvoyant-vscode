@@ -192,51 +192,69 @@ export const initialize = (aContext: vscode.ExtensionContext): void =>
         vscode.commands.registerCommand
         (
             `${applicationKey}.nextToken`,
-            () =>
+            async () =>
             {
                 outputLine("verbose", `"${applicationKey}.nextToken" is called.`);
+                let hit = false;
                 const activeTextEditor = vscode.window.activeTextEditor;
                 if (undefined !== activeTextEditor)
                 {
                     const selection = Scan.getNextTokenSelection(activeTextEditor);
                     if (undefined !== selection)
                     {
-                        Selection.getEntry().showToken({document: activeTextEditor.document, selection});
+                        hit = true;
+                        await Selection.getEntry().showToken({document: activeTextEditor.document, selection});
                     }
+                }
+                if (!hit)
+                {
+                    await vscode.window.showInformationMessage(Locale.map("No token."));
                 }
             }
         ),
         vscode.commands.registerCommand
         (
             `${applicationKey}.previousToken`,
-            () =>
+            async () =>
             {
                 outputLine("verbose", `"${applicationKey}.previousToken" is called.`);
+                let hit = false;
                 const activeTextEditor = vscode.window.activeTextEditor;
                 if (undefined !== activeTextEditor)
                 {
                     const selection = Scan.getPreviousTokenSelection(activeTextEditor);
                     if (undefined !== selection)
                     {
-                        Selection.getEntry().showToken({document: activeTextEditor.document, selection});
+                        hit = true;
+                        await Selection.getEntry().showToken({document: activeTextEditor.document, selection});
                     }
+                }
+                if (!hit)
+                {
+                    await vscode.window.showInformationMessage(Locale.map("No token."));
                 }
             }
         ),
         vscode.commands.registerCommand
         (
             `${applicationKey}.toggleHighlight`,
-            () =>
+            async () =>
             {
                 outputLine("verbose", `"${applicationKey}.toggleHighlight" is called.`);
+                let hit = false;
                 const activeTextEditor = vscode.window.activeTextEditor;
                 if (undefined !== activeTextEditor)
                 {
                     const token = Scan.getToken(activeTextEditor);
                     if (undefined !== token)
                     {
+                        hit = true;
                         Highlight.toggle(token);
                     }
+                }
+                if (!hit)
+                {
+                    await vscode.window.showInformationMessage(Locale.map("No token."));
                 }
             }
         ),
@@ -575,14 +593,7 @@ export const sightToken = async () =>
     const token = undefined === activeTextEditor ? undefined: Scan.getToken(activeTextEditor);
     if (undefined === activeTextEditor || undefined === token)
     {
-        await Menu.Show.root
-        ({
-            makeItemList: Menu.makeStaticMenu,
-            options:
-            {
-                matchOnDescription: true,
-            }
-        });
+        await vscode.window.showInformationMessage(Locale.map("No token."));
     }
     else
     {

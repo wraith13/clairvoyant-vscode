@@ -63,5 +63,6 @@
     "Go To File": "ファイルに移動",
     "Regular: Go To File": "標準: ファイルに移動",
     "No changes or this is the only change.": "変更がないか、あるいはここが唯一の変更箇所です。",
-    "No problems.": "問題はありません。"
+    "No problems.": "問題はありません。",
+    "No token.": "トークンがありません。"
 }

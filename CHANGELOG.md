@@ -6,6 +6,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## 7.1.0 - 2020-01-??
 
+### Changed
+
+- Changed to display a message when a token operation is performed while the token is not pointed.
+
 ### Fixed
 
 - Fixed an issue where the regular go to file menu was sometimes displayed twice.
