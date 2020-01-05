@@ -13,6 +13,7 @@
     "clairvoyant.reload.title": "再読み込み(初期化)",
     "clairvoyant.reportStatistics.title": "統計情報を表示",
     "clairvoyant.reportProfile.title": "プロファイル情報を表示",
+    "clairvoyant.firstToken.title": "最初のトークンへ",
     "clairvoyant.nextToken.title": "次のトークンへ",
     "clairvoyant.previousToken.title": "前のトークンへ",
     "clairvoyant.toggleHighlight.title": "ハイライトを切り替え",

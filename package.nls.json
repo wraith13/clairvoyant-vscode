@@ -13,6 +13,7 @@
     "clairvoyant.reload.title": "Reload",
     "clairvoyant.reportStatistics.title": "Report Statistics",
     "clairvoyant.reportProfile.title": "Report Profile",
+    "clairvoyant.firstToken.title": "Go First Token",
     "clairvoyant.nextToken.title": "Go Next Token",
     "clairvoyant.previousToken.title": "Go Previous Token",
     "clairvoyant.toggleHighlight.title": "Toggle highlight",

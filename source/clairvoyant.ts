@@ -191,6 +191,29 @@ export const initialize = (aContext: vscode.ExtensionContext): void =>
         vscode.commands.registerCommand(`${applicationKey}.reportProfile`, reportProfile),
         vscode.commands.registerCommand
         (
+            `${applicationKey}.firstToken`,
+            async () =>
+            {
+                outputLine("verbose", `"${applicationKey}.firstToken" is called.`);
+                let hit = false;
+                const activeTextEditor = vscode.window.activeTextEditor;
+                if (undefined !== activeTextEditor)
+                {
+                    const selection = Scan.getFirstTokenSelection(activeTextEditor);
+                    if (undefined !== selection)
+                    {
+                        hit = true;
+                        await Selection.getEntry().showToken({document: activeTextEditor.document, selection});
+                    }
+                }
+                if (!hit)
+                {
+                    await vscode.window.showInformationMessage(Locale.map("No token."));
+                }
+            }
+        ),
+        vscode.commands.registerCommand
+        (
             `${applicationKey}.nextToken`,
             async () =>
             {

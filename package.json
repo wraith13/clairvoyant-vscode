@@ -91,6 +91,11 @@
 				"category": "Clairvoyant"
 			},
 			{
+				"command": "clairvoyant.firstToken",
+				"title": "%clairvoyant.firstToken.title%",
+				"category": "Clairvoyant"
+			},
+			{
 				"command": "clairvoyant.nextToken",
 				"title": "%clairvoyant.nextToken.title%",
 				"category": "Clairvoyant"
@@ -115,6 +120,10 @@
 			"commandPalette": [
 				{
 					"command": "clairvoyant.sightDocument",
+					"when": "isDocumentScanedWithClairvoyant"
+				},
+				{
+					"command": "clairvoyant.firstToken",
 					"when": "isDocumentScanedWithClairvoyant"
 				},
 				{
@@ -153,6 +162,11 @@
 				},
 				{
 					"command": "clairvoyant.previousToken",
+					"group": "Clairvoyant",
+					"when": "isDocumentScanedWithClairvoyant"
+				},
+				{
+					"command": "clairvoyant.firstToken",
 					"group": "Clairvoyant",
 					"when": "isDocumentScanedWithClairvoyant"
 				},
