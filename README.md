@@ -36,6 +36,19 @@ You can change [settings](#extension-settings) by `settings.json`. And you can a
 
 Enjoy!
 
+## Recommended settings
+
+Please check `Workbench › Editor: Enable Preview`
+
+or
+
+```json
+"workbench.editor.enablePreview": true,
+```
+in settings.json
+
+If this setting is true or checked, Clairvoyant can display previews efficiently.
+
 ## Commands
 
 * `Clairvoyant: Sight ...` : Access to tokens in your codes with menu.
