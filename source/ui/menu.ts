@@ -789,6 +789,82 @@ const makeHighlightRootMenu = (): CommandMenuItem[] =>
             })
         }];
 };
+const makeHighlightDocumentTokensMenu = (uri: string, entries: { [key: string]: number[] }): CommandMenuItem[] =>
+([
+    {
+        label: `$(trashcan) ${Locale.typeableMap("Clear all highlights")}`,
+        //description: highlights.map(token => `$(tag) "${token}"`).join(", "),
+        command: async () => Highlight.reload(),
+    }
+] as CommandMenuItem[])
+.concat
+(
+    Profiler.profile
+    (
+        "makeHighlightDocumentTokensMenu.core",
+        () =>
+        Object.entries(entries).sort
+        (
+            "token" === getRootMenuOrder() ?
+                (a, b) => Comparer.string(a[0], b[0]):
+                Comparer.merge
+                ([
+                    Comparer.make(entry => -entry[1].length),
+                    (a, b) => Comparer.string(a[0], b[0])
+                ])
+        )
+        .map
+        (
+            entry =>
+            ({
+                label: `$(tag) "${Clairvoyant.decodeToken(entry[0])}" ...`,
+                description: undefined,
+                detail: `count: ${entry[1].length}`,
+                token: Clairvoyant.decodeToken(entry[0]),
+                command: async () => await Show.forward
+                ({
+                    makeItemList: () => makeSightFileTokenMenu
+                    (
+                        uri,
+                        Clairvoyant.decodeToken(entry[0]),
+                        entry[1]
+                    ),
+                    options:
+                    {
+                        matchOnDetail: true,
+                        document: Scan.documentMap[uri],
+                        token: Clairvoyant.decodeToken(entry[0]),
+                    },
+                }),
+            })
+        )
+    )
+);
+const makeHighlightDocumentRootMenu = (uri: string): CommandMenuItem[] =>
+{
+    const documentTokenEntry = Scan.documentTokenEntryMap[uri];
+    const documentTokens = Object.keys(documentTokenEntry);
+    const tokenMap: { [token: string]: number[] } = { };
+    Highlight.getHighlight()
+        .map(Clairvoyant.encodeToken)
+        .reverse()
+        .filter(i => 0 <= documentTokens.indexOf(i))
+        .forEach(i => tokenMap[i] = documentTokenEntry[i]);
+    return Object.keys(tokenMap).length <= 0 ?
+        []:
+        [{
+            label: `$(light-bulb) ${Locale.typeableMap("Highlighted tokens")} ...`,
+            description: Object.keys(tokenMap).map(token => `$(tag) "${token}"`).join(", "),
+            command: async () => await Show.forward
+            ({
+                makeItemList: () => makeHighlightDocumentTokensMenu(uri, tokenMap),
+                options:
+                {
+                    matchOnDescription: true,
+                },
+            })
+        }];
+};
 const makeStaticMenuItem = (octicon: string, label: Locale.KeyType, command: string): CommandMenuItem =>
 ({
     label: octicon +" " +Locale.typeableMap(label),
@@ -976,7 +1052,7 @@ export const makeSightDocumentRootMenu = (uri: string): CommandMenuItem[] => Pro
     (
         makeHistoryMenu(),
         makeQuickMenu(),
-        makeHighlightRootMenu(),
+        makeHighlightDocumentRootMenu(uri),
         makeSightFileRootMenu(uri,Scan.documentTokenEntryMap[uri]),
     )
 );

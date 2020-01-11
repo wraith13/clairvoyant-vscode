@@ -10,6 +10,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 - Described recommended settings in README.
 
+### Changed
+
+- `Highlighted tokens` at `Clairvoyant: Sight Document ...` is limited to those included in target document.
+
 ## 7.1.0 - 2020-01-05
 
 ### Added
