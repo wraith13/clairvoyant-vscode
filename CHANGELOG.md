@@ -14,6 +14,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 - `Highlighted tokens` at `Clairvoyant: Sight Document ...` is limited to those included in target document.
 
+### Fixed
+
+- Worked around an issue that preview in wrong ViewColumn. ( This is an experimental measure because the steps to reproduce the problem are not known. )
+
 ## 7.1.0 - 2020-01-05
 
 ### Added

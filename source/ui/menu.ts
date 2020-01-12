@@ -158,6 +158,12 @@ export module Show
     };
     export const root = async (entry: Entry) =>
     {
+        const activeTextEditor = vscode.window.activeTextEditor;
+        if (activeTextEditor && activeTextEditor.viewColumn)
+        {
+            Selection.setLastValidViemColumn(activeTextEditor.viewColumn);
+        }
+
         menuStack.splice(0, 0);
         await push(entry);
     };
