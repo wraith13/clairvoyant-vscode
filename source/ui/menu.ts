@@ -860,7 +860,10 @@ const makeHighlightDocumentRootMenu = (uri: string): CommandMenuItem[] =>
         []:
         [{
             label: `$(light-bulb) ${Locale.typeableMap("Highlighted tokens")} ...`,
-            description: Object.keys(tokenMap).map(token => `$(tag) "${token}"`).join(", "),
+            description: Object.keys(tokenMap)
+                .map(Clairvoyant.decodeToken)
+                .map(token => `$(tag) "${token}"`)
+                .join(", "),
             command: async () => await Show.forward
             ({
                 makeItemList: () => makeHighlightDocumentTokensMenu(uri, tokenMap),
