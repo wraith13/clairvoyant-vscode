@@ -10,3 +10,4 @@ images/clairvoyanthex.ico
 **/tslint.json
 **/*.map
 **/*.ts
+**/.DS_Store
