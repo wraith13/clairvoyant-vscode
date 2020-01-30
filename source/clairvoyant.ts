@@ -126,6 +126,7 @@ export const activeHighlightOverviewRulerLane = new Config.MapEntry("clairvoyant
 export const latestHighlightOverviewRulerLane = new Config.MapEntry("clairvoyant.latestHighlightOverviewRulerLane", overviewRulerLaneObject);
 export const highlightOverviewRulerLane = new Config.MapEntry("clairvoyant.highlightOverviewRulerLane", overviewRulerLaneObject);
 export const enableLunaticPreview = new Config.Entry<boolean>("clairvoyant.enableLunaticPreview");
+export const enableMenuCache = new Config.Entry<boolean>("clairvoyant.enableMenuCache");
 export const developFileListOnSightRootMenu = new Config.MapEntry("clairvoyant.developFileListOnSightRootMenu", developFileListObject);
 const outputChannelVolume = new Config.MapEntry("clairvoyant.outputChannelVolume", outputChannelVolumeObject);
 const outputChannel = vscode.window.createOutputChannel(Config.applicationName);
@@ -431,6 +432,7 @@ const clearConfig = () =>
         enableLunaticPreview,
         outputChannelVolume,
         developFileListOnSightRootMenu,
+        enableMenuCache,
     ]
     .forEach(i => i.clear());
     vscode.commands.executeCommand

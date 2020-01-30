@@ -414,6 +414,11 @@
 							"goto"
 						],
 						"description": "%clairvoyant.developFileListOnSightRootMenu.description%"
+					},
+					"clairvoyant.enableMenuCache": {
+						"type": "boolean",
+						"default": true,
+						"description": "%clairvoyant.enableMenuCache.description%"
 					}
 				}
 			}

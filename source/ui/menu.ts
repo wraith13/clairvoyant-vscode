@@ -38,16 +38,23 @@ export const removeCache = (key: string) =>
 };
 export const getCacheOrMake = (key: string, itemMaker: () => CommandMenuItem[]) =>
 {
-    if (!cache[key])
+    if (Clairvoyant.enableMenuCache.get(""))
     {
-        Clairvoyant.outputLine("verbose", `Menu.getCacheOrMake("${key}") has no cache.`);
-        cache[key] = itemMaker();
+        if (!cache[key])
+        {
+            Clairvoyant.outputLine("verbose", `Menu.getCacheOrMake("${key}") has no cache.`);
+            cache[key] = itemMaker();
+        }
+        else
+        {
+            Clairvoyant.outputLine("verbose", `Menu.getCacheOrMake("${key}") has cache.`);
+        }
+        return cache[key];
     }
     else
     {
-        Clairvoyant.outputLine("verbose", `Menu.getCacheOrMake("${key}") has cache.`);
+        return itemMaker();
     }
-    return cache[key];
 };
 export module Show
 {
