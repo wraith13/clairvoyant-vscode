@@ -11,3 +11,4 @@ images/clairvoyanthex.ico
 **/*.map
 **/*.ts
 **/.DS_Store
+clairvoyant-vscode.code-workspace
