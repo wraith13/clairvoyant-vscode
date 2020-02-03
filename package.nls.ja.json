@@ -40,6 +40,7 @@
     "clairvoyant.highlightOverviewRulerLane.description": "ハイライトのオーバービュールーラーでの表示レーン",
     "clairvoyant.enableLunaticPreview.description": "ルナティックプレビューの有効化 ( ダーティーなアプローチを採用しているので問題があるかもしれません。問題が起きた場合は無効化してください。 )",
     "clairvoyant.developFileListOnSightRootMenu.description": "サイトのルートメニューでファイルリストを展開します",
+    "clairvoyant.enableMenuCache.description": "メニューキャッシュの有効化",
     "clairvoyant.backMenu.title": "一つ前のメニューに戻る",
     "♻️ Reload Clairvoyant!": "♻️ Clairvoyantをリロード",
     "📊 Statistics Report": "📊 統計情報報告",

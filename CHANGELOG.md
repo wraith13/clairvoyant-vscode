@@ -4,6 +4,12 @@ All notable changes to the "clairvoyant" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## 7.3.0 - 2020-02-??
+
+### Added
+
+- `clairvoyant.enableMenuCache` setting.
+
 ## 7.2.1 - 2020-01-14
 
 ### Fixed
