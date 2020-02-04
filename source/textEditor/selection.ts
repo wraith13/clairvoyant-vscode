@@ -193,7 +193,7 @@ class Entry
 const entryMap: { [viewColumn: string]: Entry } = { };
 export const getEntry = () =>
 {
-    const key = Clairvoyant.gotoHistoryMode.get("")(lastValidViemColumn);
+    const key = Clairvoyant.gotoHistoryMode.get("")(getLastValidViemColumn());
     if (!entryMap[key])
     {
         entryMap[key] = new Entry(key);
@@ -345,7 +345,7 @@ export module RegularPreviewTextEditor
     let viewColumn: vscode.ViewColumn;
     export const make = async () =>
     {
-        viewColumn = lastValidViemColumn;
+        viewColumn = getLastValidViemColumn();
         const oldTextEditor = getLastTextEditor();
         backupDocument = oldTextEditor ? oldTextEditor.document: undefined;
     };
