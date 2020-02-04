@@ -295,7 +295,7 @@ export module LunaticPreviewTextEditor
     let viewColumn: vscode.ViewColumn;
     export const make = async () =>
     {
-        viewColumn = lastValidViemColumn;
+        viewColumn = getLastValidViemColumn();
         const oldTextEditor = getLastTextEditor();
         backupDocument = oldTextEditor ? oldTextEditor.document: undefined;
         document = await vscode.workspace.openTextDocument();
