@@ -425,6 +425,7 @@
 		]
 	},
 	"scripts": {
+		"npm:install": "npm install",
 		"vscode:publish": "vsce publish",
 		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -p ./",
