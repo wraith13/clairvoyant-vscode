@@ -76,6 +76,7 @@ class Entry
         }
         else
         {
+            Clairvoyant.outputLine("verbose", `showTextDocument("${document.fileName}", viewColumn: ${this.previewViewColumn})`);
             await vscode.window.showTextDocument(document, this.previewViewColumn);
             this.targetBackupSelectionEntry = makeShowTokenCoreEntry();
         }
@@ -87,6 +88,7 @@ class Entry
         const textEditor = vscode.window.visibleTextEditors.filter(i => i.viewColumn === this.previewViewColumn)[0];
         if (textEditor)
         {
+            Clairvoyant.outputLine("verbose", `previewSelection.viewColumn: ${this.previewViewColumn}`);
             revealSelection(textEditor, entry.selection);
             this.lastPreviewSelectionEntry = entry;
         }
@@ -295,6 +297,7 @@ export module LunaticPreviewTextEditor
     let viewColumn: vscode.ViewColumn;
     export const make = async () =>
     {
+        Clairvoyant.outputLine("verbose", `LunaticPreviewTextEditor.make.viewColumn: ${viewColumn}`);
         viewColumn = getLastValidViemColumn();
         const oldTextEditor = getLastTextEditor();
         backupDocument = oldTextEditor ? oldTextEditor.document: undefined;
