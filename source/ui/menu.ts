@@ -170,7 +170,6 @@ export module Show
         {
             Selection.setLastValidViemColumn(activeTextEditor.viewColumn);
         }
-
         menuStack.splice(0, 0);
         await push(entry);
     };
