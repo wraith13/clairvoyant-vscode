@@ -65,12 +65,12 @@ class Entry
     lastPreviewSelectionEntry: ShowTokenCoreEntry | null = null;
     previewViewColumn: vscode.ViewColumn = 1;
     public constructor(public viewColumn: string) { }
-    public showTextDocumentWithBackupSelection = async (document: vscode.TextDocument) =>
+    public showTextDocumentWithBackupSelection = async (document: vscode.TextDocument | undefined) =>
     {
         Clairvoyant.outputLine("verbose", `Selection.Entry(${this.viewColumn}).showTextDocumentWithBackupSelection() is called.`);
         this.previewViewColumn = getLastValidViemColumn();
         this.groundBackupSelectionEntry = makeShowTokenCoreEntry();
-        if (this.groundBackupSelectionEntry && this.groundBackupSelectionEntry.document.uri.toString() === document.uri.toString())
+        if (undefined === document || (this.groundBackupSelectionEntry && this.groundBackupSelectionEntry.document.uri.toString() === document.uri.toString()))
         {
             this.targetBackupSelectionEntry = null;
         }
@@ -310,18 +310,21 @@ export module LunaticPreviewTextEditor
     };
     export const show = async (previewDocument: vscode.TextDocument | undefined) =>
     {
-        lastPreviewDocument = previewDocument;
-        const targetDocument = previewDocument || backupDocument;
-        if (undefined !== targetDocument)
+        if (lastPreviewDocument !== previewDocument)
         {
-            await textEditor.edit(editBuilder => editBuilder.replace(makeWhole(document), targetDocument.getText()));
-            await vscode.languages.setTextDocumentLanguage(document, targetDocument.languageId);
-            revealSelection
-            (
-                textEditor,
-                Log.getLatest(viewColumn, targetDocument.uri.toString()) ||
-                new vscode.Selection(document.positionAt(0), document.positionAt(0))
-            );
+            lastPreviewDocument = previewDocument;
+            const targetDocument = previewDocument || backupDocument;
+            if (undefined !== targetDocument)
+            {
+                await textEditor.edit(editBuilder => editBuilder.replace(makeWhole(document), targetDocument.getText()));
+                await vscode.languages.setTextDocumentLanguage(document, targetDocument.languageId);
+                revealSelection
+                (
+                    textEditor,
+                    Log.getLatest(viewColumn, targetDocument.uri.toString()) ||
+                    new vscode.Selection(document.positionAt(0), document.positionAt(0))
+                );
+            }
         }
     };
     export const dispose = async (commitable: boolean) =>
@@ -345,6 +348,8 @@ export module RegularPreviewTextEditor
 {
     let backupDocument: vscode.TextDocument | undefined;
     let lastPreviewDocument: vscode.TextDocument | undefined;
+    let backupTextEditor: vscode.TextEditor | undefined;
+    let backupSelectionEntry: ShowTokenCoreEntry | null = null;
     let viewColumn: vscode.ViewColumn;
     export const make = async () =>
     {
@@ -354,17 +359,25 @@ export module RegularPreviewTextEditor
     };
     export const show = async (previewDocument: vscode.TextDocument | undefined) =>
     {
-        lastPreviewDocument = previewDocument;
-        const targetDocument = previewDocument || backupDocument;
-        if (undefined !== targetDocument)
+        if (lastPreviewDocument !== previewDocument)
         {
-            const textEditor = await vscode.window.showTextDocument(targetDocument, { viewColumn, preserveFocus:true, preview:true });
-            revealSelection
-            (
-                textEditor,
-                Log.getLatest(viewColumn, targetDocument.uri.toString()) ||
-                new vscode.Selection(targetDocument.positionAt(0), targetDocument.positionAt(0))
-            );
+            if (undefined !== lastPreviewDocument)
+            {
+                restoreSelection();
+            }
+            lastPreviewDocument = previewDocument;
+            const targetDocument = previewDocument || backupDocument;
+            if (undefined !== targetDocument)
+            {
+                const textEditor = await vscode.window.showTextDocument(targetDocument, { viewColumn, preserveFocus:true, preview:true });
+                backupSelection(textEditor);
+                revealSelection
+                (
+                    textEditor,
+                    Log.getLatest(viewColumn, targetDocument.uri.toString()) ||
+                    new vscode.Selection(targetDocument.positionAt(0), targetDocument.positionAt(0))
+                );
+            }
         }
     };
     export const dispose = async (commitable: boolean) =>
@@ -382,9 +395,28 @@ export module RegularPreviewTextEditor
             {
                 if (undefined !== backupDocument)
                 {
+                    restoreSelection();
                     await vscode.window.showTextDocument(backupDocument, viewColumn);
                 }
             }
+        }
+    };
+    const backupSelection = (textEditor: vscode.TextEditor) =>
+    {
+        backupTextEditor = textEditor;
+        backupSelectionEntry = makeShowTokenCoreEntry();
+    };
+    const restoreSelection = async () =>
+    {
+        if (backupSelectionEntry && backupTextEditor)
+        {
+            showSelection
+            (
+                backupSelectionEntry,
+                backupTextEditor
+            );
+            backupSelectionEntry = null;
+            backupTextEditor = undefined;
         }
     };
 }

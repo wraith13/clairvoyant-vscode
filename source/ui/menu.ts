@@ -85,10 +85,10 @@ export module Show
         {
             Highlight.Preview.showToken(options.token);
         }
-        if (undefined !== options.document)
-        {
+        //if (undefined !== options.document)
+        //{
             await selectionEntry.showTextDocumentWithBackupSelection(options.document);
-        }
+        //}
         if (true === options.filePreview)
         {
             await Selection.PreviewTextEditor.make();
@@ -139,10 +139,10 @@ export module Show
         {
             await Selection.PreviewTextEditor.dispose(isCommitable);
         }
-        if (undefined !== options.document)
-        {
+        //if (undefined !== options.document)
+        //{
             await selectionEntry.dispose(isCommitable);
-        }
+        //}
         if (undefined !== options.token)
         {
             Highlight.Preview.dispose(isCommitable);
