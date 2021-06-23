@@ -4,6 +4,12 @@ All notable changes to the "clairvoyant" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## 7.4.1 - 2021-??-??
+
+### Security
+
+- npm audit fix
+
 ## 7.4.0 - 2020-02-16
 
 ### Fixed
