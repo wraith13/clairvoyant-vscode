@@ -441,7 +441,7 @@
 		"@types/node": "^12.11.7",
 		"@types/vscode": "^1.39.0",
 		"glob": "^7.1.5",
-		"minimist": ">=1.2.3",
+		"minimist": ">=1.2.6",
 		"mocha": "^6.2.2",
 		"tslint": "^5.20.0",
 		"typescript": "^3.6.4",
